@@ -1,0 +1,16 @@
+node_modules
+dist
+.imgflo
+*.log
+.env
+.DS_Store
+*.tsbuildinfo
+coverage
+.vscode
+.idea
+
+# Test files
+test-*.svg
+test-*.png
+test-*.jpg
+test-*.webp

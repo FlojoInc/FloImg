@@ -1,0 +1,79 @@
+{
+  "name": "imgflo",
+  "version": "0.1.0",
+  "description": "Image generation and transformation library for AI agents and developers",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "imgflo": "./dist/cli/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./config": {
+      "import": "./dist/config/index.js",
+      "types": "./dist/config/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "QUICK_START.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "cli": "node --loader ts-node/esm src/cli/index.ts",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "image",
+    "generation",
+    "svg",
+    "ai",
+    "dall-e",
+    "openai",
+    "s3",
+    "cli",
+    "typescript",
+    "llm",
+    "agent",
+    "image-processing",
+    "automation",
+    "cloud-storage"
+  ],
+  "author": "Brett Cooke",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bcooke/imgflo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bcooke/imgflo/issues"
+  },
+  "homepage": "https://github.com/bcooke/imgflo#readme",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.709.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.7",
+    "openai": "^4.77.3",
+    "sharp": "^0.33.5",
+    "yaml": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
