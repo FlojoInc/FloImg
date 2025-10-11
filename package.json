@@ -1,6 +1,6 @@
 {
   "name": "imgflo",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Image generation and transformation library for AI agents and developers",
   "type": "module",
   "main": "./dist/index.js",
