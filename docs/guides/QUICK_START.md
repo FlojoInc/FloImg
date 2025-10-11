@@ -1,5 +1,17 @@
 # imgflo Quick Start
 
+## Installation
+
+```bash
+npm install imgflo
+```
+
+Or install globally for CLI use:
+
+```bash
+npm install -g imgflo
+```
+
 ## For AI Agents (Like Claude Code)
 
 This is the perfect tool when you need to generate images and get shareable URLs quickly.

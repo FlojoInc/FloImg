@@ -9,6 +9,9 @@ coverage
 .vscode
 .idea
 
+# Context folder (user feedback and testing)
+context/
+
 # Test files
 test-*.svg
 test-*.png
