@@ -13,11 +13,89 @@ import { ImgfloError } from "../core/errors.js";
 import type { MimeType } from "../core/types.js";
 
 /**
- * imgflo MCP Server
+ * imgflo MCP Server - Smart Image Generation Router
  *
- * Provides image generation, transformation, and upload capabilities
- * to MCP clients like Claude Code via stdio transport.
+ * Provides intelligent routing to appropriate image generators based on intent.
+ * Auto-discovers and loads available plugins (quickchart, d3, mermaid, qr, screenshot).
  */
+
+// Plugin auto-discovery
+async function loadAvailablePlugins(client: any): Promise<string[]> {
+  const plugins: string[] = [];
+
+  // Try to load each plugin
+  const potentialPlugins = [
+    { name: 'quickchart', module: 'imgflo-quickchart' },
+    { name: 'd3', module: 'imgflo-d3' },
+    { name: 'mermaid', module: 'imgflo-mermaid' },
+    { name: 'qr', module: 'imgflo-qr' },
+    { name: 'screenshot', module: 'imgflo-screenshot' },
+  ];
+
+  for (const { name, module } of potentialPlugins) {
+    try {
+      const plugin = await import(module);
+      const generator = plugin.default ? plugin.default() : plugin();
+      client.registerGenerator(generator);
+      plugins.push(name);
+      console.error(`[imgflo-mcp] Loaded plugin: ${name}`);
+    } catch (err) {
+      // Plugin not installed, skip silently
+    }
+  }
+
+  return plugins;
+}
+
+// Smart generator selection based on intent
+function selectGenerator(intent: string, params: any): string {
+  const intentLower = intent.toLowerCase();
+
+  // QR codes
+  if (intentLower.includes('qr') || intentLower.includes('barcode')) {
+    return 'qr';
+  }
+
+  // Screenshots
+  if (intentLower.includes('screenshot') || intentLower.includes('capture') ||
+      intentLower.includes('website') || intentLower.includes('webpage') ||
+      intentLower.includes('url') && params.url) {
+    return 'screenshot';
+  }
+
+  // Diagrams (Mermaid)
+  if (intentLower.includes('flowchart') || intentLower.includes('diagram') ||
+      intentLower.includes('sequence') || intentLower.includes('gantt') ||
+      intentLower.includes('class diagram') || intentLower.includes('entity') ||
+      intentLower.includes('state') || intentLower.includes('mindmap')) {
+    return 'mermaid';
+  }
+
+  // Charts & Data Visualization
+  if (intentLower.includes('chart') || intentLower.includes('graph') ||
+      intentLower.includes('plot') || intentLower.includes('visualiz')) {
+
+    // D3 for custom/complex visualizations
+    if (params.render || params.renderString ||
+        intentLower.includes('custom') || intentLower.includes('d3')) {
+      return 'd3';
+    }
+
+    // QuickChart for standard charts
+    return 'quickchart';
+  }
+
+  // OpenAI for image generation
+  if (intentLower.includes('generate') || intentLower.includes('create') ||
+      intentLower.includes('dall-e') || intentLower.includes('ai image')) {
+    if (params.prompt) {
+      return 'openai';
+    }
+  }
+
+  // Default to shapes for simple SVG graphics
+  return 'shapes';
+}
 
 // Initialize server
 const server = new Server(
@@ -37,23 +115,35 @@ const TOOLS: Tool[] = [
   {
     name: "generate_image",
     description:
-      "Generate an image using a specified generator (e.g., 'shapes' for SVG shapes). " +
-      "Returns an ImageBlob with the generated image data.",
+      "Generate any type of image based on natural language intent. " +
+      "Supports: charts (bar, line, pie, scatter), diagrams (flowcharts, sequence, gantt), " +
+      "QR codes, screenshots, data visualizations (D3), AI images (DALL-E), and simple shapes/gradients. " +
+      "The system automatically selects the best generator based on your intent.",
     inputSchema: {
       type: "object",
       properties: {
-        generator: {
+        intent: {
           type: "string",
-          description: "Generator to use (e.g., 'shapes')",
-          default: "shapes",
+          description:
+            "What you want to create (e.g., 'bar chart showing quarterly revenue', " +
+            "'QR code for https://example.com', 'flowchart of authentication process', " +
+            "'screenshot of https://example.com')",
         },
         params: {
           type: "object",
           description:
-            "Parameters for the generator. For 'shapes': {type: 'gradient'|'circle'|'rectangle'|'pattern', width?: number, height?: number, color1?: string, color2?: string, fill?: string, rx?: number, patternType?: 'dots'|'stripes'|'grid'}",
+            "Parameters for the generator. Common params: width, height, data, colors. " +
+            "For charts: {type: 'bar'|'line'|'pie', data: {...}}. " +
+            "For QR: {text: 'content'}. " +
+            "For diagrams: {code: 'mermaid syntax'}. " +
+            "For screenshots: {url: 'https://...'}. " +
+            "For D3: {render: function, data: [...]}. " +
+            "For shapes: {type: 'gradient'|'circle'|'rectangle'}. " +
+            "For AI: {prompt: 'description'}",
           default: {},
         },
       },
+      required: ["intent"],
     },
   },
   {
@@ -137,12 +227,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const config = await loadConfig();
     const client = createClient(config);
 
+    // Load available plugins
+    const availablePlugins = await loadAvailablePlugins(client);
+    console.error(`[imgflo-mcp] Available generators: shapes, openai, ${availablePlugins.join(', ')}`);
+
     switch (name) {
       case "generate_image": {
-        const { generator = "shapes", params = {} } = args as {
-          generator?: string;
+        const { intent, params = {} } = args as {
+          intent: string;
           params?: Record<string, unknown>;
         };
+
+        if (!intent) {
+          throw new Error("'intent' parameter is required");
+        }
+
+        // Smart generator selection
+        const generator = selectGenerator(intent, params);
+        console.error(`[imgflo-mcp] Intent: "${intent}" → Generator: ${generator}`);
 
         const blob = await client.generate({
           generator,
@@ -155,6 +257,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               type: "text",
               text: JSON.stringify({
                 success: true,
+                generator, // Tell user which generator was used
                 blob: {
                   bytes: blob.bytes.toString("base64"),
                   mime: blob.mime,
@@ -291,6 +394,7 @@ async function main() {
 
   // Log to stderr (stdout is used for MCP communication)
   console.error("imgflo MCP server running on stdio");
+  console.error("Smart routing enabled - will auto-select best generator based on intent");
 }
 
 main().catch((error) => {

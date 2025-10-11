@@ -1,7 +1,7 @@
 {
-  "name": "imgflo-mermaid",
+  "name": "imgflo-d3",
   "version": "0.1.0",
-  "description": "Mermaid diagram generator for imgflo - create flowcharts, sequence diagrams, and more",
+  "description": "D3 data visualization generator for imgflo using server-side rendering",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -22,16 +22,14 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "postinstall": "puppeteer browsers install chrome",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
     "imgflo",
-    "mermaid",
-    "diagram",
-    "flowchart",
-    "sequence-diagram",
-    "visualization",
+    "d3",
+    "data-visualization",
+    "charts",
+    "svg",
     "image-generation"
   ],
   "author": "Brett Cooke",
@@ -39,16 +37,18 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/bcooke/imgflo.git",
-    "directory": "packages/imgflo-mermaid"
+    "directory": "packages/imgflo-d3"
   },
   "peerDependencies": {
     "imgflo": "workspace:*"
   },
   "dependencies": {
-    "@mermaid-js/mermaid-cli": "^11.4.1",
-    "puppeteer": "^23.11.1"
+    "d3": "^7.9.0",
+    "jsdom": "^25.0.1"
   },
   "devDependencies": {
+    "@types/d3": "^7.4.3",
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^22.10.2",
     "imgflo": "workspace:*",
     "typescript": "^5.7.2",

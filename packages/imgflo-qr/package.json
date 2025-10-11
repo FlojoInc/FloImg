@@ -1,7 +1,7 @@
 {
-  "name": "imgflo-mermaid",
+  "name": "imgflo-qr",
   "version": "0.1.0",
-  "description": "Mermaid diagram generator for imgflo - create flowcharts, sequence diagrams, and more",
+  "description": "QR code generator for imgflo using qrcode library",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -22,16 +22,13 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "postinstall": "puppeteer browsers install chrome",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
     "imgflo",
-    "mermaid",
-    "diagram",
-    "flowchart",
-    "sequence-diagram",
-    "visualization",
+    "qr",
+    "qrcode",
+    "barcode",
     "image-generation"
   ],
   "author": "Brett Cooke",
@@ -39,17 +36,17 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/bcooke/imgflo.git",
-    "directory": "packages/imgflo-mermaid"
+    "directory": "packages/imgflo-qr"
   },
   "peerDependencies": {
     "imgflo": "workspace:*"
   },
   "dependencies": {
-    "@mermaid-js/mermaid-cli": "^11.4.1",
-    "puppeteer": "^23.11.1"
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "@types/qrcode": "^1.5.5",
     "imgflo": "workspace:*",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

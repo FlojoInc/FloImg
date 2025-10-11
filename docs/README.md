@@ -2,15 +2,16 @@
 
 Welcome to the imgflo documentation!
 
-## Getting Started
+## Main Documentation
 
-- **[Getting Started Guide](./guides/GETTING_STARTED.md)** - Complete walkthrough for new users
-- **[AI Agent Guide](./guides/AI_AGENT_GUIDE.md)** - Guide for AI agents using imgflo
+- **[Main README](../README.md)** - Project overview and three usage patterns
+- **[Usage Guide](./USAGE.md)** - Comprehensive guide for all three patterns (Library, CLI, MCP)
+- **[Status & Roadmap](./STATUS.md)** - Current status, roadmap, and next steps
 
 ## Architecture
 
 - **[Generator Strategy](./development/GENERATOR_STRATEGY.md)** - Core philosophy and design patterns
-- **[Monorepo Guide](../MONOREPO.md)** - Development in the monorepo
+- **[Monorepo Guide](../MONOREPO.md)** - Development and contributing
 
 ## Core Package
 
@@ -25,15 +26,11 @@ Core package documentation is in [`packages/imgflo/docs/`](../packages/imgflo/do
 
 Each plugin has its own documentation:
 - [imgflo-quickchart](../packages/imgflo-quickchart/README.md) - Chart.js charts
+- [imgflo-d3](../packages/imgflo-d3/README.md) - D3 visualizations
 - [imgflo-screenshot](../packages/imgflo-screenshot/README.md) - Browser screenshots
 - [imgflo-mermaid](../packages/imgflo-mermaid/README.md) - Mermaid diagrams
-
-## Project Status
-
-- **[STATUS.md](../STATUS.md)** - Current status, roadmap, and next steps
+- [imgflo-qr](../packages/imgflo-qr/README.md) - QR codes
 
 ## Examples
 
-See the [`examples/`](../examples/) directory:
-- [all-plugins.ts](../examples/all-plugins.ts) - Comprehensive demo of all generators
-- More examples in `packages/imgflo/examples/`
+See the [`examples/`](../examples/) directory for working code examples.

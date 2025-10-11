@@ -5,6 +5,8 @@ import { generateCommand } from "./commands/generate.js";
 import { transformCommand } from "./commands/transform.js";
 import { uploadCommand } from "./commands/upload.js";
 import { configCommand } from "./commands/config.js";
+import { pluginsCommand } from "./commands/plugins.js";
+import { mcpCommand } from "./commands/mcp.js";
 import { readFile } from "fs/promises";
 import { fileURLToPath } from "url";
 import { dirname, join, resolve } from "path";
@@ -34,6 +36,8 @@ program.addCommand(generateCommand);
 program.addCommand(transformCommand);
 program.addCommand(uploadCommand);
 program.addCommand(configCommand);
+program.addCommand(pluginsCommand);
+program.addCommand(mcpCommand);
 
 // Enhanced doctor command
 program
@@ -97,7 +101,36 @@ program
     console.log("  - S3_BUCKET:", process.env.S3_BUCKET || "not set");
     console.log("  - OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? "set" : "not set");
 
+    // Check plugins
+    console.log("\nInstalled plugins:");
+    const plugins = [
+      "imgflo-quickchart",
+      "imgflo-d3",
+      "imgflo-mermaid",
+      "imgflo-qr",
+      "imgflo-screenshot",
+    ];
+
+    let hasPlugins = false;
+    for (const plugin of plugins) {
+      try {
+        await import(plugin);
+        console.log(`  ✓ ${plugin}`);
+        hasPlugins = true;
+      } catch {
+        // Not installed
+      }
+    }
+
+    if (!hasPlugins) {
+      console.log("  (none installed)");
+      console.log("\n💡 Install plugins: imgflo plugins");
+    }
+
     console.log("\n✨ Ready to use! Try:");
+    console.log("  imgflo plugins           # See available plugins");
+    console.log("  imgflo config init       # Interactive setup");
+    console.log("  imgflo mcp install       # Set up MCP for Claude Code");
     console.log("  imgflo generate --generator shapes --params '{\"type\":\"gradient\"}' --out test.svg");
   });
 

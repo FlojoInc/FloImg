@@ -7,24 +7,23 @@ This document explains how documentation is organized in the imgflo monorepo.
 ```
 imgflo/
 ├── docs/                           # Monorepo-wide documentation
-│   ├── README.md                   # Documentation index
-│   ├── development/
-│   │   └── GENERATOR_STRATEGY.md   # Architecture philosophy
-│   └── guides/
-│       ├── GETTING_STARTED.md      # General getting started
-│       └── AI_AGENT_GUIDE.md       # For AI agents
+│   ├── USAGE.md                    # Comprehensive usage guide
+│   ├── STATUS.md                   # Project status and roadmap
+│   └── development/
+│       └── GENERATOR_STRATEGY.md   # Architecture philosophy
 │
 ├── packages/imgflo/docs/           # Core package documentation
-│   ├── guides/
-│   │   ├── QUICK_START.md          # Core quick start
-│   │   ├── CONFIGURATION.md        # Core configuration
-│   │   ├── OPENAI_GENERATOR.md     # OpenAI (built-in)
-│   │   ├── MCP_SERVER.md           # MCP server (built-in)
-│   │   ├── S3_PROVIDERS.md         # Storage (core)
-│   │   └── PUBLISHING.md           # Publishing core
-│   └── development/                # Historical dev docs
+│   └── guides/
+│       ├── QUICK_START.md          # Core quick start
+│       ├── CONFIGURATION.md        # Core configuration
+│       ├── OPENAI_GENERATOR.md     # OpenAI (built-in)
+│       ├── MCP_SERVER.md           # MCP server (built-in)
+│       └── S3_PROVIDERS.md         # Storage (core)
 │
 ├── packages/imgflo-quickchart/
+│   └── README.md                   # Plugin documentation
+│
+├── packages/imgflo-d3/
 │   └── README.md                   # Plugin documentation
 │
 ├── packages/imgflo-screenshot/
@@ -33,32 +32,34 @@ imgflo/
 ├── packages/imgflo-mermaid/
 │   └── README.md                   # Plugin documentation
 │
-├── examples/
-│   └── all-plugins.ts              # Working examples
+├── packages/imgflo-qr/
+│   └── README.md                   # Plugin documentation
 │
-├── README.md                       # Main entry point
-├── STATUS.md                       # Project status
-└── MONOREPO.md                     # Development guide
+├── examples/
+│   └── *.ts                        # Working examples
+│
+├── README.md                       # Main entry point (three usage patterns)
+├── MONOREPO.md                     # Development guide
+└── DOCUMENTATION.md                # This file (meta-documentation)
 ```
 
 ## Documentation Types
 
 ### Root Level (Monorepo-wide)
 
-**When to put docs here**: Documentation that applies to the entire project or multiple packages.
+**When to put docs here**: Only for immediately visible entry points.
 
-- **README.md** - Main project overview, installation, basic usage
-- **STATUS.md** - Current status, roadmap, next steps
+- **README.md** - Main project overview with three usage patterns (Library, CLI, MCP)
 - **MONOREPO.md** - Development guide for contributors
 - **DOCUMENTATION.md** - This file (meta-documentation)
 
 ### `docs/` - Shared Documentation
 
-**When to put docs here**: Conceptual documentation that spans packages.
+**When to put docs here**: Reference documentation that spans packages.
 
+- **docs/USAGE.md** - Comprehensive usage guide for all three patterns
+- **docs/STATUS.md** - Project status, roadmap, next steps
 - **docs/development/GENERATOR_STRATEGY.md** - Architecture philosophy (applies to all generators)
-- **docs/guides/GETTING_STARTED.md** - General getting started (covers core + plugins)
-- **docs/guides/AI_AGENT_GUIDE.md** - For AI agents (covers all features)
 
 ### `packages/imgflo/docs/` - Core Package Docs
 
@@ -101,8 +102,8 @@ Examples:
 ### I want to...
 
 **Get started quickly**
-- → [Main README](./README.md) - Overview
-- → [docs/guides/GETTING_STARTED.md](./docs/guides/GETTING_STARTED.md) - Full walkthrough
+- → [Main README](./README.md) - Overview and three usage patterns
+- → [docs/USAGE.md](./docs/USAGE.md) - Comprehensive usage guide
 
 **Learn about the architecture**
 - → [docs/development/GENERATOR_STRATEGY.md](./docs/development/GENERATOR_STRATEGY.md)
@@ -114,16 +115,17 @@ Examples:
 **Use a specific plugin**
 - → Check that plugin's README:
   - [imgflo-quickchart/README.md](./packages/imgflo-quickchart/README.md)
+  - [imgflo-d3/README.md](./packages/imgflo-d3/README.md)
   - [imgflo-screenshot/README.md](./packages/imgflo-screenshot/README.md)
   - [imgflo-mermaid/README.md](./packages/imgflo-mermaid/README.md)
+  - [imgflo-qr/README.md](./packages/imgflo-qr/README.md)
 
 **Develop/contribute**
 - → [MONOREPO.md](./MONOREPO.md)
-- → [STATUS.md](./STATUS.md)
+- → [docs/STATUS.md](./docs/STATUS.md)
 
 **See examples**
-- → [examples/all-plugins.ts](./examples/all-plugins.ts) - Comprehensive demo
-- → [packages/imgflo/examples/](./packages/imgflo/examples/) - More examples
+- → [examples/](./examples/) - Working code examples
 
 ## Contributing Documentation
 
@@ -179,6 +181,6 @@ When adding new documentation:
 
 **Quick Links:**
 - [Main README](./README.md)
-- [Documentation Index](./docs/README.md)
-- [Status & Roadmap](./STATUS.md)
+- [Usage Guide](./docs/USAGE.md)
+- [Status & Roadmap](./docs/STATUS.md)
 - [Development Guide](./MONOREPO.md)
