@@ -1,13 +1,38 @@
 # imgflo
 
-> Image generation glue for developers and AI agents
+> Universal image workflow engine for developers and AI agents
 
 [![npm version](https://img.shields.io/npm/v/imgflo.svg?style=flat)](https://www.npmjs.com/package/imgflo)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**imgflo** is image generation glue that lets you **describe the image you need** and handles the rest. Whether you're using **natural language** (via MCP), **code** (TypeScript/JS), or **CLI** (scripts/automation)—imgflo figures out how to make it.
+**imgflo** is a **workflow execution engine** for image generation and manipulation. It provides three core operations (generate, transform, save) that work consistently across JavaScript, CLI, YAML, MCP, and future REST APIs.
 
-Need a chart? A diagram? A QR code? A screenshot? An AI-generated image? Just describe it. The same plugins work across all three interfaces, from quick one-liners to complex multi-step pipelines with transforms and cloud storage.
+## Core Concept
+
+Every image workflow is a series of steps:
+1. **generate** - Create an image (charts, QR codes, AI images, etc.)
+2. **transform** - Modify an image (resize, filters, text overlays)
+3. **save** - Store an image (filesystem, S3, cloud storage)
+
+These primitives work the same way whether you're:
+- Writing JavaScript code
+- Running CLI commands
+- Defining YAML workflows
+- Using LLMs (Claude, GPT) via MCP
+- (Future) Using visual builders or REST APIs
+
+## What imgflo Does (and Doesn't)
+
+✅ **imgflo executes structured workflows reliably**
+✅ Provides generators, transforms, and storage providers
+✅ Handles image data efficiently (session workspace, no byte passing)
+✅ Works consistently across all interfaces
+
+❌ **imgflo does NOT parse natural language**
+❌ Does not extract data from text descriptions
+❌ Does not infer missing workflow steps
+
+**Perfect pairing:** LLMs parse natural language → imgflo executes workflows
 
 ## Three Ways to Use imgflo
 
@@ -92,20 +117,57 @@ Then just talk naturally to Claude:
 
 ---
 
-## Just Describe What You Need
+## Using with LLMs (Claude, GPT, etc.)
 
-**The core idea**: You describe the image you need, imgflo makes it happen.
+imgflo and LLMs complement each other perfectly:
 
-| What You Want | How imgflo Handles It |
-|---------------|----------------------|
-| *"Create a bar chart showing monthly sales"* | Routes to **quickchart** → generates Chart.js visualization |
-| *"Make a QR code for my website"* | Routes to **qr** generator → creates scannable code |
-| *"Draw a flowchart of our auth system"* | Routes to **mermaid** → generates diagram from description |
-| *"Show me a sunset over mountains"* | Routes to **openai** → generates with DALL-E |
-| *"Capture a screenshot of example.com"* | Routes to **screenshot** → uses Playwright |
+**LLM's Job:**
+- Parse user's natural language request
+- Extract structured data (chart data, dimensions, colors)
+- Decide which generators/operations to use
+- Construct workflow steps
 
-**Via MCP**: Talk naturally to Claude, it routes to the right generator automatically.
-**Via code/CLI**: Specify the generator directly when you want precise control, or let natural language processing (future) figure it out.
+**imgflo's Job:**
+- Execute the structured workflow reliably
+- Handle image operations and storage
+- Return predictable results
+
+### Example Flow
+
+**User to Claude:**
+> "Create a bar chart with sales data, resize to 800px, upload to S3"
+
+**Claude processes:**
+1. Extracts data: `{labels: [...], values: [...]}`
+2. Constructs workflow:
+   ```javascript
+   run_pipeline({
+     steps: [
+       { generate: { generator: 'quickchart', params: {...data...} } },
+       { transform: { operation: 'resize', params: { width: 800 } } },
+       { save: { destination: 's3://bucket/chart.png' } }
+     ]
+   })
+   ```
+
+**imgflo executes** and returns the final image URL.
+
+---
+
+## Workflow Abstraction in Action
+
+imgflo provides consistent primitives across all interfaces:
+
+| When an LLM sees... | It constructs workflow... | imgflo executes... |
+|---------------------|---------------------------|-------------------|
+| *"Create a bar chart with sales data"* | `generate(quickchart, {...data...})` | Chart.js visualization |
+| *"Make a QR code for my website"* | `generate(qr, {text: url})` | Scannable QR code |
+| *"Draw a flowchart, then resize it"* | `generate(mermaid, ...) → transform(resize, ...)` | Diagram + resized output |
+| *"Generate AI image of mountains"* | `generate(openai, {prompt: "..."})` | DALL-E image |
+| *"Screenshot site, convert to PNG"* | `generate(screenshot, ...) → transform(convert, ...)` | PNG screenshot |
+
+**Via MCP**: LLMs parse your natural language → construct workflows → imgflo executes
+**Via code/CLI**: You specify the workflow directly for precise control
 
 ---
 

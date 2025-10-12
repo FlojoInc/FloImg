@@ -5,6 +5,41 @@ All notable changes to imgflo will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-01-12
+
+### Improved
+
+#### MCP UX Enhancements
+- **Intent auto-fill for simple cases**:
+  - AI images: `intent` automatically becomes `prompt` if params.prompt not provided
+  - QR codes: URLs extracted from `intent` if params.text not provided
+  - Eliminates duplication for common use cases
+- **Clearer tool descriptions**: Updated MCP tool descriptions to clarify:
+  - AI images & QR codes: params optional (auto-filled from intent)
+  - Charts & diagrams: params REQUIRED (must provide structured data)
+  - Better examples and error messages
+- **Documentation refresh**: Updated README to emphasize workflow abstraction and LLM integration patterns
+
+### Changed
+- MCP `generate_image` tool now auto-fills params for AI images and QR codes
+- MCP `run_pipeline` generate steps apply same auto-fill logic
+- Better error messages when required params are missing for charts/diagrams
+
+### Fixed
+- Reduced duplication when using MCP tools (no longer need to provide both intent and params.prompt for AI images)
+- Clearer mental model: LLMs parse natural language → imgflo executes structured workflows
+
+### Documentation
+- Added "Core Concept" section to README
+- Added "Using with LLMs" section explaining LLM/imgflo division of responsibilities
+- Updated "Workflow Abstraction in Action" table with clearer examples
+- Emphasized that imgflo is a workflow execution engine, not a natural language parser
+
+### Technical Details
+- No breaking changes (fully backward compatible with v0.4.0)
+- All 44 tests passing
+- Auto-fill logic in `/packages/imgflo/src/mcp/server.ts` (lines 452-487, 703-712)
+
 ## [0.4.0] - 2025-01-12
 
 ### BREAKING CHANGES - MCP Server Redesign

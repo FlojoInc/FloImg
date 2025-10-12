@@ -231,34 +231,32 @@ const TOOLS: Tool[] = [
   {
     name: "generate_image",
     description:
-      "Generate any type of image based on natural language intent. " +
+      "Generate any type of image. Routes to the appropriate generator based on intent. " +
       "Supports: AI images (DALL-E), charts (bar, line, pie), diagrams (flowcharts, sequence), " +
       "QR codes, screenshots, data visualizations (D3), and simple shapes/gradients. " +
-      "The system automatically selects the best generator based on your intent. " +
-      "Images are saved to session workspace and assigned an imageId for use in subsequent operations.",
+      "Images are saved to session workspace and assigned an imageId for chaining operations.",
     inputSchema: {
       type: "object",
       properties: {
         intent: {
           type: "string",
           description:
-            "Describe what you want to create in natural language. Examples: " +
-            "'Photo of a baseball stadium at sunset', " +
-            "'Bar chart showing Q1: 100, Q2: 150, Q3: 200', " +
-            "'Flowchart for user authentication', " +
-            "'QR code for https://example.com', " +
-            "'Screenshot of https://example.com'",
+            "Brief description to route to the right generator and provide simple defaults. " +
+            "For AI images: intent becomes the prompt (e.g., 'golden retriever in field'). " +
+            "For QR codes: include the URL (e.g., 'QR code for https://example.com'). " +
+            "For charts/diagrams: just routing hint (e.g., 'bar chart', 'flowchart') - must provide params with data.",
         },
         params: {
           type: "object",
           description:
-            "Optional parameters for fine control. " +
-            "For AI images: {prompt: 'detailed description', size: '1024x1024'}. " +
-            "For charts: {type: 'bar'|'line'|'pie', data: {labels: [...], datasets: [...]}}. " +
-            "For QR: {text: 'content'}. " +
-            "For diagrams: {code: 'mermaid syntax'}. " +
-            "For screenshots: {url: 'https://...'}. " +
-            "Usually not needed - intent is enough.",
+            "Generator-specific parameters. " +
+            "AI images & QR codes: Optional (auto-filled from intent). " +
+            "Charts & diagrams: REQUIRED - must provide structured data. " +
+            "Examples: " +
+            "Charts: {type: 'bar', data: {labels: [...], datasets: [...]}}. " +
+            "Diagrams: {code: 'graph TD; A-->B'}. " +
+            "AI images: {prompt: '...', size: '1024x1024'} (or omit, uses intent). " +
+            "QR codes: {text: 'https://...'} (or omit if URL in intent).",
           default: {},
         },
         saveTo: {
@@ -449,9 +447,46 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const generator = selectGenerator(intent, params);
         console.error(`[imgflo-mcp] Intent: "${intent}" → Generator: ${generator}`);
 
+        // Auto-fill params for simple cases to improve UX
+        const finalParams = { ...params };
+
+        if (generator === 'openai' && !finalParams.prompt) {
+          // For AI images: use intent as prompt
+          finalParams.prompt = intent;
+          finalParams.size = finalParams.size || '1024x1024';
+          console.error(`[imgflo-mcp] Auto-filled: prompt="${intent}", size=${finalParams.size}`);
+        }
+
+        if (generator === 'qr' && !finalParams.text) {
+          // For QR codes: extract URL from intent
+          const urlMatch = intent.match(/https?:\/\/[^\s]+/);
+          if (urlMatch) {
+            finalParams.text = urlMatch[0];
+            console.error(`[imgflo-mcp] Auto-filled: text="${finalParams.text}"`);
+          } else {
+            throw new Error(
+              "Could not extract URL from intent for QR code. " +
+              "Please provide params.text explicitly. " +
+              "Example: { intent: 'qr code', params: { text: 'https://example.com' } }"
+            );
+          }
+        }
+
+        // For charts and diagrams: params always required (too complex to extract)
+        if ((generator === 'quickchart' || generator === 'mermaid' || generator === 'd3') &&
+            !finalParams.type && !finalParams.data && !finalParams.code && !finalParams.render) {
+          throw new Error(
+            `${generator} requires explicit params. Intent is only for routing. ` +
+            `Please provide structured data: ` +
+            `${generator === 'quickchart' ? '{ type: "bar", data: {...} }' : ''}` +
+            `${generator === 'mermaid' ? '{ code: "graph TD; A-->B" }' : ''}` +
+            `${generator === 'd3' ? '{ render: "...", data: [...] }' : ''}`
+          );
+        }
+
         const blob = await client.generate({
           generator,
-          params,
+          params: finalParams,
         });
 
         // Save to session workspace
@@ -662,7 +697,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             // Generate step
             const { intent, params = {} } = stepParams;
             const generator = selectGenerator(intent, params);
-            const blob = await client.generate({ generator, params });
+
+            // Auto-fill params for simple cases (same logic as generate_image tool)
+            const finalParams = { ...params };
+            if (generator === 'openai' && !finalParams.prompt) {
+              finalParams.prompt = intent;
+              finalParams.size = finalParams.size || '1024x1024';
+            }
+            if (generator === 'qr' && !finalParams.text) {
+              const urlMatch = intent.match(/https?:\/\/[^\s]+/);
+              if (urlMatch) finalParams.text = urlMatch[0];
+            }
+
+            const blob = await client.generate({ generator, params: finalParams });
 
             // Save to session
             const imageId = generateImageId();
