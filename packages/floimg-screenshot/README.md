@@ -5,7 +5,7 @@ Screenshot generator for floimg using Playwright headless browser.
 ## Installation
 
 ```bash
-npm install floimg floimg-screenshot
+npm install @teamflojo/floimg @teamflojo/floimg-screenshot
 ```
 
 This will automatically install Playwright and download Chromium (~200MB).
@@ -13,8 +13,8 @@ This will automatically install Playwright and download Chromium (~200MB).
 ## Usage
 
 ```typescript
-import createClient from 'floimg';
-import screenshot from 'floimg-screenshot';
+import createClient from '@teamflojo/floimg';
+import screenshot from '@teamflojo/floimg-screenshot';
 
 const floimg = createClient({
   store: {

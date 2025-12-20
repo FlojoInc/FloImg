@@ -5,14 +5,14 @@ QR code generator for floimg using the qrcode library.
 ## Installation
 
 ```bash
-npm install floimg floimg-qr
+npm install @teamflojo/floimg @teamflojo/floimg-qr
 ```
 
 ## Usage
 
 ```typescript
-import createClient from 'floimg';
-import qr from 'floimg-qr';
+import createClient from '@teamflojo/floimg';
+import qr from '@teamflojo/floimg-qr';
 
 const floimg = createClient();
 floimg.registerGenerator(qr());

@@ -5,14 +5,14 @@ D3 data visualization generator for floimg using server-side rendering.
 ## Installation
 
 ```bash
-npm install floimg floimg-d3
+npm install @teamflojo/floimg @teamflojo/floimg-d3
 ```
 
 ## Usage
 
 ```typescript
-import createClient from 'floimg';
-import d3viz from 'floimg-d3';
+import createClient from '@teamflojo/floimg';
+import d3viz from '@teamflojo/floimg-d3';
 
 const floimg = createClient();
 floimg.registerGenerator(d3viz());

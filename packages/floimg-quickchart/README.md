@@ -5,14 +5,14 @@ QuickChart.io generator for floimg - create charts using Chart.js configuration.
 ## Installation
 
 ```bash
-npm install floimg floimg-quickchart
+npm install @teamflojo/floimg @teamflojo/floimg-quickchart
 ```
 
 ## Usage
 
 ```typescript
-import createClient from 'floimg';
-import quickchart from 'floimg-quickchart';
+import createClient from '@teamflojo/floimg';
+import quickchart from '@teamflojo/floimg-quickchart';
 
 const floimg = createClient({
   store: {
