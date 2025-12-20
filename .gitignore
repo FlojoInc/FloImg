@@ -21,3 +21,7 @@ test-*.webp
 # Generated output directories
 output/
 generated/
+
+# Claude Code (local config - not tracked in public repos)
+.claude/
+.claude-sessions/

@@ -112,4 +112,4 @@ We welcome contributions—more generators, storage backends, tests, docs.
 
 ## License
 
-MIT
+MIT - Maintained by [Flojo, Inc](https://flojo.io)
