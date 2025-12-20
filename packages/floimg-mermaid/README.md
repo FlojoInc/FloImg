@@ -5,7 +5,7 @@ Mermaid diagram generator for floimg - create flowcharts, sequence diagrams, cla
 ## Installation
 
 ```bash
-npm install floimg floimg-mermaid
+npm install @teamflojo/floimg @teamflojo/floimg-mermaid
 ```
 
 This will install Mermaid CLI (~50MB including dependencies).
@@ -13,8 +13,8 @@ This will install Mermaid CLI (~50MB including dependencies).
 ## Usage
 
 ```typescript
-import createClient from 'floimg';
-import mermaid from 'floimg-mermaid';
+import createClient from '@teamflojo/floimg';
+import mermaid from '@teamflojo/floimg-mermaid';
 
 const floimg = createClient({
   store: {
