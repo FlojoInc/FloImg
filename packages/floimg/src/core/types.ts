@@ -1,5 +1,11 @@
 /**
  * Core types for floimg
+ *
+ * Includes support for:
+ * - Image generation (SVG, AI, procedural)
+ * - Image transformation (resize, filters, effects)
+ * - AI vision/analysis (Claude, GPT-4V, Ollama LLaVA)
+ * - AI text generation (prompts, descriptions, code)
  */
 
 export type MimeType =
@@ -25,6 +31,55 @@ export interface ImageBlob {
   metadata?: Record<string, unknown>;
   /** Source identifier (e.g., "svg:gradient", "ai:openai") */
   source?: string;
+}
+
+/**
+ * Represents text or structured data output from AI nodes
+ * Used for vision analysis, text generation, and prompt creation
+ */
+export interface DataBlob {
+  /** Data type: plain text or structured JSON */
+  type: "text" | "json";
+  /** Raw string content */
+  content: string;
+  /** Parsed JSON object (when type is "json") */
+  parsed?: Record<string, unknown>;
+  /** Source identifier (e.g., "ai:claude-vision", "ai:gpt4-text") */
+  source?: string;
+  /** Additional metadata about the output */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Union type for node outputs - supports both images and text/JSON data
+ */
+export type NodeOutput = ImageBlob | DataBlob;
+
+/**
+ * Type guard to check if a value is an ImageBlob
+ * Works with any input type for flexible narrowing
+ */
+export function isImageBlob(value: unknown): value is ImageBlob {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "bytes" in value &&
+    "mime" in value
+  );
+}
+
+/**
+ * Type guard to check if a value is a DataBlob
+ * Works with any input type for flexible narrowing
+ */
+export function isDataBlob(value: unknown): value is DataBlob {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "type" in value &&
+    "content" in value &&
+    !("bytes" in value)
+  );
 }
 
 /**
@@ -83,12 +138,58 @@ export interface FloimgConfig {
     [providerName: string]: unknown;
   };
 
-  // AI configuration
+  /**
+   * AI provider configuration
+   * All AI features are optional - floimg works without any AI configured
+   */
   ai?: {
+    /** Default provider for AI operations when not specified */
     default?: string;
+
+    // Cloud providers (require API keys)
     openai?: {
       apiKey: string;
+      /** Enable GPT-4 Vision capabilities */
+      enableVision?: boolean;
+      /** Enable text generation capabilities */
+      enableText?: boolean;
     };
+    anthropic?: {
+      apiKey: string;
+      /** Model to use (default: claude-sonnet-4-20250514) */
+      model?: string;
+    };
+    gemini?: {
+      apiKey: string;
+      /** Model to use (default: gemini-pro-vision) */
+      model?: string;
+    };
+
+    // Meta-providers (one key, many models)
+    openrouter?: {
+      apiKey: string;
+      /** Default model when not specified */
+      defaultModel?: string;
+    };
+    together?: {
+      apiKey: string;
+    };
+
+    // Local providers (no API key needed!)
+    ollama?: {
+      /** Ollama server URL (default: http://localhost:11434) */
+      baseUrl?: string;
+      /** Default vision model (default: llava) */
+      visionModel?: string;
+      /** Default text model (default: llama3) */
+      textModel?: string;
+    };
+    lmstudio?: {
+      /** LM Studio server URL (default: http://localhost:1234) */
+      baseUrl?: string;
+    };
+
+    /** Allow additional providers */
     [providerName: string]: unknown;
   };
 }
@@ -166,6 +267,46 @@ export interface SaveProviderSchema {
 }
 
 /**
+ * Schema for a vision provider (image analysis)
+ */
+export interface VisionProviderSchema {
+  /** Provider name (e.g., 'claude-vision', 'gpt4-vision', 'ollama-llava') */
+  name: string;
+  /** Human-readable description */
+  description?: string;
+  /** Category for UI grouping (e.g., 'Cloud', 'Local') */
+  category?: string;
+  /** Parameter definitions */
+  parameters: Record<string, ParameterSchema>;
+  /** Names of required parameters */
+  requiredParameters?: string[];
+  /** Supported output formats */
+  outputFormats?: ("text" | "json")[];
+  /** Whether this provider requires an API key */
+  requiresApiKey?: boolean;
+}
+
+/**
+ * Schema for a text generation provider
+ */
+export interface TextProviderSchema {
+  /** Provider name (e.g., 'claude-text', 'gpt4-text', 'ollama-llama') */
+  name: string;
+  /** Human-readable description */
+  description?: string;
+  /** Category for UI grouping (e.g., 'Cloud', 'Local') */
+  category?: string;
+  /** Parameter definitions */
+  parameters: Record<string, ParameterSchema>;
+  /** Names of required parameters */
+  requiredParameters?: string[];
+  /** Supported output formats */
+  outputFormats?: ("text" | "json")[];
+  /** Whether this provider requires an API key */
+  requiresApiKey?: boolean;
+}
+
+/**
  * Complete capabilities of a floimg client
  */
 export interface ClientCapabilities {
@@ -175,6 +316,10 @@ export interface ClientCapabilities {
   transforms: TransformOperationSchema[];
   /** Available save providers */
   saveProviders: SaveProviderSchema[];
+  /** Available AI vision/analysis providers */
+  visionProviders: VisionProviderSchema[];
+  /** Available AI text generation providers */
+  textProviders: TextProviderSchema[];
 }
 
 // =============================================================================
@@ -197,6 +342,35 @@ export interface ImageGenerator {
 // Legacy type aliases for backwards compatibility
 export type SvgProvider = ImageGenerator;
 export type AiProvider = ImageGenerator;
+
+/**
+ * AI Vision provider interface - analyzes images and outputs text/JSON
+ * Used for image description, OCR, object detection, etc.
+ */
+export interface VisionProvider {
+  /** Provider name (e.g., 'claude-vision', 'gpt4-vision', 'ollama-llava') */
+  name: string;
+  /** Schema describing this provider's parameters */
+  schema: VisionProviderSchema;
+  /** Analyze an image and return structured output */
+  analyze(input: ImageBlob, params: Record<string, unknown>): Promise<DataBlob>;
+}
+
+/**
+ * AI Text generation provider interface - generates text from prompts
+ * Used for prompt generation, descriptions, code, etc.
+ */
+export interface TextProvider {
+  /** Provider name (e.g., 'claude-text', 'gpt4-text', 'ollama-llama') */
+  name: string;
+  /** Schema describing this provider's parameters */
+  schema: TextProviderSchema;
+  /**
+   * Generate text from a prompt
+   * @param params - Generation parameters including prompt and optional context
+   */
+  generate(params: Record<string, unknown>): Promise<DataBlob>;
+}
 
 /**
  * Image transformation provider interface
@@ -325,6 +499,28 @@ export interface TransformInput {
 }
 
 /**
+ * Input for AI vision/analysis operation
+ */
+export interface VisionInput {
+  /** Vision provider name (e.g., 'claude-vision', 'gpt4-vision', 'ollama-llava') */
+  provider: string;
+  /** Image blob to analyze */
+  blob: ImageBlob;
+  /** Provider-specific parameters */
+  params?: Record<string, unknown>;
+}
+
+/**
+ * Input for AI text generation operation
+ */
+export interface TextGenerateInput {
+  /** Text provider name (e.g., 'claude-text', 'gpt4-text', 'ollama-llama') */
+  provider: string;
+  /** Provider-specific parameters (includes prompt, context, etc.) */
+  params?: Record<string, unknown>;
+}
+
+/**
  * Input for save operation (supports filesystem and cloud)
  */
 export interface SaveInput {
@@ -428,6 +624,30 @@ export type PipelineStep =
       in: string;
       destination: string;
       out?: string;
+    }
+  | {
+      /** AI vision/analysis step - analyzes an image and outputs text/JSON */
+      kind: "vision";
+      /** Vision provider name (e.g., 'claude-vision', 'ollama-llava') */
+      provider: string;
+      /** Input variable name (must be an ImageBlob) */
+      in: string;
+      /** Provider-specific parameters */
+      params?: Record<string, unknown>;
+      /** Output variable name (will be a DataBlob) */
+      out: string;
+    }
+  | {
+      /** AI text generation step - generates text from a prompt */
+      kind: "text";
+      /** Text provider name (e.g., 'claude-text', 'ollama-llama') */
+      provider: string;
+      /** Optional input variable name for context (can be DataBlob or string) */
+      in?: string;
+      /** Provider-specific parameters including prompt */
+      params?: Record<string, unknown>;
+      /** Output variable name (will be a DataBlob) */
+      out: string;
     };
 
 /**
@@ -452,6 +672,6 @@ export interface PipelineResult {
   step: PipelineStep;
   /** Output variable name */
   out: string;
-  /** Result value (ImageBlob or SaveResult) */
-  value: ImageBlob | SaveResult;
+  /** Result value (ImageBlob, DataBlob, or SaveResult) */
+  value: ImageBlob | DataBlob | SaveResult;
 }

@@ -1,5 +1,14 @@
 import OpenAI from "openai";
-import type { ImageGenerator, ImageBlob, GeneratorSchema } from "../../core/types.js";
+import type {
+  ImageGenerator,
+  ImageBlob,
+  DataBlob,
+  GeneratorSchema,
+  VisionProvider,
+  VisionProviderSchema,
+  TextProvider,
+  TextProviderSchema,
+} from "../../core/types.js";
 import { ProviderNotFoundError } from "../../core/errors.js";
 
 export interface OpenAIConfig {
@@ -171,6 +180,322 @@ export class OpenAIGenerator implements ImageGenerator {
         quality,
         style,
         revisedPrompt: response.data[0].revised_prompt,
+      },
+    };
+  }
+}
+
+// ============================================================================
+// Vision Provider - GPT-4V Image Analysis
+// ============================================================================
+
+export interface OpenAIVisionConfig {
+  apiKey?: string;
+  model?: "gpt-4o" | "gpt-4o-mini" | "gpt-4-turbo";
+  maxTokens?: number;
+}
+
+export interface OpenAIVisionParams {
+  prompt?: string;
+  outputFormat?: "text" | "json";
+  maxTokens?: number;
+}
+
+/**
+ * Schema for the OpenAI Vision provider
+ */
+export const openaiVisionSchema: VisionProviderSchema = {
+  name: "openai-vision",
+  description: "Analyze images using OpenAI's GPT-4 Vision models",
+  parameters: {
+    prompt: {
+      type: "string",
+      title: "Prompt",
+      description: "What to analyze or ask about the image",
+      default: "Describe this image in detail.",
+    },
+    outputFormat: {
+      type: "string",
+      title: "Output Format",
+      description: "Response format: plain text or structured JSON",
+      enum: ["text", "json"],
+      default: "text",
+    },
+    maxTokens: {
+      type: "number",
+      title: "Max Tokens",
+      description: "Maximum tokens in the response",
+      default: 1000,
+    },
+  },
+};
+
+/**
+ * OpenAI Vision provider for image analysis using GPT-4V
+ *
+ * Analyzes images and returns text or structured JSON descriptions.
+ *
+ * @example
+ * ```typescript
+ * const vision = new OpenAIVisionProvider({ apiKey: process.env.OPENAI_API_KEY });
+ * const result = await vision.analyze(imageBlob, {
+ *   prompt: "What objects are in this image?",
+ *   outputFormat: "json"
+ * });
+ * ```
+ */
+export class OpenAIVisionProvider implements VisionProvider {
+  public readonly name = "openai-vision";
+  public readonly schema = openaiVisionSchema;
+  private client: OpenAI;
+  private config: OpenAIVisionConfig;
+
+  constructor(config: OpenAIVisionConfig = {}) {
+    this.config = config;
+
+    const apiKey = config.apiKey || process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "OpenAI API key is required. Set OPENAI_API_KEY environment variable or pass apiKey in config."
+      );
+    }
+
+    this.client = new OpenAI({ apiKey });
+  }
+
+  async analyze(
+    input: ImageBlob,
+    params: Record<string, unknown>
+  ): Promise<DataBlob> {
+    const {
+      prompt = "Describe this image in detail.",
+      outputFormat = "text",
+      maxTokens = this.config.maxTokens || 1000,
+    } = params as Partial<OpenAIVisionParams>;
+
+    const model = this.config.model || "gpt-4o";
+
+    // Convert image to base64 data URL
+    const base64 = input.bytes.toString("base64");
+    const dataUrl = `data:${input.mime};base64,${base64}`;
+
+    // Build messages with image
+    const systemPrompt =
+      outputFormat === "json"
+        ? "You are a helpful assistant that analyzes images. Always respond with valid JSON."
+        : "You are a helpful assistant that analyzes images.";
+
+    const userPrompt =
+      outputFormat === "json"
+        ? `${prompt}\n\nRespond with a JSON object containing your analysis.`
+        : prompt;
+
+    const response = await this.client.chat.completions.create({
+      model,
+      max_tokens: maxTokens,
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: userPrompt },
+            {
+              type: "image_url",
+              image_url: { url: dataUrl, detail: "auto" },
+            },
+          ],
+        },
+      ],
+    });
+
+    const content = response.choices[0]?.message?.content || "";
+
+    // Try to parse JSON if requested
+    let parsed: Record<string, unknown> | undefined;
+    if (outputFormat === "json") {
+      try {
+        parsed = JSON.parse(content);
+      } catch {
+        // If JSON parsing fails, treat as text
+      }
+    }
+
+    return {
+      type: parsed ? "json" : "text",
+      content,
+      parsed,
+      source: `ai:openai-vision:${model}`,
+      metadata: {
+        model,
+        prompt,
+        usage: response.usage,
+      },
+    };
+  }
+}
+
+// ============================================================================
+// Text Provider - GPT-4 Text Generation
+// ============================================================================
+
+export interface OpenAITextConfig {
+  apiKey?: string;
+  model?: "gpt-4o" | "gpt-4o-mini" | "gpt-4-turbo" | "gpt-3.5-turbo";
+  maxTokens?: number;
+  temperature?: number;
+}
+
+export interface OpenAITextParams {
+  prompt: string;
+  systemPrompt?: string;
+  context?: string;
+  outputFormat?: "text" | "json";
+  maxTokens?: number;
+  temperature?: number;
+}
+
+/**
+ * Schema for the OpenAI Text provider
+ */
+export const openaiTextSchema: TextProviderSchema = {
+  name: "openai-text",
+  description: "Generate text using OpenAI's GPT models",
+  parameters: {
+    prompt: {
+      type: "string",
+      title: "Prompt",
+      description: "The prompt for text generation",
+    },
+    systemPrompt: {
+      type: "string",
+      title: "System Prompt",
+      description: "Optional system prompt to guide the model's behavior",
+    },
+    context: {
+      type: "string",
+      title: "Context",
+      description: "Optional context from a previous step (e.g., vision analysis)",
+    },
+    outputFormat: {
+      type: "string",
+      title: "Output Format",
+      description: "Response format: plain text or structured JSON",
+      enum: ["text", "json"],
+      default: "text",
+    },
+    maxTokens: {
+      type: "number",
+      title: "Max Tokens",
+      description: "Maximum tokens in the response",
+      default: 1000,
+    },
+    temperature: {
+      type: "number",
+      title: "Temperature",
+      description: "Creativity level (0-2)",
+      default: 0.7,
+    },
+  },
+  requiredParameters: ["prompt"],
+};
+
+/**
+ * OpenAI Text provider for text generation using GPT models
+ *
+ * Generates text for prompts, descriptions, code, and other content.
+ * Can chain with vision analysis by accepting context from previous steps.
+ *
+ * @example
+ * ```typescript
+ * const text = new OpenAITextProvider({ apiKey: process.env.OPENAI_API_KEY });
+ * const result = await text.generate({
+ *   prompt: "Write a haiku about this scene",
+ *   context: "A serene mountain lake at sunset with mist rising",
+ * });
+ * ```
+ */
+export class OpenAITextProvider implements TextProvider {
+  public readonly name = "openai-text";
+  public readonly schema = openaiTextSchema;
+  private client: OpenAI;
+  private config: OpenAITextConfig;
+
+  constructor(config: OpenAITextConfig = {}) {
+    this.config = config;
+
+    const apiKey = config.apiKey || process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "OpenAI API key is required. Set OPENAI_API_KEY environment variable or pass apiKey in config."
+      );
+    }
+
+    this.client = new OpenAI({ apiKey });
+  }
+
+  async generate(params: Record<string, unknown>): Promise<DataBlob> {
+    const {
+      prompt,
+      systemPrompt,
+      context,
+      outputFormat = "text",
+      maxTokens = this.config.maxTokens || 1000,
+      temperature = this.config.temperature || 0.7,
+    } = params as Partial<OpenAITextParams>;
+
+    if (!prompt) {
+      throw new Error("prompt is required for OpenAI text generation");
+    }
+
+    const model = this.config.model || "gpt-4o";
+
+    // Build system message
+    let system = systemPrompt || "You are a helpful assistant.";
+    if (outputFormat === "json") {
+      system += " Always respond with valid JSON.";
+    }
+
+    // Build user message with optional context
+    let userMessage = prompt;
+    if (context) {
+      userMessage = `Context from previous analysis:\n${context}\n\n${prompt}`;
+    }
+    if (outputFormat === "json") {
+      userMessage += "\n\nRespond with a JSON object.";
+    }
+
+    const response = await this.client.chat.completions.create({
+      model,
+      max_tokens: maxTokens,
+      temperature,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: userMessage },
+      ],
+    });
+
+    const content = response.choices[0]?.message?.content || "";
+
+    // Try to parse JSON if requested
+    let parsed: Record<string, unknown> | undefined;
+    if (outputFormat === "json") {
+      try {
+        parsed = JSON.parse(content);
+      } catch {
+        // If JSON parsing fails, treat as text
+      }
+    }
+
+    return {
+      type: parsed ? "json" : "text",
+      content,
+      parsed,
+      source: `ai:openai-text:${model}`,
+      metadata: {
+        model,
+        prompt,
+        temperature,
+        usage: response.usage,
       },
     };
   }

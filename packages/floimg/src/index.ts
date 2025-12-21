@@ -1,6 +1,10 @@
 import { Floimg } from "./core/client.js";
 import { ShapesProvider } from "./providers/svg/index.js";
-import { OpenAIGenerator } from "./providers/ai/index.js";
+import {
+  OpenAIGenerator,
+  OpenAIVisionProvider,
+  OpenAITextProvider,
+} from "./providers/ai/index.js";
 import { SharpTransformProvider } from "./providers/transform/index.js";
 import FsSaveProvider from "./providers/save/FsSaveProvider.js";
 import S3SaveProvider from "./providers/save/S3SaveProvider.js";
@@ -27,10 +31,22 @@ export type {
   TransformOperationSchema,
   SaveProviderSchema,
   ClientCapabilities,
+  // AI/LLM types for vision and text providers
+  DataBlob,
+  NodeOutput,
+  VisionProvider,
+  TextProvider,
+  VisionProviderSchema,
+  TextProviderSchema,
+  VisionInput,
+  TextGenerateInput,
   // Legacy aliases
   SvgProvider,
   AiProvider,
 } from "./core/types.js";
+
+// Export type guards
+export { isImageBlob, isDataBlob } from "./core/types.js";
 
 // Export errors
 export {
@@ -44,9 +60,22 @@ export {
 
 // Export generators and providers
 export { ShapesProvider } from "./providers/svg/index.js";
-export { OpenAIGenerator } from "./providers/ai/index.js";
-export type { OpenAIConfig, OpenAIGenerateParams } from "./providers/ai/index.js";
 export { SharpTransformProvider } from "./providers/transform/index.js";
+
+// Export OpenAI providers (image generation, vision, text)
+export {
+  OpenAIGenerator,
+  OpenAIVisionProvider,
+  OpenAITextProvider,
+} from "./providers/ai/index.js";
+export type {
+  OpenAIConfig,
+  OpenAIGenerateParams,
+  OpenAIVisionConfig,
+  OpenAIVisionParams,
+  OpenAITextConfig,
+  OpenAITextParams,
+} from "./providers/ai/index.js";
 
 // Export save providers
 export { default as FsSaveProvider } from "./providers/save/FsSaveProvider.js";
@@ -62,10 +91,15 @@ export function createClient(config: FloimgConfig = {}): Floimg {
   // Register built-in generators
   client.registerGenerator(new ShapesProvider());
 
-  // Register AI generators if configured
+  // Register OpenAI providers if configured
   if (config.ai?.openai) {
-    const openaiConfig = config.ai.openai as any;
+    const openaiConfig = config.ai.openai as { apiKey?: string };
+    // Image generation (DALL-E)
     client.registerGenerator(new OpenAIGenerator(openaiConfig));
+    // Vision analysis (GPT-4V)
+    client.registerVisionProvider(new OpenAIVisionProvider(openaiConfig));
+    // Text generation (GPT-4)
+    client.registerTextProvider(new OpenAITextProvider(openaiConfig));
   }
 
   // Register built-in transform providers

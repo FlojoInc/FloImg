@@ -1,0 +1,59 @@
+{
+  "name": "@teamflojo/floimg-ollama",
+  "version": "0.1.0",
+  "description": "Ollama local AI provider for floimg - vision and text generation with local models",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "floimg",
+    "ollama",
+    "llama",
+    "llava",
+    "local-ai",
+    "vision",
+    "text-generation",
+    "image-analysis"
+  ],
+  "author": "Brett Cooke",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TeamFlojo/floimg.git",
+    "directory": "packages/floimg-ollama"
+  },
+  "peerDependencies": {
+    "@teamflojo/floimg": "^0.1.0"
+  },
+  "dependencies": {
+    "ollama": "^0.5.11"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@teamflojo/floimg": "workspace:*",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

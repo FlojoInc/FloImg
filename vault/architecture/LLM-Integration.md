@@ -2,7 +2,36 @@
 
 How floimg works with Large Language Models.
 
-## Division of Labor
+## Two Integration Modes
+
+floimg integrates with LLMs in two complementary ways:
+
+1. **LLMs as Orchestrators** - Claude/GPT use floimg tools via MCP
+2. **LLMs as Providers** - floimg uses LLM APIs for vision/text within workflows
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Mode 1: LLM as Orchestrator              │
+│  ┌────────────┐     MCP Tools      ┌────────────────────┐  │
+│  │   Claude   │ ──────────────────>│      floimg        │  │
+│  │   GPT-4    │ <──────────────────│  (tool execution)  │  │
+│  └────────────┘     Results        └────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                    Mode 2: LLM as Provider                  │
+│  ┌────────────┐                    ┌────────────────────┐  │
+│  │   floimg   │ ──────────────────>│   OpenAI / Ollama  │  │
+│  │  workflow  │ <──────────────────│   Claude / Gemini  │  │
+│  └────────────┘   Vision/Text API  └────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Mode 1: LLMs as Orchestrators
+
+### Division of Labor
 
 floimg and LLMs complement each other:
 
@@ -75,8 +104,95 @@ The MCP server routes to the appropriate generator automatically.
 
 ---
 
+## Mode 2: LLMs as Providers
+
+floimg can use LLM APIs for vision analysis and text generation within workflows.
+
+### Provider Types
+
+| Provider Type | Purpose | Example Use Cases |
+|---------------|---------|-------------------|
+| **VisionProvider** | Analyze images | Describe image, extract data, detect objects |
+| **TextProvider** | Generate text | Create prompts, write descriptions, format output |
+
+### Supported Providers
+
+| Provider | Vision | Text | Image Gen | Notes |
+|----------|--------|------|-----------|-------|
+| OpenAI | GPT-4V | GPT-4 | DALL-E 3 | Included in core |
+| Anthropic | Claude Vision | Claude | - | floimg-anthropic package |
+| Ollama | LLaVA | Llama/Mistral | - | floimg-ollama (local) |
+| Google | Gemini Vision | Gemini | Imagen | floimg-gemini package |
+
+### Data Types
+
+Vision and text nodes output `DataBlob` instead of `ImageBlob`:
+
+```typescript
+interface DataBlob {
+  type: "text" | "json";
+  content: string;          // Raw string content
+  parsed?: Record<string, unknown>;  // Parsed JSON (if type is "json")
+  source?: string;          // e.g., "ai:openai-vision:gpt-4o"
+}
+```
+
+### Example: Vision → Text Chain
+
+```typescript
+const client = createClient({
+  ai: { openai: { apiKey: process.env.OPENAI_API_KEY } }
+});
+
+await client.run({
+  name: "image-to-prompt",
+  steps: [
+    { kind: "generate", generator: "quickchart", params: {...}, out: "chart" },
+    { kind: "vision", in: "chart", provider: "openai-vision",
+      params: { prompt: "Describe this chart" }, out: "description" },
+    { kind: "text", in: "description", provider: "openai-text",
+      params: { prompt: "Convert this to a DALL-E prompt" }, out: "prompt" }
+  ]
+});
+```
+
+### BYOK (Bring Your Own Key)
+
+AI providers require API keys. floimg never bundles keys:
+
+```typescript
+// Via config
+const client = createClient({
+  ai: {
+    openai: { apiKey: "sk-..." },
+    anthropic: { apiKey: "sk-ant-..." },
+    ollama: { baseUrl: "http://localhost:11434" }  // No key needed
+  }
+});
+
+// Via environment
+// OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.
+```
+
+### Local Models (Ollama)
+
+For privacy or offline use, Ollama runs models locally:
+
+```typescript
+import { ollamaVision, ollamaText } from "floimg-ollama";
+
+const client = createClient();
+client.registerVisionProvider(ollamaVision({ model: "llava" }));
+client.registerTextProvider(ollamaText({ model: "llama3" }));
+```
+
+No API key, no data leaves your machine.
+
+---
+
 ## Related Documents
 
 - [[MCP-Server-Architecture]] - MCP implementation details
 - [[Workflow-Abstraction]] - The generate/transform/save primitives
 - [[Why-floimg-Exists]] - Why deterministic execution matters
+- [[Pipeline-Execution-Engine]] - How workflows execute with dependency graphs

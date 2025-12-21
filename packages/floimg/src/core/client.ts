@@ -4,11 +4,16 @@ import type {
   TransformProvider,
   StoreProvider,
   SaveProvider,
+  VisionProvider,
+  TextProvider,
   GenerateInput,
   TransformInput,
+  VisionInput,
+  TextGenerateInput,
   UploadInput,
   SaveInput,
   ImageBlob,
+  DataBlob,
   UploadResult,
   SaveResult,
   Pipeline,
@@ -18,7 +23,10 @@ import type {
   GeneratorSchema,
   TransformOperationSchema,
   SaveProviderSchema,
+  VisionProviderSchema,
+  TextProviderSchema,
 } from "./types.js";
+import { isImageBlob, isDataBlob } from "./types.js";
 import { Logger } from "./logger.js";
 import {
   ProviderNotFoundError,
@@ -45,6 +53,8 @@ export class Floimg {
     generators: Record<string, ImageGenerator>;
     transform: Record<string, TransformProvider>;
     save: Record<string, SaveProvider>;
+    vision: Record<string, VisionProvider>;
+    text: Record<string, TextProvider>;
   };
 
   constructor(config: FloimgConfig = {}) {
@@ -59,6 +69,8 @@ export class Floimg {
       generators: {},
       transform: {},
       save: {},
+      vision: {},
+      text: {},
     };
 
     this.logger.info("Floimg client initialized");
@@ -261,6 +273,58 @@ export class Floimg {
   }
 
   /**
+   * Analyze an image using AI vision (Claude, GPT-4V, Ollama LLaVA, etc.)
+   * Returns text or structured JSON describing/analyzing the image
+   */
+  async analyzeImage(input: VisionInput): Promise<DataBlob> {
+    const { provider, blob, params = {} } = input;
+
+    // Use default vision provider if configured
+    const providerName = provider || (this.config.ai?.default as string);
+
+    if (!providerName) {
+      throw new ConfigurationError(
+        "No vision provider specified and no default configured"
+      );
+    }
+
+    this.logger.info(`Analyzing image with vision provider: ${providerName}`, params);
+
+    const visionProvider = this.providers.vision[providerName];
+    if (!visionProvider) {
+      throw new ProviderNotFoundError("vision", providerName);
+    }
+
+    return visionProvider.analyze(blob, params);
+  }
+
+  /**
+   * Generate text using AI (Claude, GPT-4, Ollama Llama, etc.)
+   * Returns text that can be used as prompts, descriptions, or other content
+   */
+  async generateText(input: TextGenerateInput): Promise<DataBlob> {
+    const { provider, params = {} } = input;
+
+    // Use default text provider if configured
+    const providerName = provider || (this.config.ai?.default as string);
+
+    if (!providerName) {
+      throw new ConfigurationError(
+        "No text provider specified and no default configured"
+      );
+    }
+
+    this.logger.info(`Generating text with provider: ${providerName}`, params);
+
+    const textProvider = this.providers.text[providerName];
+    if (!textProvider) {
+      throw new ProviderNotFoundError("text", providerName);
+    }
+
+    return textProvider.generate(params);
+  }
+
+  /**
    * Save an image (filesystem or cloud) with smart destination routing
    */
   async save(
@@ -326,12 +390,13 @@ export class Floimg {
    *
    * Steps are analyzed for dependencies and executed in parallel where possible.
    * The `concurrency` option controls maximum parallel steps (default: Infinity).
+   * Supports multi-modal workflows with images AND text/JSON data flowing between steps.
    */
   async run(pipeline: Pipeline): Promise<PipelineResult[]> {
     this.logger.info(`Running pipeline: ${pipeline.name || "unnamed"}`);
 
     const results: PipelineResult[] = [];
-    const variables = new Map<string, ImageBlob | SaveResult>();
+    const variables = new Map<string, ImageBlob | DataBlob | SaveResult>();
     const concurrency = pipeline.concurrency ?? Infinity;
 
     // Build dependency graph and compute execution waves
@@ -377,7 +442,7 @@ export class Floimg {
    */
   private async executeStep(
     step: PipelineStep,
-    variables: Map<string, ImageBlob | SaveResult>
+    variables: Map<string, ImageBlob | DataBlob | SaveResult>
   ): Promise<PipelineResult> {
     this.logger.debug(`Executing step: ${step.kind}`);
 
@@ -389,47 +454,81 @@ export class Floimg {
       return { step, out: step.out, value: blob };
     } else if (step.kind === "transform") {
       const inputBlob = variables.get(step.in);
-      if (!inputBlob || !("bytes" in inputBlob)) {
+      if (!inputBlob || !isImageBlob(inputBlob)) {
         throw new ConfigurationError(
           `Transform step references undefined or invalid variable: ${step.in}`
         );
       }
 
       const blob = await this.transform({
-        blob: inputBlob as ImageBlob,
+        blob: inputBlob,
         op: step.op,
         params: step.params,
       });
       return { step, out: step.out, value: blob };
     } else if (step.kind === "save") {
       const inputBlob = variables.get(step.in);
-      if (!inputBlob || !("bytes" in inputBlob)) {
+      if (!inputBlob || !isImageBlob(inputBlob)) {
         throw new ConfigurationError(
           `Save step references undefined or invalid variable: ${step.in}`
         );
       }
 
       const result = await this.save(
-        inputBlob as ImageBlob,
+        inputBlob,
         step.provider
           ? { path: step.destination, provider: step.provider }
           : step.destination
       );
 
       return { step, out: step.out || step.destination, value: result };
+    } else if (step.kind === "vision") {
+      // Vision step: analyze an image with AI
+      const inputBlob = variables.get(step.in);
+      if (!inputBlob || !isImageBlob(inputBlob)) {
+        throw new ConfigurationError(
+          `Vision step references undefined or invalid variable: ${step.in}`
+        );
+      }
+
+      const result = await this.analyzeImage({
+        provider: step.provider,
+        blob: inputBlob,
+        params: step.params,
+      });
+      return { step, out: step.out, value: result };
+    } else if (step.kind === "text") {
+      // Text step: generate text (optionally using context from previous step)
+      let context: string | undefined;
+      if (step.in) {
+        const inputData = variables.get(step.in);
+        if (isDataBlob(inputData)) {
+          context = inputData.content;
+        }
+        // Note: text steps can optionally take DataBlob input for chaining
+        // If input is not a DataBlob, we simply skip context injection
+      }
+
+      const result = await this.generateText({
+        provider: step.provider,
+        params: { ...step.params, context },
+      });
+      return { step, out: step.out, value: result };
     }
 
-    throw new ConfigurationError(`Unknown step kind: ${(step as any).kind}`);
+    throw new ConfigurationError(`Unknown step kind: ${(step as unknown as { kind: string }).kind}`);
   }
 
   /**
    * Get capabilities of all registered providers
-   * This allows consumers to discover available generators, transforms, and save providers
+   * This allows consumers to discover available generators, transforms, save, vision, and text providers
    */
   getCapabilities(): ClientCapabilities {
     const generators: GeneratorSchema[] = [];
     const transforms: TransformOperationSchema[] = [];
     const saveProviders: SaveProviderSchema[] = [];
+    const visionProviders: VisionProviderSchema[] = [];
+    const textProviders: TextProviderSchema[] = [];
 
     // Collect generator schemas
     for (const generator of Object.values(this.providers.generators)) {
@@ -450,7 +549,17 @@ export class Floimg {
       });
     }
 
-    return { generators, transforms, saveProviders };
+    // Collect vision provider schemas
+    for (const provider of Object.values(this.providers.vision)) {
+      visionProviders.push(provider.schema);
+    }
+
+    // Collect text provider schemas
+    for (const provider of Object.values(this.providers.text)) {
+      textProviders.push(provider.schema);
+    }
+
+    return { generators, transforms, saveProviders, visionProviders, textProviders };
   }
 
   /**
@@ -475,5 +584,21 @@ export class Floimg {
   registerSaveProvider(provider: SaveProvider): void {
     this.providers.save[provider.name] = provider;
     this.logger.debug(`Registered save provider: ${provider.name}`);
+  }
+
+  /**
+   * Register a custom vision provider (AI image analysis)
+   */
+  registerVisionProvider(provider: VisionProvider): void {
+    this.providers.vision[provider.name] = provider;
+    this.logger.debug(`Registered vision provider: ${provider.name}`);
+  }
+
+  /**
+   * Register a custom text provider (AI text generation)
+   */
+  registerTextProvider(provider: TextProvider): void {
+    this.providers.text[provider.name] = provider;
+    this.logger.debug(`Registered text provider: ${provider.name}`);
   }
 }

@@ -409,6 +409,94 @@ const TOOLS: Tool[] = [
       required: ["steps"],
     },
   },
+  {
+    name: "analyze_image",
+    description:
+      "Analyze an image using AI vision (Claude Vision, GPT-4V, Gemini Vision, Ollama LLaVA). " +
+      "Returns text or structured JSON describing the image content. " +
+      "Reference images by: imageId (from previous calls), imagePath (any file), or imageBytes (base64). " +
+      "Useful for: extracting text, describing contents, detecting objects, answering questions about images.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        imageId: {
+          type: "string",
+          description: "ID of image from previous generate_image or transform_image call",
+        },
+        imagePath: {
+          type: "string",
+          description: "Path to image file on disk (e.g., './my-image.png')",
+        },
+        imageBytes: {
+          type: "string",
+          description: "Base64-encoded image bytes",
+        },
+        mime: {
+          type: "string",
+          description: "MIME type (required only if using imageBytes)",
+        },
+        prompt: {
+          type: "string",
+          description:
+            "What to analyze or ask about the image. " +
+            "Examples: 'Describe this image', 'What text is visible?', 'List all objects'",
+        },
+        provider: {
+          type: "string",
+          description:
+            "Vision provider to use. Defaults to first available. " +
+            "Options: 'openai' (GPT-4V), 'anthropic' (Claude), 'ollama' (LLaVA), 'gemini'",
+          enum: ["openai", "anthropic", "ollama", "gemini"],
+        },
+        outputFormat: {
+          type: "string",
+          description: "Output format: 'text' (default) or 'json' (structured data)",
+          enum: ["text", "json"],
+        },
+      },
+      required: ["prompt"],
+    },
+  },
+  {
+    name: "generate_text",
+    description:
+      "Generate text using AI (Claude, GPT-4, Gemini, Ollama Llama/Mistral). " +
+      "Useful for: creating prompts, writing descriptions, generating code, expanding on ideas. " +
+      "Can optionally take context from previous analysis to chain operations.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        prompt: {
+          type: "string",
+          description: "The prompt or question to generate text for",
+        },
+        context: {
+          type: "string",
+          description: "Optional context to include (e.g., output from analyze_image)",
+        },
+        provider: {
+          type: "string",
+          description:
+            "Text provider to use. Defaults to first available. " +
+            "Options: 'openai' (GPT-4), 'anthropic' (Claude), 'ollama' (Llama/Mistral), 'gemini'",
+          enum: ["openai", "anthropic", "ollama", "gemini"],
+        },
+        systemPrompt: {
+          type: "string",
+          description: "Optional system prompt to set the AI's behavior/role",
+        },
+        temperature: {
+          type: "number",
+          description: "Creativity level (0.0 = deterministic, 1.0 = creative). Default: 0.7",
+        },
+        maxTokens: {
+          type: "number",
+          description: "Maximum tokens to generate. Default: 1024",
+        },
+      },
+      required: ["prompt"],
+    },
+  },
 ];
 
 // List tools handler
@@ -810,6 +898,122 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                   finalImageId: currentImageId,
                   results,
                 },
+              }, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "analyze_image": {
+        const { imageId, imagePath, imageBytes, mime, prompt, provider, outputFormat = "text" } = args as {
+          imageId?: string;
+          imagePath?: string;
+          imageBytes?: string;
+          mime?: string;
+          prompt: string;
+          provider?: "openai" | "anthropic" | "ollama" | "gemini";
+          outputFormat?: "text" | "json";
+        };
+
+        if (!prompt) {
+          throw new Error("'prompt' parameter is required");
+        }
+
+        // Load input image
+        const inputBlob = await loadImage(imageId, imagePath, imageBytes, mime);
+
+        // Check if vision providers are available
+        const capabilities = client.getCapabilities();
+        if (!capabilities.visionProviders || capabilities.visionProviders.length === 0) {
+          throw new Error(
+            "No vision providers configured. " +
+            "Configure AI providers in floimg.config.ts or environment variables. " +
+            "Supported: OpenAI (OPENAI_API_KEY), Anthropic (ANTHROPIC_API_KEY), " +
+            "Ollama (OLLAMA_BASE_URL), Gemini (GEMINI_API_KEY)"
+          );
+        }
+
+        // Select provider (use specified or first available)
+        const selectedProvider = provider || capabilities.visionProviders[0].name;
+        console.error(`[floimg-mcp] Analyzing image with provider: ${selectedProvider}`);
+
+        const result = await client.analyzeImage({
+          provider: selectedProvider,
+          blob: inputBlob,
+          params: {
+            prompt,
+            outputFormat,
+          },
+        });
+
+        console.error(`[floimg-mcp] Analysis complete: ${result.content.slice(0, 100)}...`);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                success: true,
+                provider: selectedProvider,
+                outputFormat: result.type,
+                content: result.content,
+                ...(result.parsed && { parsed: result.parsed }),
+              }, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "generate_text": {
+        const { prompt, context, provider, systemPrompt, temperature, maxTokens } = args as {
+          prompt: string;
+          context?: string;
+          provider?: "openai" | "anthropic" | "ollama" | "gemini";
+          systemPrompt?: string;
+          temperature?: number;
+          maxTokens?: number;
+        };
+
+        if (!prompt) {
+          throw new Error("'prompt' parameter is required");
+        }
+
+        // Check if text providers are available
+        const capabilities = client.getCapabilities();
+        if (!capabilities.textProviders || capabilities.textProviders.length === 0) {
+          throw new Error(
+            "No text providers configured. " +
+            "Configure AI providers in floimg.config.ts or environment variables. " +
+            "Supported: OpenAI (OPENAI_API_KEY), Anthropic (ANTHROPIC_API_KEY), " +
+            "Ollama (OLLAMA_BASE_URL), Gemini (GEMINI_API_KEY)"
+          );
+        }
+
+        // Select provider (use specified or first available)
+        const selectedProvider = provider || capabilities.textProviders[0].name;
+        console.error(`[floimg-mcp] Generating text with provider: ${selectedProvider}`);
+
+        const result = await client.generateText({
+          provider: selectedProvider,
+          params: {
+            prompt,
+            ...(context && { context }),
+            ...(systemPrompt && { systemPrompt }),
+            ...(temperature !== undefined && { temperature }),
+            ...(maxTokens !== undefined && { maxTokens }),
+          },
+        });
+
+        console.error(`[floimg-mcp] Text generation complete: ${result.content.slice(0, 100)}...`);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                success: true,
+                provider: selectedProvider,
+                content: result.content,
               }, null, 2),
             },
           ],
