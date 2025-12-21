@@ -190,6 +190,28 @@ No API key, no data leaves your machine.
 
 ---
 
+## Implementation Status
+
+| Feature | Status | Location |
+|---------|--------|----------|
+| DataBlob type | Done | `floimg/src/core/types.ts` |
+| VisionProvider interface | Done | `floimg/src/core/types.ts` |
+| TextProvider interface | Done | `floimg/src/core/types.ts` |
+| analyzeImage() method | Done | `floimg/src/core/client.ts` |
+| generateText() method | Done | `floimg/src/core/client.ts` |
+| OpenAI Vision (GPT-4V) | Done | `floimg/src/providers/ai/openai.ts` |
+| OpenAI Text (GPT-4) | Done | `floimg/src/providers/ai/openai.ts` |
+| floimg-ollama package | Done | `packages/floimg-ollama/` |
+| analyze_image MCP tool | Done | `floimg/src/mcp/server.ts` |
+| generate_text MCP tool | Done | `floimg/src/mcp/server.ts` |
+| floimg-studio VisionNode | Done | `floimg-studio/packages/frontend/` |
+| floimg-studio TextNode | Done | `floimg-studio/packages/frontend/` |
+| floimg-studio AISettings | Done | `floimg-studio/packages/frontend/` |
+| Anthropic provider | Planned | `packages/floimg-anthropic/` |
+| Gemini provider | Planned | `packages/floimg-gemini/` |
+
+---
+
 ## Related Documents
 
 - [[MCP-Server-Architecture]] - MCP implementation details
