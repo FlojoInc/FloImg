@@ -7,19 +7,28 @@
 
 **floimg** provides three core operations—generate, transform, save—that work consistently across JavaScript, CLI, YAML, and MCP.
 
-## The Problem
+## Why floimg?
 
-**LLMs are non-deterministic.** Great for creativity, terrible for "resize to exactly 800x600."
+| Challenge                             | Solution                                    |
+| ------------------------------------- | ------------------------------------------- |
+| **LLMs are non-deterministic**        | Deterministic execution for precise results |
+| **Image libraries are fragmented**    | Unified API across all generators           |
+| **AI agents need image capabilities** | MCP integration + Claude Code plugin        |
 
-**Image libraries are fragmented.** Charts need Chart.js. Diagrams need Mermaid. QR codes need node-qrcode. Each has different APIs with no way to chain them.
+Generate AI images with DALL-E, create charts with Chart.js, build diagrams with Mermaid, and chain them all together in pipelines—through one consistent interface.
 
-**floimg solves both.** Deterministic execution with a unified abstraction. LLMs handle natural language; floimg handles precise execution.
+> **[Full Documentation →](https://floimg.com/docs)**
 
-> **[Why floimg Exists →](./vault/Why-floimg-Exists.md)**
+## Features
+
+- **AI Image Generation** - DALL-E and other AI models via unified API
+- **Data Visualization** - Charts, graphs, and diagrams
+- **Image Processing** - Resize, crop, watermark, filters
+- **Pipeline Engine** - Chain operations into reusable workflows
+- **Multi-Interface** - SDK, CLI, YAML, and MCP
+- **Claude Code Ready** - Native plugin for AI-assisted workflows
 
 ## Try It Now (No Install Required)
-
-Generate images instantly with `npx`:
 
 ```bash
 # Generate a QR code
@@ -38,48 +47,74 @@ npx @teamflojo/floimg convert image.png -o image.webp
 npx @teamflojo/floimg
 ```
 
-**Plugin auto-install:** Commands like `qr` and `chart` require plugins. On first run, floimg will prompt to install them automatically:
+Plugins auto-install on first use. [See all CLI commands →](https://floimg.com/docs/cli)
 
-```
-🔍 The 'qr' command requires @teamflojo/floimg-qr
-   QR Code Generator
+## Claude Code Integration
 
-Install it now? (y/n): y
-📦 Installing @teamflojo/floimg-qr...
-✅ Installed!
+Use floimg directly from Claude Code with the **floimg-claude** plugin:
+
+```bash
+npm install -g @teamflojo/floimg-claude
 ```
+
+Then just talk to Claude:
+
+- _"Create a bar chart showing quarterly revenue"_
+- _"Generate a QR code for my website"_
+- _"Take a screenshot of github.com"_
+- _"Resize this image to 800x600 and add a watermark"_
+
+The plugin includes slash commands, an Image Architect agent, and auto-discovery for image tasks.
+
+> **[Claude Code Documentation →](https://floimg.com/docs/claude-code)**
 
 ## Install
 
 ```bash
 npm install @teamflojo/floimg
 
-# Add plugins you need
-npm install @teamflojo/floimg-quickchart @teamflojo/floimg-mermaid @teamflojo/floimg-qr @teamflojo/floimg-screenshot
+# Add generators you need
+npm install @teamflojo/floimg-quickchart  # Charts
+npm install @teamflojo/floimg-mermaid     # Diagrams
+npm install @teamflojo/floimg-qr          # QR codes
+npm install @teamflojo/floimg-openai      # AI images (DALL-E)
+npm install @teamflojo/floimg-screenshot  # Screenshots
 ```
 
 ## Quick Start
 
 ```typescript
 import createClient from "@teamflojo/floimg";
-import qr from "@teamflojo/floimg-qr";
+import quickchart from "@teamflojo/floimg-quickchart";
 
 const floimg = createClient();
-floimg.registerGenerator(qr());
+floimg.registerGenerator(quickchart());
 
 // Generate → Transform → Save
-const qrCode = await floimg.generate({
-  generator: "qr",
-  params: { text: "https://example.com" },
+const chart = await floimg.generate({
+  generator: "quickchart",
+  params: {
+    type: "bar",
+    data: {
+      labels: ["Q1", "Q2", "Q3", "Q4"],
+      datasets: [{ label: "Revenue", data: [12, 19, 8, 15] }],
+    },
+  },
 });
 
-await floimg.save(qrCode, "./qr.png");
-// Or: await floimg.save(qrCode, 's3://bucket/qr.png');
+const resized = await floimg.transform({
+  blob: chart,
+  op: "resize",
+  params: { width: 800 },
+});
+
+await floimg.save(resized, "./chart.png");
+// Or: await floimg.save(resized, 's3://bucket/chart.png');
 ```
 
 ## Three Interfaces
 
-### 📚 Library
+### SDK (TypeScript/JavaScript)
 
 ```typescript
 const chart = await floimg.generate({ generator: 'quickchart', params: {...} });
@@ -87,71 +122,66 @@ const resized = await floimg.transform({ blob: chart, op: 'resize', params: { wi
 await floimg.save(resized, 's3://bucket/chart.png');
 ```
 
-### 💻 CLI
-
-**Shorthand commands** (recommended for common tasks):
+### CLI
 
 ```bash
 floimg qr "https://example.com" -o qr.png
 floimg chart bar --labels "A,B,C" --values "10,20,30" -o chart.png
 floimg resize image.png 800x600 -o resized.png
-floimg convert image.png -o image.webp
 ```
 
-**Full API** (for advanced use cases):
+### MCP (AI Agents)
 
-```bash
-floimg generate --generator qr --params '{"text":"https://example.com"}' --out qr.png
-floimg transform --in image.png --op resize --params '{"width":800}' --out resized.png
-floimg save --in resized.png --out s3://bucket/image.png
+```json
+{
+  "mcpServers": {
+    "floimg": {
+      "command": "npx",
+      "args": ["-y", "@teamflojo/floimg-claude"]
+    }
+  }
+}
 ```
 
-### 🤖 MCP (AI Agents)
-
-```bash
-floimg mcp install  # Generates Claude Code config
-```
-
-Then just talk to Claude: _"Create a QR code for example.com"_
+Then talk to Claude: _"Create a QR code for example.com"_
 
 ## Packages
 
 ### Core
 
-| Package                                                                | Description                  | npm                                                                                                           |
-| ---------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| [`@teamflojo/floimg`](https://www.npmjs.com/package/@teamflojo/floimg) | Core engine, CLI, MCP server | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg.svg)](https://www.npmjs.com/package/@teamflojo/floimg) |
+| Package                                                                              | Description                  | npm                                                                                                                         |
+| ------------------------------------------------------------------------------------ | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| [`@teamflojo/floimg`](https://www.npmjs.com/package/@teamflojo/floimg)               | Core engine, CLI, MCP server | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg.svg)](https://www.npmjs.com/package/@teamflojo/floimg)               |
+| [`@teamflojo/floimg-claude`](https://www.npmjs.com/package/@teamflojo/floimg-claude) | Claude Code plugin           | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-claude.svg)](https://www.npmjs.com/package/@teamflojo/floimg-claude) |
 
-### Plugins
+### Generators
 
-| Package                                                                                      | Description                        | npm                                                                                                                                 |
-| -------------------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| [`@teamflojo/floimg-quickchart`](https://www.npmjs.com/package/@teamflojo/floimg-quickchart) | Chart.js charts via QuickChart     | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-quickchart.svg)](https://www.npmjs.com/package/@teamflojo/floimg-quickchart) |
-| [`@teamflojo/floimg-d3`](https://www.npmjs.com/package/@teamflojo/floimg-d3)                 | D3 data visualizations             | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-d3.svg)](https://www.npmjs.com/package/@teamflojo/floimg-d3)                 |
-| [`@teamflojo/floimg-mermaid`](https://www.npmjs.com/package/@teamflojo/floimg-mermaid)       | Mermaid diagrams                   | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-mermaid.svg)](https://www.npmjs.com/package/@teamflojo/floimg-mermaid)       |
-| [`@teamflojo/floimg-qr`](https://www.npmjs.com/package/@teamflojo/floimg-qr)                 | QR code generation                 | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-qr.svg)](https://www.npmjs.com/package/@teamflojo/floimg-qr)                 |
-| [`@teamflojo/floimg-screenshot`](https://www.npmjs.com/package/@teamflojo/floimg-screenshot) | Website screenshots via Playwright | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-screenshot.svg)](https://www.npmjs.com/package/@teamflojo/floimg-screenshot) |
+| Package                                                                                      | Description            | npm                                                                                                                                 |
+| -------------------------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [`@teamflojo/floimg-openai`](https://www.npmjs.com/package/@teamflojo/floimg-openai)         | AI images via DALL-E   | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-openai.svg)](https://www.npmjs.com/package/@teamflojo/floimg-openai)         |
+| [`@teamflojo/floimg-quickchart`](https://www.npmjs.com/package/@teamflojo/floimg-quickchart) | Chart.js charts        | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-quickchart.svg)](https://www.npmjs.com/package/@teamflojo/floimg-quickchart) |
+| [`@teamflojo/floimg-d3`](https://www.npmjs.com/package/@teamflojo/floimg-d3)                 | D3 visualizations      | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-d3.svg)](https://www.npmjs.com/package/@teamflojo/floimg-d3)                 |
+| [`@teamflojo/floimg-mermaid`](https://www.npmjs.com/package/@teamflojo/floimg-mermaid)       | Mermaid diagrams       | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-mermaid.svg)](https://www.npmjs.com/package/@teamflojo/floimg-mermaid)       |
+| [`@teamflojo/floimg-qr`](https://www.npmjs.com/package/@teamflojo/floimg-qr)                 | QR codes               | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-qr.svg)](https://www.npmjs.com/package/@teamflojo/floimg-qr)                 |
+| [`@teamflojo/floimg-screenshot`](https://www.npmjs.com/package/@teamflojo/floimg-screenshot) | Playwright screenshots | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-screenshot.svg)](https://www.npmjs.com/package/@teamflojo/floimg-screenshot) |
 
 ## Documentation
 
-- **[Why floimg Exists](./vault/Why-floimg-Exists.md)** - The problem and solution
-- **[Design Principles](./vault/Design-Principles.md)** - Philosophy
-- **[Configuration](./vault/architecture/Configuration.md)** - Setup options
-- **[Generator Strategy](./vault/architecture/Generator-Strategy.md)** - How generators work
-- **[MCP Architecture](./vault/architecture/MCP-Server-Architecture.md)** - Claude integration
-- **[Monorepo Guide](./vault/architecture/Monorepo-Guide.md)** - Development
+- **[Getting Started](https://floimg.com/docs/getting-started/quick-start)** - Installation and first steps
+- **[SDK Reference](https://floimg.com/docs/sdk/generate)** - TypeScript/JavaScript API
+- **[CLI Reference](https://floimg.com/docs/cli)** - Command-line usage
+- **[Claude Code](https://floimg.com/docs/claude-code)** - AI agent integration
+- **[Plugins](https://floimg.com/docs/plugins/quickchart)** - Generator documentation
 
-## Development
+## Contributing
+
+We welcome contributions—generators, storage backends, tests, docs.
 
 ```bash
 pnpm install && pnpm -r build && pnpm -r test
 ```
 
-## Contributing
-
-We welcome contributions—more generators, storage backends, tests, docs.
-
-**[Development Guide →](./vault/architecture/Monorepo-Guide.md)**
+See the [Contributing Guide](https://floimg.com/docs/getting-started/concepts) for details.
 
 ## License
 

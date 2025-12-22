@@ -1,8 +1,10 @@
 # @teamflojo/floimg-claude
 
-Claude Code plugin for [floimg](https://github.com/TeamFlojo/floimg) - Universal image generation and workflows.
+Claude Code plugin for [floimg](https://floimg.com) - Universal image generation and workflows.
 
 Generate charts, diagrams, QR codes, screenshots, and AI images directly from Claude Code.
+
+> **[Full Documentation →](https://floimg.com/docs/claude-code)**
 
 ## Features
 
@@ -17,6 +19,8 @@ Generate charts, diagrams, QR codes, screenshots, and AI images directly from Cl
 | `/floimg-claude:screenshot` | Capture webpages with Playwright                        |
 | `/floimg-claude:workflow`   | Execute multi-step image pipelines                      |
 
+> **[Command Reference →](https://floimg.com/docs/claude-code/commands)**
+
 ### Image Architect Agent
 
 A specialized agent for complex image tasks. Expert in:
@@ -24,6 +28,8 @@ A specialized agent for complex image tasks. Expert in:
 - Choosing the right generator for each task
 - Planning multi-step image workflows
 - Optimizing image pipelines
+
+> **[Agent Documentation →](https://floimg.com/docs/claude-code/agent)**
 
 ### Auto-Discovery Skill
 
@@ -35,52 +41,48 @@ Claude automatically detects image-related tasks and uses floimg when you mentio
 - Screenshots, captures
 - Images, photos, illustrations
 
-## Installation
+> **[Skills Documentation →](https://floimg.com/docs/claude-code/skills)**
 
-### Prerequisites
+## Quick Start
 
-Install floimg and the plugins you need:
+### Option 1: MCP Server (Recommended)
+
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "floimg": {
+      "command": "npx",
+      "args": ["-y", "@teamflojo/floimg-claude"]
+    }
+  }
+}
+```
+
+### Option 2: Global Install
 
 ```bash
-npm install -g @teamflojo/floimg
+npm install -g @teamflojo/floimg-claude
 
-# Optional plugins (install as needed)
+# Install generators you need
 npm install -g @teamflojo/floimg-quickchart   # Charts
 npm install -g @teamflojo/floimg-mermaid      # Diagrams
 npm install -g @teamflojo/floimg-qr           # QR codes
 npm install -g @teamflojo/floimg-screenshot   # Screenshots
 ```
 
-### Install the Plugin
-
-```bash
-# From npm
-npm install -g @teamflojo/floimg-claude
-
-# Then in Claude Code, add the plugin
-claude --plugin-dir $(npm root -g)/@teamflojo/floimg-claude
-```
-
-Or add to your project's Claude settings:
-
-```json
-{
-  "plugins": ["@teamflojo/floimg-claude"]
-}
-```
-
 ## Configuration
 
-Set environment variables for the features you need:
+Set environment variables for optional features:
 
 ```bash
 # For AI image generation (DALL-E)
 export OPENAI_API_KEY=sk-...
 
-# For cloud storage (optional)
+# For cloud storage
 export AWS_ACCESS_KEY_ID=...
 export AWS_SECRET_ACCESS_KEY=...
-export AWS_REGION=us-east-1
 export S3_BUCKET=my-bucket
 ```
 
@@ -113,40 +115,18 @@ export S3_BUCKET=my-bucket
 ### Multi-Step Workflow
 
 ```
-/floimg-claude:workflow Create a hero image for my blog, resize to 1200x630, add "Welcome" caption, save to S3
+/floimg-claude:workflow Create a hero image, resize to 1200x630, add caption, save to S3
 ```
 
-### Using the Agent
+### Natural Language (Auto-Discovery)
 
-Just describe complex image tasks and the image-architect agent will help:
+Just describe what you need:
 
 ```
-I need to create a data visualization dashboard with:
+I need a data visualization dashboard with:
 - A bar chart of monthly sales
 - A pie chart of product categories
 - All charts should be 800x600 and saved to ./charts/
-```
-
-## What's Included
-
-```
-floimg-claude/
-├── .claude-plugin/plugin.json    # Plugin manifest
-├── .mcp.json                     # MCP server configuration
-├── commands/                     # Slash commands
-│   ├── image.md
-│   ├── chart.md
-│   ├── diagram.md
-│   ├── qr.md
-│   ├── screenshot.md
-│   └── workflow.md
-├── agents/
-│   └── image-architect.md        # Specialized agent
-└── skills/
-    └── image-workflows/          # Auto-discovered skill
-        ├── SKILL.md
-        ├── reference.md
-        └── examples.md
 ```
 
 ## Supported Generators
@@ -161,7 +141,7 @@ floimg-claude/
 
 ## Transform Operations
 
-After generating an image, you can transform it:
+After generating, transform images with:
 
 - `resize` - Scale to specific dimensions
 - `blur` - Apply Gaussian blur
@@ -183,11 +163,20 @@ After generating an image, you can transform it:
 
 - Node.js >= 18.0.0
 - Claude Code >= 1.0.0
-- @teamflojo/floimg >= 0.2.0
+
+## Documentation
+
+- **[Getting Started](https://floimg.com/docs/claude-code)** - Setup and configuration
+- **[Commands](https://floimg.com/docs/claude-code/commands)** - Slash command reference
+- **[Agent](https://floimg.com/docs/claude-code/agent)** - Image Architect agent
+- **[Skills](https://floimg.com/docs/claude-code/skills)** - Auto-discovery behavior
+- **[Examples](https://floimg.com/docs/mcp/examples)** - Usage examples
 
 ## Links
 
-- [floimg Documentation](https://github.com/TeamFlojo/floimg)
+- [floimg Website](https://floimg.com)
+- [floimg Documentation](https://floimg.com/docs)
+- [GitHub Repository](https://github.com/TeamFlojo/floimg)
 - [Report Issues](https://github.com/TeamFlojo/floimg/issues)
 
 ## License
