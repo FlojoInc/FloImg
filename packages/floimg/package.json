@@ -1,6 +1,6 @@
 {
   "name": "@teamflojo/floimg",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Universal image workflow engine for developers and AI agents",
   "type": "module",
   "main": "./dist/index.js",
