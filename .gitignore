@@ -22,6 +22,8 @@ test-*.webp
 output/
 generated/
 
-# Claude Code (local config - not tracked in public repos)
-.claude/
+# Claude Code
 .claude-sessions/
+.claude/settings.json
+.claude/settings.local.json
+.claude/hooks/
