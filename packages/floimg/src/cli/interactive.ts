@@ -1,5 +1,11 @@
 import { createInterface } from "readline";
 
+// Teal brand color for CLI output (RGB: 13, 148, 136)
+const TEAL = "\x1b[38;2;13;148;136m";
+const BOLD = "\x1b[1m";
+const DIM = "\x1b[2m";
+const RESET = "\x1b[0m";
+
 /**
  * Interactive menu options
  */
@@ -63,20 +69,20 @@ export async function showInteractiveMenu(): Promise<void> {
   console.log("");
   console.log("╭─────────────────────────────────────────────────────────╮");
   console.log("│                                                         │");
-  console.log("│   \x1b[1m\x1b[36mfloimg\x1b[0m - Universal Image Workflow Engine             │");
+  console.log(`│   ${BOLD}${TEAL}floimg${RESET} - Universal Image Workflow Engine             │`);
   console.log("│                                                         │");
   console.log("╰─────────────────────────────────────────────────────────╯");
   console.log("");
-  console.log("\x1b[1mWhat would you like to do?\x1b[0m");
+  console.log(`${BOLD}What would you like to do?${RESET}`);
   console.log("");
 
   for (const option of MENU_OPTIONS) {
-    console.log(`  \x1b[36m${option.key})\x1b[0m ${option.label}`);
-    console.log(`     \x1b[2m${option.description}\x1b[0m`);
+    console.log(`  ${TEAL}${option.key})${RESET} ${option.label}`);
+    console.log(`     ${DIM}${option.description}${RESET}`);
   }
 
   console.log("");
-  console.log("  \x1b[36mq)\x1b[0m Quit");
+  console.log(`  ${TEAL}q)${RESET} Quit`);
   console.log("");
 
   // Check if we're in a TTY
