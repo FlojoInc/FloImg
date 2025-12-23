@@ -1,8 +1,8 @@
 # Cloud Integration
 
-> **See also**: [ADR-001: Pure Open-Source Studio](../../floimg-hq/vault/architecture/ADR-001-Pure-Open-Source-Studio.md)
+> **See also**: ADR-001 (Pure Open-Source Studio) in floimg-hq vault
 
-floimg-studio is a **pure open-source, self-hostable** workflow builder. It contains no cloud-specific code, authentication, or usage limits.
+FloImg Studio (`apps/studio/`) is a **pure open-source, self-hostable** workflow builder. It contains no cloud-specific code, authentication, or usage limits.
 
 ## Architecture Principle
 
@@ -36,14 +36,14 @@ This follows the Supabase model where the open-source project is fully functiona
 
 ## Self-Hosted Deployment
 
-floimg-studio is designed for self-hosting. No special configuration needed:
+FloImg Studio is designed for self-hosting. It lives in the floimg monorepo:
 
 ```bash
 # Clone and run
-git clone https://github.com/teamflojo/floimg-studio
-cd floimg-studio
+git clone https://github.com/teamflojo/floimg
+cd floimg
 pnpm install
-pnpm dev
+pnpm dev:studio   # Starts frontend (5173) + backend (5100)
 ```
 
 ### Optional Configuration
@@ -78,7 +78,7 @@ floimg-cloud/packages/studio-cloud/
 
 ## For Contributors
 
-When contributing to floimg-studio:
+When contributing to FloImg Studio (`apps/studio/`):
 
 - **DO NOT** add authentication code
 - **DO NOT** add usage limits or tier checks
