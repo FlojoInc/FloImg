@@ -2,6 +2,11 @@
   "name": "@floimg-studio/frontend",
   "version": "0.1.0",
   "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles": "./src/index.css"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/TeamFlojo/floimg.git",
