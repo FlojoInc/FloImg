@@ -1,0 +1,37 @@
+{
+  "name": "@floimg-studio/backend",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TeamFlojo/floimg.git",
+    "directory": "apps/studio/backend"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts 2>&1 | tee ../../logs/backend.log",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@fastify/static": "^8.0.0",
+    "@fastify/multipart": "^9.3.0",
+    "@fastify/websocket": "^11.2.0",
+    "@floimg-studio/shared": "workspace:*",
+    "@teamflojo/floimg": "workspace:*",
+    "@teamflojo/floimg-mermaid": "workspace:*",
+    "@teamflojo/floimg-qr": "workspace:*",
+    "@teamflojo/floimg-quickchart": "workspace:*",
+    "fastify": "^5.6.2",
+    "nanoid": "^5.0.7",
+    "openai": "^4.76.0",
+    "yaml": "^2.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.7.1",
+    "typescript": "^5.7.2"
+  }
+}
