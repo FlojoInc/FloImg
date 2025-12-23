@@ -33,8 +33,8 @@ services:
 ### From Source
 
 ```bash
-git clone https://github.com/floimg/floimg-studio.git
-cd floimg-studio
+git clone https://github.com/teamflojo/floimg.git
+cd floimg/apps/studio
 pnpm install
 pnpm build
 pnpm start
