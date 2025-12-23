@@ -9,6 +9,21 @@ Universal image workflow engine for developers and AI agents.
 - **Packages**: `packages/*` - Core library + 6 plugins (npm @teamflojo/\*)
 - **Apps**: `apps/studio/*` - Visual workflow builder (React 19, Fastify 5)
 
+## Git Conventions
+
+### Commits
+
+- **No AI co-authorship**: Do not add `Co-Authored-By: Claude` or similar footers
+- **Conventional style**: `type: description` (e.g., `feat: add QR code rotation`)
+
+### Pull Requests
+
+- **Always use PRs** - No direct pushes to main
+- **Linear history** - Use "Rebase and merge" (not merge commits)
+- **Branch naming**: `type/description` (e.g., `feat/add-export`, `fix/auth-bug`)
+
+**Branch prefixes:** `feat/`, `fix/`, `chore/`, `refactor/`, `docs/`
+
 ## Quick Start
 
 ```bash
