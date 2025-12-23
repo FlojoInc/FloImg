@@ -161,20 +161,20 @@ floimg schemas are converted to studio NodeDefinitions:
 
 ### Dependencies
 
-floimg packages are installed from npm:
+Since Studio now lives in the floimg monorepo (`apps/studio/`), it uses workspace dependencies:
 
 ```json
 {
   "dependencies": {
-    "floimg": "^0.5.0",
-    "floimg-qr": "^0.2.0",
-    "floimg-mermaid": "^0.2.0",
-    "floimg-quickchart": "^0.2.0"
+    "@teamflojo/floimg": "workspace:*",
+    "@teamflojo/floimg-qr": "workspace:*",
+    "@teamflojo/floimg-mermaid": "workspace:*",
+    "@teamflojo/floimg-quickchart": "workspace:*"
   }
 }
 ```
 
-For local development with unpublished floimg changes, add `"../floimg/packages/*"` to `pnpm-workspace.yaml` and use `workspace:*` protocol.
+This enables atomic changes across core and studio without a publish-to-test cycle.
 
 ### Key Files
 
