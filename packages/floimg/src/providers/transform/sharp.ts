@@ -1,6 +1,11 @@
 import sharp from "sharp";
 import { Resvg } from "@resvg/resvg-js";
-import type { TransformProvider, ImageBlob, MimeType, TransformOperationSchema } from "../../core/types.js";
+import type {
+  TransformProvider,
+  ImageBlob,
+  MimeType,
+  TransformOperationSchema,
+} from "../../core/types.js";
 import { TransformError } from "../../core/errors.js";
 import { TextRenderer, type TextOptions, type CaptionOptions } from "./text.js";
 import { FilterPresets } from "./presets.js";
@@ -379,10 +384,85 @@ export const sharpOperationSchemas: Record<string, TransformOperationSchema> = {
 
 /**
  * Transform provider using Sharp for image manipulation and Resvg for SVG rendering
+ *
+ * Implements self-dispatching via the transform() method - the client delegates
+ * operation routing to the provider rather than maintaining a central switch statement.
  */
 export class SharpTransformProvider implements TransformProvider {
   name = "sharp";
   operationSchemas = sharpOperationSchemas;
+
+  /**
+   * Execute a transform operation by name
+   * This is the primary entry point for dynamic operation dispatch
+   */
+  async transform(
+    input: ImageBlob,
+    op: string,
+    params: Record<string, unknown>
+  ): Promise<ImageBlob> {
+    switch (op) {
+      case "convert":
+        if (!params.to) {
+          throw new TransformError("Convert operation requires 'to' parameter");
+        }
+        return this.convert(input, params.to as MimeType);
+
+      case "resize":
+        return this.resize(input, params as Parameters<typeof this.resize>[1]);
+
+      case "composite":
+        return this.composite(input, params.overlays as Parameters<typeof this.composite>[1]);
+
+      case "optimizeSvg":
+        return this.optimizeSvg(input);
+
+      case "blur":
+        return this.blur(input, params.sigma as number | undefined);
+
+      case "sharpen":
+        return this.sharpen(input, params);
+
+      case "grayscale":
+        return this.grayscale(input);
+
+      case "negate":
+        return this.negate(input);
+
+      case "normalize":
+        return this.normalize(input);
+
+      case "threshold":
+        return this.threshold(input, params.value as number | undefined);
+
+      case "modulate":
+        return this.modulate(input, params as Parameters<typeof this.modulate>[1]);
+
+      case "tint":
+        return this.tint(input, params.color as Parameters<typeof this.tint>[1]);
+
+      case "extend":
+        return this.extend(input, params as Parameters<typeof this.extend>[1]);
+
+      case "extract":
+        return this.extract(input, params as Parameters<typeof this.extract>[1]);
+
+      case "roundCorners":
+        return this.roundCorners(input, params.radius as number);
+
+      case "addText":
+        return this.addText(input, params);
+
+      case "addCaption":
+        return this.addCaption(input, params);
+
+      case "preset":
+        return this.preset(input, params.name as string);
+
+      default:
+        throw new TransformError(`Unknown operation: ${op}`);
+    }
+  }
 
   async convert(input: ImageBlob, to: MimeType): Promise<ImageBlob> {
     try {
@@ -671,7 +751,10 @@ export class SharpTransformProvider implements TransformProvider {
     }
   }
 
-  async modulate(input: ImageBlob, opts: { brightness?: number; saturation?: number; hue?: number; lightness?: number }): Promise<ImageBlob> {
+  async modulate(
+    input: ImageBlob,
+    opts: { brightness?: number; saturation?: number; hue?: number; lightness?: number }
+  ): Promise<ImageBlob> {
     try {
       const sharpInstance = sharp(input.bytes);
       const result = await sharpInstance.modulate(opts).toBuffer();
@@ -691,7 +774,10 @@ export class SharpTransformProvider implements TransformProvider {
     }
   }
 
-  async tint(input: ImageBlob, color: string | { r: number; g: number; b: number }): Promise<ImageBlob> {
+  async tint(
+    input: ImageBlob,
+    color: string | { r: number; g: number; b: number }
+  ): Promise<ImageBlob> {
     try {
       const sharpInstance = sharp(input.bytes);
       const result = await sharpInstance.tint(color).toBuffer();
@@ -713,7 +799,16 @@ export class SharpTransformProvider implements TransformProvider {
 
   // ===== Border & Frame Operations =====
 
-  async extend(input: ImageBlob, opts: { top: number; bottom: number; left: number; right: number; background?: string | { r: number; g: number; b: number; alpha?: number } }): Promise<ImageBlob> {
+  async extend(
+    input: ImageBlob,
+    opts: {
+      top: number;
+      bottom: number;
+      left: number;
+      right: number;
+      background?: string | { r: number; g: number; b: number; alpha?: number };
+    }
+  ): Promise<ImageBlob> {
     try {
       const sharpInstance = sharp(input.bytes);
       const result = await sharpInstance.extend(opts).toBuffer();
@@ -733,7 +828,10 @@ export class SharpTransformProvider implements TransformProvider {
     }
   }
 
-  async extract(input: ImageBlob, region: { left: number; top: number; width: number; height: number }): Promise<ImageBlob> {
+  async extract(
+    input: ImageBlob,
+    region: { left: number; top: number; width: number; height: number }
+  ): Promise<ImageBlob> {
     try {
       const sharpInstance = sharp(input.bytes);
       const result = await sharpInstance.extract(region).toBuffer();

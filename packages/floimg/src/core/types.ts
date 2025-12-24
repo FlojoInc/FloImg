@@ -380,12 +380,27 @@ export interface TextProvider {
 
 /**
  * Image transformation provider interface
+ *
+ * Providers handle their own operation dispatch via the transform() method.
+ * The individual operation methods (resize, blur, etc.) are optional and
+ * only used for type-safe direct calls. The transform() method is the
+ * primary entry point for dynamic operation dispatch.
  */
 export interface TransformProvider {
   /** Provider name */
   name: string;
   /** Schemas for all operations this provider supports */
   operationSchemas: Record<string, TransformOperationSchema>;
+
+  /**
+   * Execute a transform operation by name
+   * This is the primary dispatch method - providers handle their own routing
+   * @param input - Image to transform
+   * @param op - Operation name (e.g., 'resize', 'blur', 'convert')
+   * @param params - Operation-specific parameters
+   */
+  transform(input: ImageBlob, op: string, params: Record<string, unknown>): Promise<ImageBlob>;
+
   /** Convert image to a different format */
   convert(input: ImageBlob, to: MimeType): Promise<ImageBlob>;
   /** Resize an image (optional) */
@@ -493,26 +508,14 @@ export interface GenerateInput {
 export interface TransformInput {
   /** Image blob to transform */
   blob: ImageBlob;
-  /** Operation to perform */
-  op:
-    | "convert"
-    | "resize"
-    | "composite"
-    | "optimizeSvg"
-    | "blur"
-    | "sharpen"
-    | "grayscale"
-    | "negate"
-    | "normalize"
-    | "threshold"
-    | "modulate"
-    | "tint"
-    | "extend"
-    | "extract"
-    | "roundCorners"
-    | "addText"
-    | "addCaption"
-    | "preset";
+  /** Operation to perform (string allows custom operations from plugins) */
+  op: string;
+  /**
+   * Transform provider to use (optional)
+   * If not specified, uses the default provider from config
+   * Use this to target specific providers (e.g., 'stability' for AI transforms)
+   */
+  provider?: string;
   /** Target MIME type (for convert operation) */
   to?: MimeType;
   /** Additional operation parameters */
@@ -612,28 +615,19 @@ export type PipelineStep =
     }
   | {
       kind: "transform";
-      op:
-        | "convert"
-        | "resize"
-        | "composite"
-        | "optimizeSvg"
-        | "blur"
-        | "sharpen"
-        | "grayscale"
-        | "negate"
-        | "normalize"
-        | "threshold"
-        | "modulate"
-        | "tint"
-        | "extend"
-        | "extract"
-        | "roundCorners"
-        | "addText"
-        | "addCaption"
-        | "preset";
+      /** Operation name (string allows custom operations from plugins) */
+      op: string;
+      /** Input variable name */
       in: string;
+      /** Operation parameters */
       params: Record<string, unknown>;
+      /** Output variable name */
       out: string;
+      /**
+       * Transform provider to use (optional)
+       * If not specified, uses the default provider
+       */
+      provider?: string;
     }
   | {
       kind: "save";

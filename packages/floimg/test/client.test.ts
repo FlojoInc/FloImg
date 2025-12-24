@@ -68,6 +68,23 @@ const mockTransformSchemas: Record<string, TransformOperationSchema> = {
 const mockTransformProvider: TransformProvider = {
   name: "mock-transform",
   operationSchemas: mockTransformSchemas,
+  async transform(
+    blob: ImageBlob,
+    op: string,
+    params: Record<string, unknown>
+  ): Promise<ImageBlob> {
+    switch (op) {
+      case "convert":
+        if (!params.to) {
+          throw new Error("Convert operation requires 'to' parameter");
+        }
+        return this.convert(blob, params.to as string);
+      case "resize":
+        return this.resize!(blob, params as { width?: number; height?: number });
+      default:
+        throw new Error(`Unknown transform operation: ${op}`);
+    }
+  },
   async convert(blob: ImageBlob, format: string): Promise<ImageBlob> {
     return {
       ...blob,
