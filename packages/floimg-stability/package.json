@@ -1,0 +1,55 @@
+{
+  "name": "@teamflojo/floimg-stability",
+  "version": "0.1.0",
+  "description": "Stability AI image generation plugin for floimg (SDXL, SD3)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "floimg",
+    "stability-ai",
+    "stable-diffusion",
+    "sdxl",
+    "sd3",
+    "image-generation",
+    "ai"
+  ],
+  "author": "Brett Cooke",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TeamFlojo/floimg.git",
+    "directory": "packages/floimg-stability"
+  },
+  "peerDependencies": {
+    "@teamflojo/floimg": "^0.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@teamflojo/floimg": "workspace:*",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

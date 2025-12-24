@@ -144,6 +144,8 @@ export interface NodeDefinition {
   description?: string;
   category: string;
   params: ParamSchema;
+  /** Whether this node uses AI/ML models */
+  isAI?: boolean;
 }
 
 // Parameter schema for dynamic form generation

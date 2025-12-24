@@ -19,6 +19,7 @@ export { Gallery } from "./components/Gallery";
 export { TemplateGallery } from "./components/TemplateGallery";
 export { WorkflowLibrary } from "./components/WorkflowLibrary";
 export { AISettings } from "./components/AISettings";
+export { UploadGallery } from "./components/UploadGallery";
 
 // State management
 export { useWorkflowStore } from "./stores/workflowStore";
