@@ -1,10 +1,10 @@
 import { Command } from "commander";
-import { homedir } from "os";
 import { join, resolve } from "path";
-import { writeFile, mkdir, readFile } from "fs/promises";
+import { writeFile } from "fs/promises";
 
-export const mcpCommand = new Command("mcp")
-  .description("MCP (Model Context Protocol) integration helpers");
+export const mcpCommand = new Command("mcp").description(
+  "MCP (Model Context Protocol) integration helpers"
+);
 
 mcpCommand
   .command("install")
@@ -65,7 +65,9 @@ mcpCommand
     console.log("   4. Try: 'Create a QR code for https://example.com'");
 
     console.log("\n📖 Documentation:");
-    console.log("   https://github.com/bcooke/floimg/blob/main/packages/floimg/docs/guides/MCP_SERVER.md");
+    console.log(
+      "   https://github.com/bcooke/floimg/blob/main/packages/floimg/docs/guides/MCP_SERVER.md"
+    );
   });
 
 mcpCommand

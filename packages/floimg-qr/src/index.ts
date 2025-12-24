@@ -90,7 +90,7 @@ export const qrSchema: GeneratorSchema = {
  */
 export interface QRConfig {
   /** Default error correction level */
-  errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
+  errorCorrectionLevel?: "L" | "M" | "Q" | "H";
   /** Default width */
   width?: number;
   /** Default margin */
@@ -106,7 +106,7 @@ export interface QRParams extends Record<string, unknown> {
   /** Text/URL to encode (required) */
   text?: string;
   /** Error correction level: L (7%), M (15%), Q (25%), H (30%) */
-  errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
+  errorCorrectionLevel?: "L" | "M" | "Q" | "H";
   /** Output width in pixels */
   width?: number;
   /** Margin around QR code (in modules) */
@@ -119,7 +119,7 @@ export interface QRParams extends Record<string, unknown> {
     light?: string;
   };
   /** Output format: 'png' | 'svg' */
-  format?: 'png' | 'svg';
+  format?: "png" | "svg";
   /** QR code version (1-40, auto if not specified) */
   version?: number;
   /** Mask pattern (0-7, auto if not specified) */
@@ -133,10 +133,10 @@ export interface QRParams extends Record<string, unknown> {
  */
 export default function qr(config: QRConfig = {}): ImageGenerator {
   const {
-    errorCorrectionLevel: defaultErrorLevel = 'M',
+    errorCorrectionLevel: defaultErrorLevel = "M",
     width: defaultWidth = 300,
     margin: defaultMargin = 4,
-    color: defaultColor = { dark: '#000000', light: '#ffffff' },
+    color: defaultColor = { dark: "#000000", light: "#ffffff" },
   } = config;
 
   return {
@@ -150,10 +150,10 @@ export default function qr(config: QRConfig = {}): ImageGenerator {
         width = defaultWidth,
         margin = defaultMargin,
         color = defaultColor,
-        format = 'png',
+        format = "png",
         version,
         maskPattern,
-        quality,
+        quality: _quality,
       } = params as QRParams;
 
       if (!text) {
@@ -172,23 +172,23 @@ export default function qr(config: QRConfig = {}): ImageGenerator {
 
       // Generate QR code
       let bytes: Buffer;
-      let mime: 'image/png' | 'image/svg+xml';
+      let mime: "image/png" | "image/svg+xml";
 
-      if (format === 'svg') {
+      if (format === "svg") {
         // Generate SVG
         const svgString = await QRCode.toString(text, {
           ...baseOptions,
-          type: 'svg',
+          type: "svg",
         });
-        bytes = Buffer.from(svgString, 'utf-8');
-        mime = 'image/svg+xml';
+        bytes = Buffer.from(svgString, "utf-8");
+        mime = "image/svg+xml";
       } else {
         // Generate PNG
         bytes = await QRCode.toBuffer(text, {
           ...baseOptions,
-          type: 'png',
+          type: "png",
         });
-        mime = 'image/png';
+        mime = "image/png";
       }
 
       return {

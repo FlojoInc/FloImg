@@ -90,7 +90,7 @@ export interface MermaidConfig {
   /** Default background color */
   backgroundColor?: string;
   /** Output format: 'svg' | 'png' (default: 'svg') */
-  format?: 'svg' | 'png';
+  format?: "svg" | "png";
   /** Image width (for PNG) */
   width?: number;
   /** Image height (for PNG) */
@@ -105,7 +105,7 @@ export interface MermaidParams extends Record<string, unknown> {
   /** Background color override */
   backgroundColor?: string;
   /** Format override */
-  format?: 'svg' | 'png';
+  format?: "svg" | "png";
   /** Width override (for PNG) */
   width?: number;
   /** Height override (for PNG) */
@@ -119,9 +119,9 @@ export interface MermaidParams extends Record<string, unknown> {
  */
 export default function mermaid(config: MermaidConfig = {}): ImageGenerator {
   const {
-    theme: defaultTheme = 'default',
-    backgroundColor: defaultBgColor = 'white',
-    format: defaultFormat = 'svg',
+    theme: defaultTheme = "default",
+    backgroundColor: defaultBgColor = "white",
+    format: defaultFormat = "svg",
     width: defaultWidth,
     height: defaultHeight,
   } = config;
@@ -152,7 +152,7 @@ export default function mermaid(config: MermaidConfig = {}): ImageGenerator {
 
       try {
         // Write Mermaid code to temp file
-        await writeFile(inputFile, code, 'utf-8');
+        await writeFile(inputFile, code, "utf-8");
 
         // Build Mermaid CLI config
         const cliConfig: Record<string, unknown> = {
@@ -171,11 +171,11 @@ export default function mermaid(config: MermaidConfig = {}): ImageGenerator {
         );
 
         // Read output
-        const { readFile } = await import('fs/promises');
+        const { readFile } = await import("fs/promises");
         const bytes = await readFile(outputFile);
 
         // Determine MIME type
-        const mimeType = format === 'png' ? 'image/png' : 'image/svg+xml';
+        const mimeType = format === "png" ? "image/png" : "image/svg+xml";
 
         return {
           bytes: Buffer.from(bytes),
@@ -193,7 +193,7 @@ export default function mermaid(config: MermaidConfig = {}): ImageGenerator {
         try {
           await unlink(inputFile);
           await unlink(outputFile);
-        } catch (err) {
+        } catch {
           // Ignore cleanup errors
         }
       }
