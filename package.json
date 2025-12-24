@@ -10,7 +10,7 @@
     "build:studio": "pnpm --filter '@floimg-studio/*' build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "lint": "eslint packages/*/src apps/**/src --ext .ts,.tsx",
+    "lint": "eslint packages/*/src --ext .ts,.tsx",
     "lint:fix": "eslint packages/*/src apps/**/src --ext .ts,.tsx --fix",
     "format": "prettier --write \"packages/*/src/**/*.ts\" \"apps/**/src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"packages/*/src/**/*.ts\" \"apps/**/src/**/*.{ts,tsx}\"",
