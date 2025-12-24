@@ -35,7 +35,7 @@ import {
 /**
  * Main floimg client for image generation, transformation, and upload
  */
-export class Floimg {
+export class FloImg {
   private logger: Logger;
   private config: FloimgConfig;
 

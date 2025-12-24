@@ -1,4 +1,4 @@
-import { Floimg } from "./core/client.js";
+import { FloImg } from "./core/client.js";
 import { ShapesProvider } from "./providers/svg/index.js";
 import { SharpTransformProvider } from "./providers/transform/index.js";
 import FsSaveProvider from "./providers/save/FsSaveProvider.js";
@@ -83,8 +83,8 @@ export type { S3SaveProviderConfig } from "./providers/save/S3SaveProvider.js";
  * floimg.registerGenerator(googleImagen({ apiKey: process.env.GOOGLE_AI_API_KEY }));
  * ```
  */
-export function createClient(config: FloimgConfig = {}): Floimg {
-  const client = new Floimg(config);
+export function createClient(config: FloimgConfig = {}): FloImg {
+  const client = new FloImg(config);
 
   // Register built-in generators
   client.registerGenerator(new ShapesProvider());
@@ -113,7 +113,7 @@ export function createClient(config: FloimgConfig = {}): Floimg {
 }
 
 // Export the client class
-export { Floimg };
+export { FloImg };
 
 // Default export
 export default createClient;
