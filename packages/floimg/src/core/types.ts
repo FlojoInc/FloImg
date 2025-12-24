@@ -8,12 +8,7 @@
  * - AI text generation (prompts, descriptions, code)
  */
 
-export type MimeType =
-  | "image/svg+xml"
-  | "image/png"
-  | "image/jpeg"
-  | "image/webp"
-  | "image/avif";
+export type MimeType = "image/svg+xml" | "image/png" | "image/jpeg" | "image/webp" | "image/avif";
 
 /**
  * Represents an image as a buffer with metadata
@@ -60,12 +55,7 @@ export type NodeOutput = ImageBlob | DataBlob;
  * Works with any input type for flexible narrowing
  */
 export function isImageBlob(value: unknown): value is ImageBlob {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "bytes" in value &&
-    "mime" in value
-  );
+  return typeof value === "object" && value !== null && "bytes" in value && "mime" in value;
 }
 
 /**
@@ -236,6 +226,14 @@ export interface GeneratorSchema {
   parameters: Record<string, ParameterSchema>;
   /** Names of required parameters */
   requiredParameters?: string[];
+
+  // AI-specific metadata
+  /** Whether this generator uses AI/ML models */
+  isAI?: boolean;
+  /** Whether this generator requires an API key to function */
+  requiresApiKey?: boolean;
+  /** Environment variable name for the API key (e.g., 'OPENAI_API_KEY') */
+  apiKeyEnvVar?: string;
 }
 
 /**
@@ -252,6 +250,14 @@ export interface TransformOperationSchema {
   parameters: Record<string, ParameterSchema>;
   /** Names of required parameters */
   requiredParameters?: string[];
+
+  // AI-specific metadata (for AI transforms like background removal, upscale)
+  /** Whether this transform uses AI/ML models */
+  isAI?: boolean;
+  /** Whether this transform requires an API key to function */
+  requiresApiKey?: boolean;
+  /** Environment variable name for the API key */
+  apiKeyEnvVar?: string;
 }
 
 /**
@@ -417,15 +423,30 @@ export interface TransformProvider {
   /** Apply threshold (pure B&W) */
   threshold?(input: ImageBlob, value?: number): Promise<ImageBlob>;
   /** Adjust brightness, saturation, hue, lightness */
-  modulate?(input: ImageBlob, opts: { brightness?: number; saturation?: number; hue?: number; lightness?: number }): Promise<ImageBlob>;
+  modulate?(
+    input: ImageBlob,
+    opts: { brightness?: number; saturation?: number; hue?: number; lightness?: number }
+  ): Promise<ImageBlob>;
   /** Apply color tint overlay */
   tint?(input: ImageBlob, color: string | { r: number; g: number; b: number }): Promise<ImageBlob>;
 
   // Border & frame operations (optional)
   /** Add borders to image */
-  extend?(input: ImageBlob, opts: { top: number; bottom: number; left: number; right: number; background?: string | { r: number; g: number; b: number; alpha?: number } }): Promise<ImageBlob>;
+  extend?(
+    input: ImageBlob,
+    opts: {
+      top: number;
+      bottom: number;
+      left: number;
+      right: number;
+      background?: string | { r: number; g: number; b: number; alpha?: number };
+    }
+  ): Promise<ImageBlob>;
   /** Extract a region from image */
-  extract?(input: ImageBlob, region: { left: number; top: number; width: number; height: number }): Promise<ImageBlob>;
+  extract?(
+    input: ImageBlob,
+    region: { left: number; top: number; width: number; height: number }
+  ): Promise<ImageBlob>;
   /** Round corners of image */
   roundCorners?(input: ImageBlob, radius: number): Promise<ImageBlob>;
 
@@ -561,11 +582,7 @@ export interface SaveProvider {
   /** Provider name */
   name: string;
   /** Save an image */
-  save(input: {
-    blob: ImageBlob;
-    path: string;
-    [key: string]: unknown;
-  }): Promise<SaveResult>;
+  save(input: { blob: ImageBlob; path: string; [key: string]: unknown }): Promise<SaveResult>;
 }
 
 /**

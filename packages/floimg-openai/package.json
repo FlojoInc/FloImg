@@ -1,0 +1,58 @@
+{
+  "name": "@teamflojo/floimg-openai",
+  "version": "0.1.0",
+  "description": "OpenAI image generation, vision, and text providers for floimg",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "floimg",
+    "openai",
+    "dall-e",
+    "gpt-4",
+    "image-generation",
+    "vision",
+    "ai"
+  ],
+  "author": "Brett Cooke",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TeamFlojo/floimg.git",
+    "directory": "packages/floimg-openai"
+  },
+  "peerDependencies": {
+    "@teamflojo/floimg": "^0.2.0"
+  },
+  "dependencies": {
+    "openai": "^4.76.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@teamflojo/floimg": "workspace:*",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

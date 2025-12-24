@@ -11,6 +11,9 @@ import { createClient, type ClientCapabilities } from "@teamflojo/floimg";
 import qr from "@teamflojo/floimg-qr";
 import mermaid from "@teamflojo/floimg-mermaid";
 import quickchart from "@teamflojo/floimg-quickchart";
+import openai from "@teamflojo/floimg-openai";
+import stability from "@teamflojo/floimg-stability";
+import googleImagen from "@teamflojo/floimg-google";
 
 type FloimgClient = ReturnType<typeof createClient>;
 
@@ -28,13 +31,23 @@ export function initializeClient(config: { verbose?: boolean } = {}): FloimgClie
 
   client = createClient({
     verbose: config.verbose ?? process.env.NODE_ENV !== "production",
-    ai: process.env.OPENAI_API_KEY ? { openai: { apiKey: process.env.OPENAI_API_KEY } } : undefined,
   });
 
   // Register generator plugins
   client.registerGenerator(qr());
   client.registerGenerator(mermaid());
   client.registerGenerator(quickchart());
+
+  // Register AI generators when API keys are available
+  if (process.env.OPENAI_API_KEY) {
+    client.registerGenerator(openai({ apiKey: process.env.OPENAI_API_KEY }));
+  }
+  if (process.env.STABILITY_API_KEY) {
+    client.registerGenerator(stability({ apiKey: process.env.STABILITY_API_KEY }));
+  }
+  if (process.env.GOOGLE_AI_API_KEY) {
+    client.registerGenerator(googleImagen({ apiKey: process.env.GOOGLE_AI_API_KEY }));
+  }
 
   // Cache capabilities
   capabilities = client.getCapabilities();
