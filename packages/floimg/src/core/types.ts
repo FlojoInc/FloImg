@@ -226,6 +226,8 @@ export interface GeneratorSchema {
   parameters: Record<string, ParameterSchema>;
   /** Names of required parameters */
   requiredParameters?: string[];
+  /** Output type this generator produces (default: 'image') */
+  outputType?: "image" | "data";
 
   // AI-specific metadata
   /** Whether this generator uses AI/ML models */
@@ -235,6 +237,12 @@ export interface GeneratorSchema {
   /** Environment variable name for the API key (e.g., 'OPENAI_API_KEY') */
   apiKeyEnvVar?: string;
 }
+
+/**
+ * I/O type for schema validation
+ * Used by visual builders to validate connections between nodes
+ */
+export type IOType = "image" | "data";
 
 /**
  * Schema for a transform operation
@@ -250,6 +258,10 @@ export interface TransformOperationSchema {
   parameters: Record<string, ParameterSchema>;
   /** Names of required parameters */
   requiredParameters?: string[];
+  /** Input type this operation accepts (default: 'image') */
+  inputType?: IOType;
+  /** Output type this operation produces (default: 'image') */
+  outputType?: IOType;
 
   // AI-specific metadata (for AI transforms like background removal, upscale)
   /** Whether this transform uses AI/ML models */
@@ -290,6 +302,10 @@ export interface VisionProviderSchema {
   outputFormats?: ("text" | "json")[];
   /** Whether this provider requires an API key */
   requiresApiKey?: boolean;
+  /** Input type (always 'image' for vision providers) */
+  inputType?: IOType;
+  /** Output type (always 'data' for vision providers) */
+  outputType?: IOType;
 }
 
 /**
@@ -310,6 +326,10 @@ export interface TextProviderSchema {
   outputFormats?: ("text" | "json")[];
   /** Whether this provider requires an API key */
   requiresApiKey?: boolean;
+  /** Input type (optional 'data' for context) */
+  inputType?: IOType;
+  /** Output type (always 'data' for text providers) */
+  outputType?: IOType;
 }
 
 /**

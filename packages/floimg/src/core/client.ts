@@ -114,9 +114,9 @@ export class FloImg {
     // Merge 'to' into params for convert operation
     const mergedParams = to ? { ...params, to } : params;
 
-
     // Delegate to provider's transform method
     return transformProvider.transform(blob, op, mergedParams);
+  }
 
   /**
    * Analyze an image using AI vision (Claude, GPT-4V, Ollama LLaVA, etc.)
