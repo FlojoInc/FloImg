@@ -95,6 +95,8 @@ export interface MermaidConfig {
   width?: number;
   /** Image height (for PNG) */
   height?: number;
+  /** Puppeteer launch options (for CI environments, etc.) */
+  puppeteerConfig?: Record<string, unknown>;
 }
 
 export interface MermaidParams extends Record<string, unknown> {
@@ -117,6 +119,19 @@ export interface MermaidParams extends Record<string, unknown> {
 /**
  * Create a Mermaid generator instance
  */
+/**
+ * Get default Puppeteer config for the current environment
+ */
+function getDefaultPuppeteerConfig(): Record<string, unknown> {
+  // In CI environments, we need to disable the sandbox
+  if (process.env.CI) {
+    return {
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    };
+  }
+  return {};
+}
+
 export default function mermaid(config: MermaidConfig = {}): ImageGenerator {
   const {
     theme: defaultTheme = "default",
@@ -124,7 +139,14 @@ export default function mermaid(config: MermaidConfig = {}): ImageGenerator {
     format: defaultFormat = "svg",
     width: defaultWidth,
     height: defaultHeight,
+    puppeteerConfig: userPuppeteerConfig,
   } = config;
+
+  // Merge user config with CI defaults
+  const puppeteerConfig = {
+    ...getDefaultPuppeteerConfig(),
+    ...userPuppeteerConfig,
+  };
 
   return {
     name: "mermaid",
@@ -167,7 +189,10 @@ export default function mermaid(config: MermaidConfig = {}): ImageGenerator {
         await runMermaid(
           inputFile,
           outputFile as any, // CLI typing is too strict, we build valid paths
-          cliConfig
+          {
+            ...cliConfig,
+            puppeteerConfig,
+          }
         );
 
         // Read output
