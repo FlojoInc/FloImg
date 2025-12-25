@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### AI Provider Packages
+
+- **`@teamflojo/floimg-openai`** - OpenAI integration (extracted from core)
+  - DALL-E 2/3 image generation
+  - GPT-4 Vision image analysis
+  - GPT-4 text generation
+- **`@teamflojo/floimg-stability`** - Stability AI integration
+  - SDXL and SD3 image generation
+  - AI transforms: removeBackground, upscale, searchAndReplace, outpaint
+- **`@teamflojo/floimg-google`** - Google AI integration
+  - Imagen 4.0 image generation
+- **`@teamflojo/floimg-ollama`** - Ollama local AI integration
+  - LLaVA vision analysis
+  - Llama text generation
+
+#### Transform Provider Architecture
+
+- **Self-dispatching providers**: TransformProvider now handles its own operation routing
+- **I/O type metadata**: Schemas include inputType/outputType for visual builder validation
+- **AI transforms**: Support for AI-powered image transformations
+
+### Changed
+
+- Extracted OpenAI provider to separate `@teamflojo/floimg-openai` package
+- TransformProvider interface now requires `transform()` method
+- Class renamed from `Floimg` to `FloImg` for consistency
+
 ## [0.5.0] - 2025-12-23
 
 ### Added
