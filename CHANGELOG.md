@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to floimg will be documented in this file.
+All notable changes to FloImg will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -15,11 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - DALL-E 2/3 image generation
   - GPT-4 Vision image analysis
   - GPT-4 text generation
+  - AI transforms: edit (inpainting), variations
 - **`@teamflojo/floimg-stability`** - Stability AI integration
   - SDXL and SD3 image generation
   - AI transforms: removeBackground, upscale, searchAndReplace, outpaint
 - **`@teamflojo/floimg-google`** - Google AI integration
   - Imagen 4.0 image generation
+- **`@teamflojo/floimg-replicate`** - Replicate integration (NEW)
+  - AI transforms: faceRestore (GFPGAN), colorize (DeOldify), realEsrgan (upscale), fluxEdit (text-guided editing)
 - **`@teamflojo/floimg-ollama`** - Ollama local AI integration
   - LLaVA vision analysis
   - Llama text generation
@@ -29,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Self-dispatching providers**: TransformProvider now handles its own operation routing
 - **I/O type metadata**: Schemas include inputType/outputType for visual builder validation
 - **AI transforms**: Support for AI-powered image transformations
+- **Four transform providers**: sharp (built-in), stability-transform, openai-transform, replicate-transform
 
 ### Changed
 
@@ -106,7 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
-- All AI features are optional - floimg works without any AI configured
+- All AI features are optional - FloImg works without any AI configured
 - AI providers require respective API keys or local model setup
 
 ## [0.1.0] - 2025-12-20

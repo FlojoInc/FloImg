@@ -1,13 +1,13 @@
-# floimg
+# FloImg
 
 > Universal image workflow engine for developers and AI agents
 
 [![npm version](https://img.shields.io/npm/v/@teamflojo/floimg.svg?style=flat)](https://www.npmjs.com/package/@teamflojo/floimg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**floimg** provides three core operations—generate, transform, save—that work consistently across JavaScript, CLI, YAML, and MCP.
+**FloImg** provides three core operations—generate, transform, save—that work consistently across JavaScript, CLI, YAML, and MCP.
 
-## Why floimg?
+## Why FloImg?
 
 | Challenge                             | Solution                                    |
 | ------------------------------------- | ------------------------------------------- |
@@ -51,7 +51,7 @@ Plugins auto-install on first use. [See all CLI commands →](https://floimg.com
 
 ## Claude Code Integration
 
-Use floimg directly from Claude Code with the **floimg-claude** plugin:
+Use FloImg directly from Claude Code with the **floimg-claude** plugin:
 
 ```bash
 npm install -g @teamflojo/floimg-claude
@@ -164,12 +164,39 @@ Then talk to Claude: _"Create a QR code for example.com"_
 | [`@teamflojo/floimg-openai`](https://www.npmjs.com/package/@teamflojo/floimg-openai)         | DALL-E image generation + vision | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-openai.svg)](https://www.npmjs.com/package/@teamflojo/floimg-openai)         |
 | [`@teamflojo/floimg-stability`](https://www.npmjs.com/package/@teamflojo/floimg-stability)   | Stability AI (SDXL, SD3)         | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-stability.svg)](https://www.npmjs.com/package/@teamflojo/floimg-stability)   |
 | [`@teamflojo/floimg-google`](https://www.npmjs.com/package/@teamflojo/floimg-google)         | Google Imagen                    | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-google.svg)](https://www.npmjs.com/package/@teamflojo/floimg-google)         |
+| [`@teamflojo/floimg-replicate`](https://www.npmjs.com/package/@teamflojo/floimg-replicate)   | Replicate models (FLUX, GFPGAN)  | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-replicate.svg)](https://www.npmjs.com/package/@teamflojo/floimg-replicate)   |
 | [`@teamflojo/floimg-ollama`](https://www.npmjs.com/package/@teamflojo/floimg-ollama)         | Ollama local AI (LLaVA, Llama)   | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-ollama.svg)](https://www.npmjs.com/package/@teamflojo/floimg-ollama)         |
 | [`@teamflojo/floimg-quickchart`](https://www.npmjs.com/package/@teamflojo/floimg-quickchart) | Chart.js charts                  | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-quickchart.svg)](https://www.npmjs.com/package/@teamflojo/floimg-quickchart) |
 | [`@teamflojo/floimg-d3`](https://www.npmjs.com/package/@teamflojo/floimg-d3)                 | D3 visualizations                | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-d3.svg)](https://www.npmjs.com/package/@teamflojo/floimg-d3)                 |
 | [`@teamflojo/floimg-mermaid`](https://www.npmjs.com/package/@teamflojo/floimg-mermaid)       | Mermaid diagrams                 | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-mermaid.svg)](https://www.npmjs.com/package/@teamflojo/floimg-mermaid)       |
 | [`@teamflojo/floimg-qr`](https://www.npmjs.com/package/@teamflojo/floimg-qr)                 | QR codes                         | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-qr.svg)](https://www.npmjs.com/package/@teamflojo/floimg-qr)                 |
 | [`@teamflojo/floimg-screenshot`](https://www.npmjs.com/package/@teamflojo/floimg-screenshot) | Playwright screenshots           | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-screenshot.svg)](https://www.npmjs.com/package/@teamflojo/floimg-screenshot) |
+
+### AI Transform Providers
+
+In addition to generation, these packages provide AI-powered image transformations:
+
+| Package                       | Transforms                                            |
+| ----------------------------- | ----------------------------------------------------- |
+| `@teamflojo/floimg-openai`    | edit (inpaint), variations                            |
+| `@teamflojo/floimg-stability` | removeBackground, upscale, searchAndReplace, outpaint |
+| `@teamflojo/floimg-replicate` | faceRestore, colorize, realEsrgan, fluxEdit           |
+
+```typescript
+// Example: Remove background with Stability AI
+const noBg = await floimg.transform({
+  blob: image,
+  op: "removeBackground",
+  provider: "stability-transform",
+});
+
+// Example: Restore faces with Replicate
+const restored = await floimg.transform({
+  blob: image,
+  op: "faceRestore",
+  provider: "replicate-transform",
+});
+```
 
 ### FloImg Studio
 
@@ -180,7 +207,7 @@ Then talk to Claude: _"Create a QR code for example.com"_
 
 ## FloImg Studio
 
-FloImg Studio is a visual workflow builder for floimg. Design image pipelines with a drag-and-drop interface.
+FloImg Studio is a visual workflow builder for FloImg. Design image pipelines with a drag-and-drop interface.
 
 ### Self-Host
 
