@@ -77,7 +77,10 @@ npm install @teamflojo/floimg
 npm install @teamflojo/floimg-quickchart  # Charts
 npm install @teamflojo/floimg-mermaid     # Diagrams
 npm install @teamflojo/floimg-qr          # QR codes
-npm install @teamflojo/floimg-openai      # AI images (DALL-E)
+npm install @teamflojo/floimg-openai      # DALL-E + GPT-4 Vision
+npm install @teamflojo/floimg-stability   # Stability AI (SDXL, SD3) + AI transforms
+npm install @teamflojo/floimg-google      # Google Imagen
+npm install @teamflojo/floimg-ollama      # Ollama local AI
 npm install @teamflojo/floimg-screenshot  # Screenshots
 ```
 
@@ -156,14 +159,17 @@ Then talk to Claude: _"Create a QR code for example.com"_
 
 ### Generators
 
-| Package                                                                                      | Description            | npm                                                                                                                                 |
-| -------------------------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| [`@teamflojo/floimg-openai`](https://www.npmjs.com/package/@teamflojo/floimg-openai)         | AI images via DALL-E   | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-openai.svg)](https://www.npmjs.com/package/@teamflojo/floimg-openai)         |
-| [`@teamflojo/floimg-quickchart`](https://www.npmjs.com/package/@teamflojo/floimg-quickchart) | Chart.js charts        | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-quickchart.svg)](https://www.npmjs.com/package/@teamflojo/floimg-quickchart) |
-| [`@teamflojo/floimg-d3`](https://www.npmjs.com/package/@teamflojo/floimg-d3)                 | D3 visualizations      | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-d3.svg)](https://www.npmjs.com/package/@teamflojo/floimg-d3)                 |
-| [`@teamflojo/floimg-mermaid`](https://www.npmjs.com/package/@teamflojo/floimg-mermaid)       | Mermaid diagrams       | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-mermaid.svg)](https://www.npmjs.com/package/@teamflojo/floimg-mermaid)       |
-| [`@teamflojo/floimg-qr`](https://www.npmjs.com/package/@teamflojo/floimg-qr)                 | QR codes               | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-qr.svg)](https://www.npmjs.com/package/@teamflojo/floimg-qr)                 |
-| [`@teamflojo/floimg-screenshot`](https://www.npmjs.com/package/@teamflojo/floimg-screenshot) | Playwright screenshots | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-screenshot.svg)](https://www.npmjs.com/package/@teamflojo/floimg-screenshot) |
+| Package                                                                                      | Description                      | npm                                                                                                                                 |
+| -------------------------------------------------------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [`@teamflojo/floimg-openai`](https://www.npmjs.com/package/@teamflojo/floimg-openai)         | DALL-E image generation + vision | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-openai.svg)](https://www.npmjs.com/package/@teamflojo/floimg-openai)         |
+| [`@teamflojo/floimg-stability`](https://www.npmjs.com/package/@teamflojo/floimg-stability)   | Stability AI (SDXL, SD3)         | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-stability.svg)](https://www.npmjs.com/package/@teamflojo/floimg-stability)   |
+| [`@teamflojo/floimg-google`](https://www.npmjs.com/package/@teamflojo/floimg-google)         | Google Imagen                    | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-google.svg)](https://www.npmjs.com/package/@teamflojo/floimg-google)         |
+| [`@teamflojo/floimg-ollama`](https://www.npmjs.com/package/@teamflojo/floimg-ollama)         | Ollama local AI (LLaVA, Llama)   | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-ollama.svg)](https://www.npmjs.com/package/@teamflojo/floimg-ollama)         |
+| [`@teamflojo/floimg-quickchart`](https://www.npmjs.com/package/@teamflojo/floimg-quickchart) | Chart.js charts                  | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-quickchart.svg)](https://www.npmjs.com/package/@teamflojo/floimg-quickchart) |
+| [`@teamflojo/floimg-d3`](https://www.npmjs.com/package/@teamflojo/floimg-d3)                 | D3 visualizations                | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-d3.svg)](https://www.npmjs.com/package/@teamflojo/floimg-d3)                 |
+| [`@teamflojo/floimg-mermaid`](https://www.npmjs.com/package/@teamflojo/floimg-mermaid)       | Mermaid diagrams                 | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-mermaid.svg)](https://www.npmjs.com/package/@teamflojo/floimg-mermaid)       |
+| [`@teamflojo/floimg-qr`](https://www.npmjs.com/package/@teamflojo/floimg-qr)                 | QR codes                         | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-qr.svg)](https://www.npmjs.com/package/@teamflojo/floimg-qr)                 |
+| [`@teamflojo/floimg-screenshot`](https://www.npmjs.com/package/@teamflojo/floimg-screenshot) | Playwright screenshots           | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-screenshot.svg)](https://www.npmjs.com/package/@teamflojo/floimg-screenshot) |
 
 ### FloImg Studio
 
