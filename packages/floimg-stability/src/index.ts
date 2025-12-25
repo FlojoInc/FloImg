@@ -323,3 +323,13 @@ export default function stability(config: StabilityConfig = {}): ImageGenerator 
 
 // Named export for convenience
 export { stability };
+
+// Export transform provider
+export {
+  stabilityTransform,
+  removeBackgroundSchema,
+  upscaleSchema,
+  searchAndReplaceSchema,
+  outpaintSchema,
+  type StabilityTransformConfig,
+} from "./transforms.js";
