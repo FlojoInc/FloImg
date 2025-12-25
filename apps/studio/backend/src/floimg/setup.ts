@@ -11,9 +11,10 @@ import { createClient, type ClientCapabilities } from "@teamflojo/floimg";
 import qr from "@teamflojo/floimg-qr";
 import mermaid from "@teamflojo/floimg-mermaid";
 import quickchart from "@teamflojo/floimg-quickchart";
-import openai from "@teamflojo/floimg-openai";
+import openai, { openaiTransform } from "@teamflojo/floimg-openai";
 import stability, { stabilityTransform } from "@teamflojo/floimg-stability";
 import googleImagen from "@teamflojo/floimg-google";
+import { replicateTransform } from "@teamflojo/floimg-replicate";
 
 type FloimgClient = ReturnType<typeof createClient>;
 
@@ -38,9 +39,10 @@ export function initializeClient(config: { verbose?: boolean } = {}): FloimgClie
   client.registerGenerator(mermaid());
   client.registerGenerator(quickchart());
 
-  // Register AI generators when API keys are available
+  // Register AI generators and transforms when API keys are available
   if (process.env.OPENAI_API_KEY) {
     client.registerGenerator(openai({ apiKey: process.env.OPENAI_API_KEY }));
+    client.registerTransformProvider(openaiTransform({ apiKey: process.env.OPENAI_API_KEY }));
   }
   if (process.env.STABILITY_API_KEY) {
     client.registerGenerator(stability({ apiKey: process.env.STABILITY_API_KEY }));
@@ -48,6 +50,11 @@ export function initializeClient(config: { verbose?: boolean } = {}): FloimgClie
   }
   if (process.env.GOOGLE_AI_API_KEY) {
     client.registerGenerator(googleImagen({ apiKey: process.env.GOOGLE_AI_API_KEY }));
+  }
+  if (process.env.REPLICATE_API_TOKEN) {
+    client.registerTransformProvider(
+      replicateTransform({ apiToken: process.env.REPLICATE_API_TOKEN })
+    );
   }
 
   // Cache capabilities

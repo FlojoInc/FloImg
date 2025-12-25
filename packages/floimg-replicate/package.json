@@ -1,0 +1,60 @@
+{
+  "name": "@teamflojo/floimg-replicate",
+  "version": "0.1.0",
+  "description": "Replicate AI model integration for floimg (FLUX, GFPGAN, DeOldify, Real-ESRGAN)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build",
+    "test": "vitest --run"
+  },
+  "keywords": [
+    "floimg",
+    "replicate",
+    "flux",
+    "gfpgan",
+    "deoldify",
+    "real-esrgan",
+    "image-generation",
+    "image-restoration",
+    "ai"
+  ],
+  "author": "Brett Cooke",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TeamFlojo/floimg.git",
+    "directory": "packages/floimg-replicate"
+  },
+  "peerDependencies": {
+    "@teamflojo/floimg": "^0.2.0"
+  },
+  "dependencies": {
+    "replicate": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@teamflojo/floimg": "workspace:*",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

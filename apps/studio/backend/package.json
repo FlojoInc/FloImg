@@ -31,6 +31,7 @@
     "@teamflojo/floimg-openai": "workspace:*",
     "@teamflojo/floimg-stability": "workspace:*",
     "@teamflojo/floimg-google": "workspace:*",
+    "@teamflojo/floimg-replicate": "workspace:*",
     "fastify": "^5.6.2",
     "nanoid": "^5.0.7",
     "openai": "^4.76.0",

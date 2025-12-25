@@ -474,3 +474,11 @@ export function openaiText(config: OpenAITextConfig = {}): TextProvider {
 
 // Named export alias for default
 export { openai };
+
+// Transform provider exports
+export {
+  openaiTransform,
+  type OpenAITransformConfig,
+  editSchema,
+  variationsSchema,
+} from "./transforms.js";

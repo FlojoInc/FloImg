@@ -83,6 +83,9 @@ importers:
       '@teamflojo/floimg-quickchart':
         specifier: workspace:*
         version: link:../../../packages/floimg-quickchart
+      '@teamflojo/floimg-replicate':
+        specifier: workspace:*
+        version: link:../../../packages/floimg-replicate
       '@teamflojo/floimg-stability':
         specifier: workspace:*
         version: link:../../../packages/floimg-stability
@@ -358,6 +361,25 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.19.3)(jsdom@25.0.1)
+
+  packages/floimg-replicate:
+    dependencies:
+      replicate:
+        specifier: ^1.0.1
+        version: 1.4.0
+    devDependencies:
+      '@teamflojo/floimg':
+        specifier: workspace:*
+        version: link:../floimg
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.19.3
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
         version: 2.1.9(@types/node@22.19.3)(jsdom@25.0.1)
 
   packages/floimg-screenshot:
@@ -4542,6 +4564,10 @@ packages:
   regexp.prototype.flags@1.5.4:
     resolution: {integrity: sha512-dYqgNSZbDwkaJ2ceRd9ojCGjBq+mOm9LmtXnAnEGyHhN/5R7iDW2TRw3h+o/jCFxus3P2LfWIIiwowAjANm7IA==}
     engines: {node: '>= 0.4'}
+
+  replicate@1.4.0:
+    resolution: {integrity: sha512-1ufKejfUVz/azy+5TnzQP7U1+MHVWZ6psnQ06az8byUUnRhT+DZ/MvewzB1NQYBVMgNKR7xPDtTwlcP5nv/5+w==}
+    engines: {git: '>=2.11.0', node: '>=18.0.0', npm: '>=7.19.0', yarn: '>=1.7.0'}
 
   require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
@@ -10390,6 +10416,10 @@ snapshots:
       get-proto: 1.0.1
       gopd: 1.2.0
       set-function-name: 2.0.2
+
+  replicate@1.4.0:
+    optionalDependencies:
+      readable-stream: 4.7.0
 
   require-directory@2.1.1: {}
 
