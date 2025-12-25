@@ -12,7 +12,7 @@ import qr from "@teamflojo/floimg-qr";
 import mermaid from "@teamflojo/floimg-mermaid";
 import quickchart from "@teamflojo/floimg-quickchart";
 import openai from "@teamflojo/floimg-openai";
-import stability from "@teamflojo/floimg-stability";
+import stability, { stabilityTransform } from "@teamflojo/floimg-stability";
 import googleImagen from "@teamflojo/floimg-google";
 
 type FloimgClient = ReturnType<typeof createClient>;
@@ -44,6 +44,7 @@ export function initializeClient(config: { verbose?: boolean } = {}): FloimgClie
   }
   if (process.env.STABILITY_API_KEY) {
     client.registerGenerator(stability({ apiKey: process.env.STABILITY_API_KEY }));
+    client.registerTransformProvider(stabilityTransform({ apiKey: process.env.STABILITY_API_KEY }));
   }
   if (process.env.GOOGLE_AI_API_KEY) {
     client.registerGenerator(googleImagen({ apiKey: process.env.GOOGLE_AI_API_KEY }));
