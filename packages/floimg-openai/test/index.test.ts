@@ -7,10 +7,10 @@ import openai, {
   openaiTextSchema,
 } from "../src/index.js";
 
-// Mock OpenAI client
+// Mock OpenAI client - Vitest 4 requires function syntax for constructor mocks
 vi.mock("openai", () => {
-  return {
-    default: vi.fn().mockImplementation(() => ({
+  const MockOpenAI = vi.fn(function () {
+    return {
       images: {
         generate: vi.fn().mockResolvedValue({
           data: [
@@ -29,8 +29,9 @@ vi.mock("openai", () => {
           }),
         },
       },
-    })),
-  };
+    };
+  });
+  return { default: MockOpenAI };
 });
 
 // Mock fetch for image download

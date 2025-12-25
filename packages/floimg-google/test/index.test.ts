@@ -1,22 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import googleImagen, { googleImagenSchema } from "../src/index.js";
 
-// Mock GoogleGenAI
-vi.mock("@google/genai", () => ({
-  GoogleGenAI: vi.fn().mockImplementation(() => ({
-    models: {
-      generateImages: vi.fn().mockResolvedValue({
-        generatedImages: [
-          {
-            image: {
-              imageBytes: Buffer.from("test-image").toString("base64"),
+// Mock GoogleGenAI - Vitest 4 requires function syntax for constructor mocks
+vi.mock("@google/genai", () => {
+  const MockGoogleGenAI = vi.fn(function () {
+    return {
+      models: {
+        generateImages: vi.fn().mockResolvedValue({
+          generatedImages: [
+            {
+              image: {
+                imageBytes: Buffer.from("test-image").toString("base64"),
+              },
             },
-          },
-        ],
-      }),
-    },
-  })),
-}));
+          ],
+        }),
+      },
+    };
+  });
+  return { GoogleGenAI: MockGoogleGenAI };
+});
 
 describe("floimg-google", () => {
   beforeEach(() => {

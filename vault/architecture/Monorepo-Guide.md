@@ -52,9 +52,20 @@ pnpm build
 # Dev mode (watch all packages)
 pnpm dev
 
-# Run tests across all packages
+# Run all tests
 pnpm test
+
+# Run fast unit tests only (recommended during development)
+pnpm test:unit
+
+# Run browser-based integration tests
+pnpm test:integration
+
+# Watch mode for TDD
+pnpm test:watch
 ```
+
+📖 See [[Testing-Strategy]] for detailed testing documentation.
 
 ### Package Commands
 
@@ -151,9 +162,9 @@ export default function myGenerator(config = {}): ImageGenerator {
         mime: "image/png",
         width: 800,
         height: 600,
-        source: "myplugin"
+        source: "myplugin",
       };
-    }
+    },
   };
 }
 
@@ -163,6 +174,7 @@ export { myGenerator };
 ### 5. Add README
 
 Document your plugin thoroughly, including:
+
 - Installation instructions
 - Usage examples
 - Configuration options
@@ -184,16 +196,17 @@ The `workspace:*` protocol in `package.json` means "use the local version during
 ```json
 {
   "peerDependencies": {
-    "floimg": "workspace:*"  // Links to local packages/floimg
+    "floimg": "workspace:*" // Links to local packages/floimg
   }
 }
 ```
 
 When published to npm, this becomes:
+
 ```json
 {
   "peerDependencies": {
-    "floimg": "^0.1.0"  // Real version number
+    "floimg": "^0.1.0" // Real version number
   }
 }
 ```
@@ -279,10 +292,12 @@ floimg (core)
 **📖 See [Core vs Plugins Guide](./vault/architecture/Core-vs-Plugins.md) for detailed decision-making framework.**
 
 Key principle:
+
 - **Core**: Fundamental image operations using dependencies we already need (< 5MB new deps)
 - **Plugins**: Specialized generation or heavy dependencies (> 5MB)
 
 Examples:
+
 - ✅ Core: Filters (Sharp-based), text rendering (@napi-rs/canvas, 2MB)
 - ✅ Plugin: Screenshots (Playwright, 200MB), QR codes (specialized library)
 
@@ -308,6 +323,7 @@ params: {
 ### 3. Document Thoroughly
 
 Each plugin README should include:
+
 - What it does
 - Installation
 - Basic usage
@@ -318,15 +334,16 @@ Each plugin README should include:
 ### 4. Minimal Implementation
 
 Keep generator code simple (~20-100 lines):
+
 ```typescript
-export default function(config) {
+export default function (config) {
   return {
-    name: 'myplugin',
+    name: "myplugin",
     async generate(params) {
       // 1. Accept native format
       // 2. Call underlying library/API
       // 3. Return ImageBlob
-    }
+    },
   };
 }
 ```
@@ -367,6 +384,7 @@ pnpm install
 ### TypeScript errors in plugins
 
 Make sure you've built the core package first:
+
 ```bash
 cd packages/floimg
 pnpm build
@@ -387,7 +405,8 @@ When contributing a new plugin:
 
 ## See Also
 
-- [Generator Strategy](./vault/architecture/Generator-Strategy.md)
-- [Core vs Plugins](./vault/architecture/Core-vs-Plugins.md)
-- [Main README](./README.md)
+- [[Generator-Strategy]] - How generators work
+- [[Core-vs-Plugins]] - What belongs in core vs plugins
+- [[Testing-Strategy]] - Test architecture and best practices
+- [[Plugin-Architecture]] - Plugin development guide
 - [pnpm Workspaces](https://pnpm.io/workspaces)

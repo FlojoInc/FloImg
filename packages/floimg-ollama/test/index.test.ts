@@ -6,14 +6,17 @@ import ollama, {
   ollamaTextSchema,
 } from "../src/index.js";
 
-// Mock Ollama client
-vi.mock("ollama", () => ({
-  Ollama: vi.fn().mockImplementation(() => ({
-    chat: vi.fn().mockResolvedValue({
-      message: { content: "Test response from Ollama" },
-    }),
-  })),
-}));
+// Mock Ollama client - Vitest 4 requires function syntax for constructor mocks
+vi.mock("ollama", () => {
+  const MockOllama = vi.fn(function () {
+    return {
+      chat: vi.fn().mockResolvedValue({
+        message: { content: "Test response from Ollama" },
+      }),
+    };
+  });
+  return { Ollama: MockOllama };
+});
 
 describe("floimg-ollama", () => {
   beforeEach(() => {

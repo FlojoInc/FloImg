@@ -9,6 +9,11 @@
     "dev:studio": "pnpm --filter '@floimg-studio/*' --parallel dev",
     "build:studio": "pnpm --filter '@floimg-studio/*' build",
     "test": "pnpm -r test",
+    "test:unit": "pnpm exec vitest --run --project unit",
+    "test:integration": "pnpm exec vitest --run --project integration",
+    "test:studio": "pnpm exec vitest --run --project studio",
+    "test:coverage": "pnpm exec vitest --run --coverage",
+    "test:watch": "pnpm exec vitest",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint packages/*/src --ext .ts,.tsx",
     "lint:fix": "eslint packages/*/src apps/**/src --ext .ts,.tsx --fix",
@@ -58,6 +63,7 @@
     "@types/node": "^22.10.2",
     "@typescript-eslint/eslint-plugin": "^8.50.0",
     "@typescript-eslint/parser": "^8.50.0",
+    "@vitest/coverage-v8": "^4.0.16",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
@@ -65,6 +71,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.16"
   }
 }

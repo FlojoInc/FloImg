@@ -29,7 +29,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "cli": "node --loader ts-node/esm src/cli/index.ts",
-    "test": "vitest",
+    "test": "vitest --run",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
