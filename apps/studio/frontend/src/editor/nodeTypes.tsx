@@ -92,6 +92,7 @@ export const GeneratorNode = memo(function GeneratorNode({
         </div>
         <div className="text-xs text-gray-500 dark:text-zinc-400">
           {Object.entries(data.params)
+            .filter(([, value]) => typeof value !== "object" || value === null)
             .slice(0, 2)
             .map(([key, value]) => (
               <div key={key} className="truncate">
@@ -138,6 +139,7 @@ export const TransformNode = memo(function TransformNode({
         </div>
         <div className="text-xs text-gray-500 dark:text-zinc-400">
           {Object.entries(data.params)
+            .filter(([, value]) => typeof value !== "object" || value === null)
             .slice(0, 2)
             .map(([key, value]) => (
               <div key={key} className="truncate">
