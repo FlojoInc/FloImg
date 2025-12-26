@@ -1,10 +1,19 @@
 # PROJECT STATUS
 
-**Last Updated**: 2025-12-25
+**Last Updated**: 2025-12-26
 
 ## Current Focus
 
-No active tasks. Use `/p [description]` to plan new work.
+**T-2025-003: Fix Node Dragging** (P0 CRITICAL)
+
+- Bug: Nodes cannot be dragged on canvas
+- Root cause: Missing `nodesDraggable` prop on ReactFlow
+- Status: Ready to start
+
+## Next Up
+
+**T-2025-004**: Fix [object Object] display bug in nodes
+**T-2025-005**: Reduce node width (max-w-[220px])
 
 ## Just Completed
 
@@ -58,7 +67,7 @@ Visual workflow builder in `apps/studio/`:
 | stability-transform | removeBackground, upscale, searchAndReplace, outpaint |
 | replicate-transform | faceRestore, colorize, realEsrgan, fluxEdit           |
 
-## Next Up
+## Backlog
 
 - Publish updated packages to npm (floimg-openai, floimg-replicate)
 - Additional AI provider packages (Anthropic, Gemini)
