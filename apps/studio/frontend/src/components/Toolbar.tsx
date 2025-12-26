@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { useWorkflowStore } from "../stores/workflowStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { getImageUrl } from "../api/client";
@@ -6,7 +6,27 @@ import { generateJavaScript } from "../utils/codeGenerator";
 
 type ExportTab = "yaml" | "javascript";
 
-export function Toolbar() {
+/**
+ * Props for the Toolbar component.
+ * All props are optional to maintain backward compatibility.
+ */
+export interface ToolbarProps {
+  /** Slot rendered after the branding text (e.g., "Cloud" badge) */
+  brandingSlot?: ReactNode;
+  /** Slot rendered before the action buttons (e.g., usage counter) */
+  beforeActionsSlot?: ReactNode;
+  /** Slot rendered after all action buttons (e.g., auth/user menu) */
+  afterActionsSlot?: ReactNode;
+  /** Hide the "by Flojo" attribution link */
+  hideAttribution?: boolean;
+}
+
+export function Toolbar({
+  brandingSlot,
+  beforeActionsSlot,
+  afterActionsSlot,
+  hideAttribution = false,
+}: ToolbarProps = {}) {
   const execution = useWorkflowStore((s) => s.execution);
   const execute = useWorkflowStore((s) => s.execute);
   const exportToYaml = useWorkflowStore((s) => s.exportToYaml);
@@ -112,14 +132,17 @@ export function Toolbar() {
 
           <div className="flex items-baseline gap-2">
             <h1 className="text-xl font-bold text-gray-800 dark:text-white">floimg Studio</h1>
-            <a
-              href="https://flojo.io"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300"
-            >
-              by Flojo
-            </a>
+            {brandingSlot}
+            {!hideAttribution && (
+              <a
+                href="https://flojo.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300"
+              >
+                by Flojo
+              </a>
+            )}
           </div>
 
           {/* Workflow name and status - click to rename */}
@@ -163,6 +186,7 @@ export function Toolbar() {
         </div>
 
         <div className="flex items-center gap-3">
+          {beforeActionsSlot}
           <button
             onClick={openSettings}
             className="p-2 text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-md"
@@ -253,6 +277,7 @@ export function Toolbar() {
               </>
             )}
           </button>
+          {afterActionsSlot}
         </div>
       </div>
 

@@ -14,7 +14,7 @@ export { default as App } from "./App";
 export { WorkflowEditor } from "./editor/WorkflowEditor";
 export { NodePalette } from "./components/NodePalette";
 export { NodeInspector } from "./components/NodeInspector";
-export { Toolbar } from "./components/Toolbar";
+export { Toolbar, type ToolbarProps } from "./components/Toolbar";
 export { Gallery } from "./components/Gallery";
 export { TemplateGallery } from "./components/TemplateGallery";
 export { WorkflowLibrary } from "./components/WorkflowLibrary";
