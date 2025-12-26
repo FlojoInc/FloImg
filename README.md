@@ -4,6 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@teamflojo/floimg.svg?style=flat)](https://www.npmjs.com/package/@teamflojo/floimg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/jcczptnX)
 
 **FloImg** provides three core operations—generate, transform, save—that work consistently across JavaScript, CLI, YAML, and MCP.
 
@@ -237,7 +238,12 @@ We welcome contributions—generators, storage backends, tests, docs.
 pnpm install && pnpm -r build && pnpm -r test
 ```
 
-See the [Contributing Guide](https://floimg.com/docs/getting-started/concepts) for details.
+See the [Contributing Guide](./vault/community/Contributing.md) for details.
+
+**Join our community:**
+
+- [Discord](https://discord.gg/jcczptnX) - Chat with the community
+- [GitHub Discussions](https://github.com/TeamFlojo/floimg/discussions) - Ask questions, share ideas
 
 ## License
 
