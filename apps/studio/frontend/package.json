@@ -42,8 +42,8 @@
   ],
   "scripts": {
     "dev": "vite 2>&1 | tee ../../logs/frontend.log",
-    "build": "tsc && vite build",
-    "build:lib": "vite build --mode lib",
+    "build": "vite build --mode lib",
+    "build:app": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },
