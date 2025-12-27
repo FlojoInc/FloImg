@@ -15,6 +15,8 @@ import { qrCommand } from "./commands/qr.js";
 import { resizeCommand } from "./commands/resize.js";
 import { convertCommand } from "./commands/convert.js";
 import { chartCommand } from "./commands/chart.js";
+import { diagramCommand } from "./commands/diagram.js";
+import { screenshotCommand } from "./commands/screenshot.js";
 // Interactive mode
 import { showInteractiveMenu, shouldShowInteractiveMenu } from "./interactive.js";
 import { readFile } from "fs/promises";
@@ -59,6 +61,8 @@ program.addCommand(qrCommand);
 program.addCommand(resizeCommand);
 program.addCommand(convertCommand);
 program.addCommand(chartCommand);
+program.addCommand(diagramCommand);
+program.addCommand(screenshotCommand);
 
 // Enhanced doctor command
 program
