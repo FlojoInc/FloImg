@@ -12,9 +12,9 @@
 
 FloImg solves three core problems:
 
-### The Regeneration Problem
+### The Probabilistic Editing Problem
 
-When you ask ChatGPT/DALL-E to modify an image, it regenerates—it doesn't edit pixels. "Change the colors" might give you a completely different composition. FloImg applies **deterministic transforms**: adjust hue mathematically, guaranteed to preserve everything else.
+When you ask ChatGPT to modify an image, DALL-E generates a new image from a new prompt—it doesn't edit pixels. Even AI "editing" like inpainting is probabilistic. "Change the colors" might give you a completely different composition. FloImg applies **deterministic transforms**: adjust hue mathematically, guaranteed to preserve everything else.
 
 ### The Tool Fragmentation Problem
 

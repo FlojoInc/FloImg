@@ -8,7 +8,7 @@ allowed-tools: mcp__floimg__generate_image, mcp__floimg__transform_image, mcp__f
 
 This skill enables you to create and execute image workflows using floimg—the composable workflow engine that solves three core problems:
 
-1. **The Regeneration Problem**: LLMs regenerate entire images when asked for changes. FloImg applies deterministic transforms—the image stays intact except for exactly what you requested.
+1. **The Probabilistic Editing Problem**: AI image modification is probabilistic—DALL-E generates new images, inpainting runs diffusion. FloImg applies deterministic transforms—the image stays intact except for exactly what you requested.
 
 2. **The Tool Fragmentation Problem**: People wrangle multiple apps (remove.bg, Photoshop, Figma). FloImg consolidates into one pipeline.
 
