@@ -4,7 +4,7 @@ Claude Code plugin for [floimg](https://floimg.com) — composable image workflo
 
 ## Why?
 
-**The Regeneration Problem**: When you ask ChatGPT/DALL-E to modify an image, it regenerates—"change the colors" might give you a completely different composition. FloImg applies deterministic transforms: adjust hue, resize, add caption—the image stays intact except for exactly what you asked.
+**The Probabilistic Editing Problem**: When you ask ChatGPT to modify an image, DALL-E generates a new image—it doesn't edit pixels. Even AI "editing" like inpainting is probabilistic. FloImg applies deterministic transforms: adjust hue, resize, add caption—the image stays intact except for exactly what you asked.
 
 **The Tool Fragmentation Problem**: People wrangle remove.bg, Photoshop, Figma, format converters, cloud services. FloImg consolidates into one pipeline.
 

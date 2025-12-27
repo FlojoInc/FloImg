@@ -6,9 +6,9 @@ Composable image workflow engine — any source, any transforms, any destination
 
 **FloImg is a composable workflow engine** that solves three core problems:
 
-### 1. The Regeneration Problem
+### 1. The Probabilistic Editing Problem
 
-When you ask ChatGPT/DALL-E to modify an image, it regenerates—it doesn't edit pixels. "Change the colors" might give you a different composition. FloImg applies **deterministic transforms**: adjust hue mathematically, guaranteed to preserve everything else.
+When you ask ChatGPT to modify an image, DALL-E generates a new image—it doesn't edit pixels. Even AI "editing" like inpainting is probabilistic. "Change the colors" might give you a different composition. FloImg applies **deterministic transforms**: adjust hue mathematically, guaranteed to preserve everything else.
 
 ### 2. The Tool Fragmentation Problem
 
