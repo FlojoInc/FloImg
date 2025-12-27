@@ -1,6 +1,6 @@
 {
   "name": "@teamflojo/floimg-claude",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Claude Code plugin for floimg - Universal image generation and workflows",
   "type": "module",
   "files": [
@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/TeamFlojo/floimg#readme",
   "peerDependencies": {
-    "@teamflojo/floimg": "^0.2.0"
+    "@teamflojo/floimg": "^0.4.0"
   },
   "engines": {
     "node": ">=18.0.0"

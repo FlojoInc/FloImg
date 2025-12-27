@@ -1,6 +1,6 @@
 ---
 description: Capture a screenshot of a webpage using Playwright
-allowed-tools: mcp__floimg__generate_image, mcp__floimg__save_image
+allowed-tools: Bash
 ---
 
 # Webpage Screenshot
@@ -9,85 +9,57 @@ Capture a screenshot of: "$ARGUMENTS"
 
 ## Instructions
 
-1. **Parse the URL** and any options:
-   - Full URL (add https:// if missing)
-   - Viewport size preferences
-   - Full page vs viewport only
-   - Device emulation
+1. **Parse the URL** from the user's request:
+   - Add `https://` if missing
+   - Note any viewport or device preferences
+   - Check if full-page capture is requested
 
-2. **Call `generate_image`** with:
-   - `intent`: "screenshot of [url]"
-   - `params`:
-     - `url`: The webpage URL (required)
-     - `fullPage`: Capture entire page (default false)
-     - `width`: Viewport width (default 1280)
-     - `height`: Viewport height (default 720)
-     - `deviceScaleFactor`: Retina scale (default 1)
+2. **Run the floimg CLI** to capture the screenshot:
 
-3. **Report the result**:
-   - Screenshot file path
-   - Captured dimensions
-   - Options for cropping or resizing
-
-## Parameters
-
-| Param               | Description                    | Default |
-| ------------------- | ------------------------------ | ------- |
-| `url`               | Webpage URL (required)         | -       |
-| `fullPage`          | Capture entire scrollable page | false   |
-| `width`             | Viewport width in pixels       | 1280    |
-| `height`            | Viewport height in pixels      | 720     |
-| `deviceScaleFactor` | Pixel density (2 for Retina)   | 1       |
-
-## Example Calls
-
-**Basic screenshot**:
-
-```json
-{
-  "intent": "screenshot of https://github.com"
-}
+```bash
+npx -y @teamflojo/floimg screenshot "URL" -o ./screenshot.png
 ```
 
-**Full page capture**:
+3. **Report the result** to the user:
+   - Confirm the file path and dimensions
+   - Offer to crop, resize, or capture different viewport
 
-```json
-{
-  "intent": "screenshot",
-  "params": {
-    "url": "https://docs.floimg.com",
-    "fullPage": true
-  }
-}
+## Examples
+
+**Basic screenshot:**
+
+```bash
+npx -y @teamflojo/floimg screenshot "https://github.com" -o ./github.png
 ```
 
-**Mobile viewport**:
+**Full page capture:**
 
-```json
-{
-  "intent": "screenshot",
-  "params": {
-    "url": "https://example.com",
-    "width": 375,
-    "height": 812,
-    "deviceScaleFactor": 2
-  }
-}
+```bash
+npx -y @teamflojo/floimg screenshot "https://docs.floimg.com" --full-page -o ./docs-full.png
 ```
 
-**Desktop HD**:
+**Mobile viewport:**
 
-```json
-{
-  "intent": "screenshot",
-  "params": {
-    "url": "https://example.com",
-    "width": 1920,
-    "height": 1080,
-    "deviceScaleFactor": 1
-  }
-}
+```bash
+npx -y @teamflojo/floimg screenshot "https://example.com" --width 375 --height 812 --device-scale 2 -o ./mobile.png
 ```
+
+**Desktop HD:**
+
+```bash
+npx -y @teamflojo/floimg screenshot "https://example.com" --width 1920 --height 1080 -o ./desktop-hd.png
+```
+
+## Optional Flags
+
+| Flag             | Description                    | Default |
+| ---------------- | ------------------------------ | ------- |
+| `--full-page`    | Capture entire scrollable page | false   |
+| `--width`        | Viewport width in pixels       | 1280    |
+| `--height`       | Viewport height in pixels      | 720     |
+| `--device-scale` | Pixel density (2 for Retina)   | 1       |
+| `--format`       | Output format (png, jpeg)      | png     |
+| `--quality`      | JPEG quality (1-100)           | 80      |
 
 ## Common Viewport Sizes
 
@@ -103,7 +75,7 @@ Capture a screenshot of: "$ARGUMENTS"
 
 ## Notes
 
-- Requires `@teamflojo/floimg-screenshot` plugin
 - First screenshot may take longer (browser launch)
 - Some sites may block automated screenshots
 - JavaScript executes before capture
+- Requires network access to the target URL

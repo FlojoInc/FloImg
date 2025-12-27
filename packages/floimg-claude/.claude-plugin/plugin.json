@@ -1,5 +1,5 @@
 {
-  "name": "floimg-claude",
+  "name": "floimg",
   "description": "Universal image generation and workflows for Claude Code. Generate charts, diagrams, QR codes, screenshots, and AI images with floimg.",
   "version": "0.1.0",
   "author": {
@@ -7,15 +7,11 @@
     "url": "https://github.com/TeamFlojo"
   },
   "homepage": "https://github.com/TeamFlojo/floimg",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/TeamFlojo/floimg.git",
-    "directory": "packages/floimg-claude"
-  },
+  "repository": "https://github.com/TeamFlojo/floimg",
   "license": "MIT",
   "keywords": ["image", "chart", "diagram", "qr", "screenshot", "mermaid", "dall-e", "quickchart"],
   "commands": ["./commands/"],
-  "agents": ["./agents/"],
+  "agents": ["./agents/image-architect.md"],
   "skills": ["./skills/"],
   "mcpServers": "./.mcp.json"
 }

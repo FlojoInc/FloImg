@@ -1,6 +1,6 @@
 ---
 description: Generate a Mermaid diagram (flowcharts, sequence diagrams, class diagrams, etc.)
-allowed-tools: mcp__floimg__generate_image, mcp__floimg__save_image
+allowed-tools: Bash
 ---
 
 # Diagram Generation
@@ -10,22 +10,53 @@ Generate a Mermaid diagram based on: "$ARGUMENTS"
 ## Instructions
 
 1. **Determine diagram type** from the request:
-   - Process flow / workflow -> flowchart (graph TD/LR)
-   - API calls / interactions -> sequence diagram
-   - Object relationships -> class diagram
-   - Lifecycle / states -> state diagram
-   - Timeline / schedule -> Gantt chart
-   - Concept relationships -> mindmap
+   - Process flow / workflow → flowchart (`graph TD` or `graph LR`)
+   - API calls / interactions → sequence diagram
+   - Object relationships → class diagram
+   - Lifecycle / states → state diagram
+   - Timeline / schedule → Gantt chart
 
-2. **Write valid Mermaid code** and call `generate_image` with:
-   - `intent`: "diagram" or "flowchart"
-   - `params`: `{ "code": "<mermaid code>" }`
+2. **Write valid Mermaid code** and run the floimg CLI:
+
+```bash
+npx -y @teamflojo/floimg diagram "MERMAID_CODE" -o ./diagram.png
+```
+
+Or use a file:
+
+```bash
+npx -y @teamflojo/floimg diagram --file ./diagram.mmd -o ./diagram.png
+```
+
+3. **Report the result** to the user:
+   - Confirm the file path
+   - Offer to adjust layout, styling, or export format
+
+## Examples
+
+**Flowchart:**
+
+```bash
+npx -y @teamflojo/floimg diagram "graph TD; A[Start] --> B{Decision}; B -->|Yes| C[Action]; B -->|No| D[End]" -o ./flow.png
+```
+
+**Sequence diagram:**
+
+```bash
+npx -y @teamflojo/floimg diagram "sequenceDiagram; User->>API: Request; API->>DB: Query; DB-->>API: Result; API-->>User: Response" -o ./sequence.png
+```
+
+**State diagram:**
+
+```bash
+npx -y @teamflojo/floimg diagram "stateDiagram-v2; [*] --> Draft; Draft --> Review; Review --> Published; Published --> [*]" -o ./states.png
+```
 
 ## Mermaid Syntax Quick Reference
 
 ### Flowchart
 
-```mermaid
+```
 graph TD
     A[Start] --> B{Decision}
     B -->|Yes| C[Action 1]
@@ -36,40 +67,23 @@ graph TD
 
 ### Sequence Diagram
 
-```mermaid
+```
 sequenceDiagram
     participant U as User
     participant A as API
-    participant D as Database
     U->>A: Request
-    A->>D: Query
-    D-->>A: Results
     A-->>U: Response
 ```
 
 ### Class Diagram
 
-```mermaid
+```
 classDiagram
     class Animal {
         +String name
         +makeSound()
     }
-    class Dog {
-        +bark()
-    }
     Animal <|-- Dog
-```
-
-### State Diagram
-
-```mermaid
-stateDiagram-v2
-    [*] --> Draft
-    Draft --> Review
-    Review --> Published
-    Review --> Draft
-    Published --> [*]
 ```
 
 ## Node Shapes
@@ -80,8 +94,7 @@ stateDiagram-v2
 | `B{Text}`   | Diamond (decision) |
 | `C((Text))` | Circle             |
 | `D([Text])` | Stadium            |
-| `E[[Text]]` | Subroutine         |
-| `F[(Text)]` | Database           |
+| `E[(Text)]` | Database           |
 
 ## Edge Types
 
@@ -103,4 +116,11 @@ stateDiagram-v2
 | State     | `stateDiagram-v2`       | Lifecycles        |
 | Gantt     | `gantt`                 | Project timelines |
 | ER        | `erDiagram`             | Database schemas  |
-| Mindmap   | `mindmap`               | Brainstorming     |
+
+## Optional Flags
+
+| Flag       | Description              | Example        |
+| ---------- | ------------------------ | -------------- |
+| `--theme`  | Mermaid theme            | `--theme dark` |
+| `--width`  | Image width in pixels    | `--width 1200` |
+| `--format` | Output format (png, svg) | `--format svg` |

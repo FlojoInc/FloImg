@@ -1,7 +1,8 @@
 {
   "mcpServers": {
     "floimg": {
-      "command": "floimg-mcp",
+      "command": "npx",
+      "args": ["-y", "@teamflojo/floimg", "mcp"],
       "env": {
         "OPENAI_API_KEY": "${OPENAI_API_KEY}",
         "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",

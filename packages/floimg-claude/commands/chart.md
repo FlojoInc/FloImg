@@ -1,6 +1,6 @@
 ---
 description: Generate a chart or graph using QuickChart (bar, line, pie, doughnut, radar, etc.)
-allowed-tools: mcp__floimg__generate_image, mcp__floimg__save_image
+allowed-tools: Bash
 ---
 
 # Chart Generation
@@ -10,90 +10,66 @@ Generate a chart based on: "$ARGUMENTS"
 ## Instructions
 
 1. **Parse the chart request**:
-   - Identify chart type (bar, line, pie, doughnut, radar, scatter, bubble, polarArea)
+   - Identify chart type (bar, line, pie, doughnut, radar, scatter)
    - Extract data points (labels and values)
-   - Determine styling preferences (colors, title, legend)
+   - Note any styling preferences (title, colors)
 
-2. **Structure the params** for QuickChart:
+2. **Run the floimg CLI** to generate the chart:
 
-   ```json
-   {
-     "type": "bar",
-     "data": {
-       "labels": ["Q1", "Q2", "Q3", "Q4"],
-       "datasets": [
-         {
-           "label": "Sales",
-           "data": [65, 59, 80, 81],
-           "backgroundColor": ["#4ade80", "#22d3ee", "#a78bfa", "#f472b6"]
-         }
-       ]
-     },
-     "options": {
-       "plugins": {
-         "title": { "display": true, "text": "Quarterly Sales" }
-       }
-     }
-   }
-   ```
+```bash
+npx -y @teamflojo/floimg chart TYPE --labels "LABELS" --values "VALUES" -o ./chart.png
+```
 
-3. **Call `generate_image`** with:
-   - `intent`: "chart" (routes to QuickChart)
-   - `params`: The structured chart configuration above
+**Chart types:** `bar`, `line`, `pie`, `doughnut`, `radar`, `polarArea`, `scatter`
 
-4. **Report and offer options**:
-   - Different chart types for the same data
-   - Color scheme adjustments
-   - Export to different sizes
+3. **Report the result** to the user:
+   - Confirm the file path
+   - Offer alternatives (different chart type, colors, size)
+
+## Examples
+
+**Bar chart:**
+
+```bash
+npx -y @teamflojo/floimg chart bar --labels "Q1,Q2,Q3,Q4" --values "100,150,120,180" --title "Quarterly Sales" -o ./sales-chart.png
+```
+
+**Pie chart:**
+
+```bash
+npx -y @teamflojo/floimg chart pie --labels "Desktop,Mobile,Tablet" --values "60,30,10" -o ./device-chart.png
+```
+
+**Line chart:**
+
+```bash
+npx -y @teamflojo/floimg chart line --labels "Mon,Tue,Wed,Thu,Fri" --values "10,25,15,30,20" --title "Weekly Traffic" -o ./traffic.png
+```
+
+**Multiple datasets (JSON config):**
+For complex charts with multiple series, use the `--config` flag with JSON:
+
+```bash
+npx -y @teamflojo/floimg chart bar --config '{"data":{"labels":["Q1","Q2","Q3"],"datasets":[{"label":"2023","data":[10,20,30]},{"label":"2024","data":[15,25,35]}]}}' -o ./comparison.png
+```
 
 ## Chart Types
 
-| Type                | Best For                  |
-| ------------------- | ------------------------- |
-| bar / horizontalBar | Categorical comparisons   |
-| line                | Trends over time          |
-| pie / doughnut      | Parts of a whole          |
-| radar               | Multi-variable comparison |
-| scatter / bubble    | Correlation analysis      |
-| polarArea           | Radial data display       |
+| Type      | Best For                  |
+| --------- | ------------------------- |
+| bar       | Categorical comparisons   |
+| line      | Trends over time          |
+| pie       | Parts of a whole          |
+| doughnut  | Parts of whole (hollow)   |
+| radar     | Multi-variable comparison |
+| polarArea | Radial data display       |
+| scatter   | Correlation analysis      |
 
-## Example Params
+## Optional Flags
 
-**Bar Chart**:
-
-```json
-{
-  "type": "bar",
-  "data": {
-    "labels": ["Jan", "Feb", "Mar"],
-    "datasets": [{ "label": "Revenue", "data": [1000, 1500, 1200] }]
-  }
-}
-```
-
-**Pie Chart**:
-
-```json
-{
-  "type": "pie",
-  "data": {
-    "labels": ["Desktop", "Mobile", "Tablet"],
-    "datasets": [{ "data": [60, 30, 10] }]
-  }
-}
-```
-
-**Line Chart with Multiple Series**:
-
-```json
-{
-  "type": "line",
-  "data": {
-    "labels": ["Mon", "Tue", "Wed", "Thu", "Fri"],
-    "datasets": [
-      { "label": "This Week", "data": [10, 20, 15, 25, 30] },
-      { "label": "Last Week", "data": [8, 15, 12, 20, 25] }
-    ]
-  }
-}
-```
+| Flag       | Description                  | Example            |
+| ---------- | ---------------------------- | ------------------ |
+| `--title`  | Chart title                  | `--title "Sales"`  |
+| `--width`  | Image width in pixels        | `--width 800`      |
+| `--height` | Image height in pixels       | `--height 600`     |
+| `--config` | Full Chart.js config as JSON | `--config '{...}'` |

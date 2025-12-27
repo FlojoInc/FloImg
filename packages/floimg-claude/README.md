@@ -6,70 +6,100 @@ Generate charts, diagrams, QR codes, screenshots, and AI images directly from Cl
 
 > **[Full Documentation →](https://floimg.com/docs/claude-code)**
 
-## Features
-
-### Slash Commands
-
-| Command                     | Description                                             |
-| --------------------------- | ------------------------------------------------------- |
-| `/floimg-claude:image`      | Generate any image (AI, chart, diagram, QR, screenshot) |
-| `/floimg-claude:chart`      | Create data visualizations with QuickChart              |
-| `/floimg-claude:diagram`    | Generate Mermaid diagrams (flowcharts, sequences, etc.) |
-| `/floimg-claude:qr`         | Create QR codes                                         |
-| `/floimg-claude:screenshot` | Capture webpages with Playwright                        |
-| `/floimg-claude:workflow`   | Execute multi-step image pipelines                      |
-
-> **[Command Reference →](https://floimg.com/docs/claude-code/commands)**
-
-### Image Architect Agent
-
-A specialized agent for complex image tasks. Expert in:
-
-- Choosing the right generator for each task
-- Planning multi-step image workflows
-- Optimizing image pipelines
-
-> **[Agent Documentation →](https://floimg.com/docs/claude-code/agent)**
-
-### Auto-Discovery Skill
-
-Claude automatically detects image-related tasks and uses floimg when you mention:
-
-- Charts, graphs, visualizations
-- Diagrams, flowcharts, sequences
-- QR codes
-- Screenshots, captures
-- Images, photos, illustrations
-
-> **[Skills Documentation →](https://floimg.com/docs/claude-code/skills)**
-
 ## Quick Start
 
-### Option 1: MCP Server (Recommended)
+Install the plugin and simple commands work immediately:
 
-Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```bash
+npm install -g @teamflojo/floimg-claude
+```
+
+Then try:
+
+```
+/floimg:qr https://floimg.com
+/floimg:chart bar chart with Q1: 100, Q2: 150, Q3: 200
+```
+
+**That's it!** Simple commands use `npx` under the hood - no additional setup required.
+
+## Architecture
+
+| Command Type                                                                    | Method      | Works Immediately? |
+| ------------------------------------------------------------------------------- | ----------- | ------------------ |
+| Simple (`/floimg:qr`, `/floimg:chart`, `/floimg:diagram`, `/floimg:screenshot`) | CLI via npx | Yes                |
+| Complex (`/floimg:image`, `/floimg:workflow`)                                   | MCP         | After restart      |
+
+**Simple commands** work out of the box via CLI.
+
+**Complex workflows** (multi-step transforms, iteration) use MCP for session state. Restart Claude Code once to enable MCP.
+
+## Slash Commands
+
+| Command              | Description                              | Method |
+| -------------------- | ---------------------------------------- | ------ |
+| `/floimg:qr`         | Create QR codes                          | CLI    |
+| `/floimg:chart`      | Data visualizations with QuickChart      | CLI    |
+| `/floimg:diagram`    | Mermaid diagrams (flowcharts, sequences) | CLI    |
+| `/floimg:screenshot` | Capture webpages                         | CLI    |
+| `/floimg:image`      | Generate any image with transforms       | MCP    |
+| `/floimg:workflow`   | Multi-step pipelines                     | MCP    |
+
+## Usage Examples
+
+### Simple Tasks (Work Immediately)
+
+```
+/floimg:qr https://floimg.com
+/floimg:chart pie chart: Desktop 60%, Mobile 30%, Tablet 10%
+/floimg:diagram user login flow: user -> form -> auth -> dashboard
+/floimg:screenshot https://github.com
+```
+
+### Complex Workflows (After MCP Enabled)
+
+For multi-step workflows with iteration:
+
+```
+/floimg:workflow Create a hero image, resize to 1200x630, add caption, save to S3
+```
+
+Or iterate naturally:
+
+```
+User: "Create a hero image for my tech blog"
+Claude: [generates image]
+
+User: "Make it more vibrant"
+Claude: [transforms the same image]
+
+User: "Add our tagline at the bottom"
+Claude: [adds caption]
+```
+
+Session state enables referencing previous images without file paths.
+
+## MCP Setup (For Complex Workflows)
+
+MCP unlocks:
+
+- **Multi-step transforms**: generate → resize → caption → save
+- **Iterative refinement**: "make it bluer", "add more contrast"
+- **Session state**: reference images by ID, not file paths
+
+After installing the plugin, restart Claude Code once. The MCP server auto-configures.
+
+Or manually add to your MCP config:
 
 ```json
 {
   "mcpServers": {
     "floimg": {
       "command": "npx",
-      "args": ["-y", "@teamflojo/floimg-claude"]
+      "args": ["-y", "@teamflojo/floimg", "mcp"]
     }
   }
 }
-```
-
-### Option 2: Global Install
-
-```bash
-npm install -g @teamflojo/floimg-claude
-
-# Install generators you need
-npm install -g @teamflojo/floimg-quickchart   # Charts
-npm install -g @teamflojo/floimg-mermaid      # Diagrams
-npm install -g @teamflojo/floimg-qr           # QR codes
-npm install -g @teamflojo/floimg-screenshot   # Screenshots
 ```
 
 ## Configuration
@@ -86,62 +116,38 @@ export AWS_SECRET_ACCESS_KEY=...
 export S3_BUCKET=my-bucket
 ```
 
-## Usage Examples
+## Image Architect Agent
 
-### Quick Chart
+A specialized agent for complex image tasks:
 
-```
-/floimg-claude:chart bar chart showing Q1: $100K, Q2: $150K, Q3: $175K, Q4: $200K
-```
+- Choosing the right generator for each task
+- Planning multi-step image workflows
+- Optimizing image pipelines
 
-### Architecture Diagram
+## Auto-Discovery Skill
 
-```
-/floimg-claude:diagram microservices architecture: frontend -> API gateway -> auth, users, orders services
-```
+Claude automatically detects image-related tasks when you mention:
 
-### QR Code
+- Charts, graphs, visualizations
+- Diagrams, flowcharts, sequences
+- QR codes, screenshots
+- Images, photos, illustrations
 
-```
-/floimg-claude:qr https://floimg.com
-```
-
-### Screenshot
-
-```
-/floimg-claude:screenshot https://github.com full page
-```
-
-### Multi-Step Workflow
-
-```
-/floimg-claude:workflow Create a hero image, resize to 1200x630, add caption, save to S3
-```
-
-### Natural Language (Auto-Discovery)
-
-Just describe what you need:
-
-```
-I need a data visualization dashboard with:
-- A bar chart of monthly sales
-- A pie chart of product categories
-- All charts should be 800x600 and saved to ./charts/
-```
+Just describe what you need in natural language.
 
 ## Supported Generators
 
-| Generator     | Triggered By                 | Requires                       |
-| ------------- | ---------------------------- | ------------------------------ |
-| OpenAI/DALL-E | photo, illustration, scene   | `OPENAI_API_KEY`               |
-| QuickChart    | chart, graph, bar, pie       | `@teamflojo/floimg-quickchart` |
-| Mermaid       | flowchart, diagram, sequence | `@teamflojo/floimg-mermaid`    |
-| QR            | qr code, barcode             | `@teamflojo/floimg-qr`         |
-| Screenshot    | screenshot, capture          | `@teamflojo/floimg-screenshot` |
+| Generator     | Triggered By                 | Requires         |
+| ------------- | ---------------------------- | ---------------- |
+| OpenAI/DALL-E | photo, illustration, scene   | `OPENAI_API_KEY` |
+| QuickChart    | chart, graph, bar, pie       | (included)       |
+| Mermaid       | flowchart, diagram, sequence | (included)       |
+| QR            | qr code, barcode             | (included)       |
+| Screenshot    | screenshot, capture          | (included)       |
 
 ## Transform Operations
 
-After generating, transform images with:
+With MCP enabled, transform images:
 
 - `resize` - Scale to specific dimensions
 - `blur` - Apply Gaussian blur
@@ -170,7 +176,6 @@ After generating, transform images with:
 - **[Commands](https://floimg.com/docs/claude-code/commands)** - Slash command reference
 - **[Agent](https://floimg.com/docs/claude-code/agent)** - Image Architect agent
 - **[Skills](https://floimg.com/docs/claude-code/skills)** - Auto-discovery behavior
-- **[Examples](https://floimg.com/docs/mcp/examples)** - Usage examples
 
 ## Links
 

@@ -1,6 +1,6 @@
 ---
 description: Generate a QR code for a URL, text, or data
-allowed-tools: mcp__floimg__generate_image, mcp__floimg__save_image
+allowed-tools: Bash
 ---
 
 # QR Code Generation
@@ -9,76 +9,47 @@ Generate a QR code for: "$ARGUMENTS"
 
 ## Instructions
 
-1. **Extract the content** to encode:
+1. **Extract the content** to encode from the user's request:
    - URL (https://...)
    - Plain text
-   - Contact info (vCard)
-   - WiFi credentials
+   - WiFi credentials (format: `WIFI:T:WPA;S:NetworkName;P:Password;;`)
+   - Contact info, email, phone, etc.
 
-2. **Call `generate_image`** with:
-   - `intent`: "QR code for [content]"
-   - `params` (optional):
-     - `text`: Content to encode (if not in intent)
-     - `width`: Size in pixels (default 300)
-     - `errorCorrectionLevel`: L, M, Q, H (default M)
-     - `margin`: Quiet zone modules (default 4)
+2. **Run the floimg CLI** to generate the QR code:
 
-3. **Report the result**:
-   - Image path
-   - What content is encoded
-   - Options for resizing or cloud upload
-
-## Parameters
-
-| Param                  | Description                       | Default       |
-| ---------------------- | --------------------------------- | ------------- |
-| `text`                 | Content to encode                 | (from intent) |
-| `width`                | Size in pixels                    | 300           |
-| `errorCorrectionLevel` | L (7%), M (15%), Q (25%), H (30%) | M             |
-| `margin`               | Quiet zone size                   | 4             |
-
-## Error Correction Levels
-
-| Level | Recovery | Use When                     |
-| ----- | -------- | ---------------------------- |
-| L     | 7%       | Clean environments, max data |
-| M     | 15%      | General use (recommended)    |
-| Q     | 25%      | Some expected damage         |
-| H     | 30%      | Logos/images will overlay    |
-
-## Example Calls
-
-**Simple URL**:
-
-```json
-{
-  "intent": "QR code for https://floimg.com"
-}
+```bash
+npx -y @teamflojo/floimg qr "CONTENT_HERE" -o ./qr-output.png
 ```
 
-**High resolution with max error correction**:
+**Optional flags:**
 
-```json
-{
-  "intent": "QR code",
-  "params": {
-    "text": "https://floimg.com/getting-started",
-    "width": 500,
-    "errorCorrectionLevel": "H"
-  }
-}
+- `--width 500` - Size in pixels (default 300)
+- `--error-correction H` - Error correction level: L, M, Q, H (default M)
+- `--format svg` - Output format: png or svg
+
+3. **Report the result** to the user:
+   - Confirm the file path where the QR code was saved
+   - Mention what content is encoded
+   - Offer to resize or save to a different location if needed
+
+## Examples
+
+**Simple URL:**
+
+```bash
+npx -y @teamflojo/floimg qr "https://floimg.com" -o ./qr-floimg.png
 ```
 
-**WiFi credentials**:
+**WiFi credentials:**
 
-```json
-{
-  "intent": "QR code",
-  "params": {
-    "text": "WIFI:T:WPA;S:MyNetwork;P:MyPassword;;",
-    "width": 400
-  }
-}
+```bash
+npx -y @teamflojo/floimg qr "WIFI:T:WPA;S:MyNetwork;P:MyPassword;;" -o ./wifi-qr.png
+```
+
+**High resolution with max error correction:**
+
+```bash
+npx -y @teamflojo/floimg qr "https://floimg.com" --width 500 --error-correction H -o ./qr-large.png
 ```
 
 ## Content Types
@@ -88,7 +59,15 @@ Generate a QR code for: "$ARGUMENTS"
 | URL        | `https://example.com`                   |
 | Plain text | Any text string                         |
 | WiFi       | `WIFI:T:WPA;S:NetworkName;P:Password;;` |
-| vCard      | `BEGIN:VCARD...END:VCARD`               |
 | Email      | `mailto:user@example.com`               |
 | Phone      | `tel:+1234567890`                       |
 | SMS        | `sms:+1234567890?body=Hello`            |
+
+## Error Correction Levels
+
+| Level | Recovery | Use When                     |
+| ----- | -------- | ---------------------------- |
+| L     | 7%       | Clean environments, max data |
+| M     | 15%      | General use (recommended)    |
+| Q     | 25%      | Some expected damage         |
+| H     | 30%      | Logos/images will overlay    |

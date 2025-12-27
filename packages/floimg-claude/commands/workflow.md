@@ -1,6 +1,6 @@
 ---
 description: Execute a multi-step image workflow (generate, transform, save pipeline)
-allowed-tools: mcp__floimg__generate_image, mcp__floimg__transform_image, mcp__floimg__save_image, mcp__floimg__run_pipeline
+allowed-tools: mcp__floimg__generate_image, mcp__floimg__transform_image, mcp__floimg__save_image, mcp__floimg__run_pipeline, Bash
 ---
 
 # Image Workflow
@@ -9,28 +9,43 @@ Execute a multi-step image workflow: "$ARGUMENTS"
 
 ## Instructions
 
-1. **Parse the workflow** into discrete steps:
-   - **Generate**: What image to create (AI, chart, diagram, QR, screenshot)
-   - **Transform**: What modifications (resize, blur, caption, etc.)
-   - **Save**: Where to store (local path or cloud)
+### If MCP tools are available (preferred)
 
-2. **Use `run_pipeline`** for efficient multi-step execution:
+Use `run_pipeline` for efficient multi-step execution:
 
-   ```json
-   {
-     "steps": [
-       { "generate": { "intent": "...", "params": {...} } },
-       { "transform": { "operation": "resize", "params": { "width": 800 } } },
-       { "transform": { "operation": "addCaption", "params": { "text": "...", "position": "bottom" } } },
-       { "save": { "destination": "s3://bucket/output.png" } }
-     ]
-   }
-   ```
+```json
+{
+  "steps": [
+    { "generate": { "intent": "...", "params": {...} } },
+    { "transform": { "operation": "resize", "params": { "width": 800 } } },
+    { "transform": { "operation": "addCaption", "params": { "text": "...", "position": "bottom" } } },
+    { "save": { "destination": "s3://bucket/output.png" } }
+  ]
+}
+```
 
-3. **Report results**:
-   - Each step's output
-   - Final imageId
-   - Final save location
+Or chain individual tools for more control:
+
+1. `generate_image` → returns `imageId`
+2. `transform_image` with `imageId` → returns new `imageId`
+3. `save_image` with final `imageId`
+
+### If MCP is not available
+
+Inform the user: **"Multi-step workflows work best with MCP for session state and iteration. Restart Claude Code to enable the floimg MCP server."**
+
+For simple sequential operations, CLI can work but requires temp files:
+
+```bash
+# Step 1: Generate
+npx -y @teamflojo/floimg generate --generator openai --prompt "hero image" -o /tmp/step1.png
+
+# Step 2: Transform
+npx -y @teamflojo/floimg resize /tmp/step1.png 1200x630 -o /tmp/step2.png
+
+# Step 3: Save to cloud
+npx -y @teamflojo/floimg save /tmp/step2.png s3://bucket/hero.png
+```
 
 ## Transform Operations
 
@@ -49,7 +64,7 @@ Execute a multi-step image workflow: "$ARGUMENTS"
 
 ## Common Workflow Patterns
 
-### Social Media Ready
+### Social Media Ready (MCP)
 
 ```json
 {
@@ -67,7 +82,7 @@ Execute a multi-step image workflow: "$ARGUMENTS"
 }
 ```
 
-### Thumbnail Generation
+### Thumbnail Generation (MCP)
 
 ```json
 {
@@ -85,21 +100,22 @@ Execute a multi-step image workflow: "$ARGUMENTS"
 }
 ```
 
-### Branded Watermark
+### Iterative Refinement (MCP session state)
 
-```json
-{
-  "steps": [
-    { "generate": { "intent": "chart showing..." } },
-    {
-      "transform": {
-        "operation": "addText",
-        "params": { "text": "floimg.com", "x": 10, "y": 10, "size": 14, "color": "#666" }
-      }
-    },
-    { "save": { "destination": "./charts/branded.png" } }
-  ]
-}
+```
+User: "Create a hero image for my AI startup"
+→ generate_image(...) → imageId: "img_001"
+
+User: "Make it more vibrant"
+→ transform_image({ imageId: "img_001", operation: "modulate", params: { saturation: 1.3 } })
+→ imageId: "img_002"
+
+User: "Add our tagline at the bottom"
+→ transform_image({ imageId: "img_002", operation: "addCaption", params: { text: "AI for Everyone" } })
+→ imageId: "img_003"
+
+User: "Perfect, save it"
+→ save_image({ imageId: "img_003", destination: "./hero.png" })
 ```
 
 ## Save Destinations
@@ -111,9 +127,11 @@ Execute a multi-step image workflow: "$ARGUMENTS"
 | R2     | `r2://bucket-name/path/image.png`     |
 | Tigris | `tigris://bucket-name/path/image.png` |
 
-## Tips
+## Why MCP for Workflows
 
-- **Order matters**: Resize before adding text/caption for best quality
-- **Use imageId**: Chain operations without re-uploading
-- **Batch similar**: Generate multiple images, then transform together
-- **Cloud last**: Save to cloud as final step after all transforms
+- **Session state**: `imageId` references without file juggling
+- **Iteration**: Refine results without re-generating
+- **Efficiency**: Images stay in memory between transforms
+- **Natural language**: Describe what you want, floimg plans the steps
+
+For simple one-shot commands, use `/floimg:chart`, `/floimg:qr`, etc. (they work without MCP).
