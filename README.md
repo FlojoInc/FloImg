@@ -1,22 +1,34 @@
 # FloImg
 
-> Universal image workflow engine for developers and AI agents
+> Composable image workflow engine — any source, any transforms, any destination
 
 [![npm version](https://img.shields.io/npm/v/@teamflojo/floimg.svg?style=flat)](https://www.npmjs.com/package/@teamflojo/floimg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/jcczptnX)
 
-**FloImg** provides three core operations—generate, transform, save—that work consistently across JavaScript, CLI, YAML, and MCP.
+**FloImg** unifies image generation, transformation, and delivery into composable pipelines. Whether you're generating AI images, resizing for social media, or building complex multi-step workflows, FloImg handles it through one consistent interface.
 
 ## Why FloImg?
 
-| Challenge                             | Solution                                    |
-| ------------------------------------- | ------------------------------------------- |
-| **LLMs are non-deterministic**        | Deterministic execution for precise results |
-| **Image libraries are fragmented**    | Unified API across all generators           |
-| **AI agents need image capabilities** | MCP integration + Claude Code plugin        |
+FloImg solves three core problems:
 
-Generate AI images with DALL-E, create charts with Chart.js, build diagrams with Mermaid, and chain them all together in pipelines—through one consistent interface.
+### The Regeneration Problem
+
+When you ask ChatGPT/DALL-E to modify an image, it regenerates—it doesn't edit pixels. "Change the colors" might give you a completely different composition. FloImg applies **deterministic transforms**: adjust hue mathematically, guaranteed to preserve everything else.
+
+### The Tool Fragmentation Problem
+
+People wrangle multiple apps: remove.bg, Photoshop, Figma, format converters, cloud upload services. Each requires learning, signing up, downloading files. FloImg consolidates into one pipeline.
+
+### Better Than Glue Code
+
+FloImg isn't just integration code—it's accessible through multiple modalities: visual builder (FloImg Studio), natural language (Claude Code), SDK/CLI, MCP for AI agents, YAML for config. Use whichever fits how you think.
+
+| Workflow Type         | Example                                                           |
+| --------------------- | ----------------------------------------------------------------- |
+| **AI + Professional** | Generate with DALL-E → resize for OG → add caption → upload to S3 |
+| **Purely Creative**   | AI generate → AI refine → AI variations                           |
+| **Purely Practical**  | Chart → resize → format convert → CDN                             |
 
 > **[Full Documentation →](https://floimg.com/docs)**
 
@@ -32,17 +44,16 @@ Generate AI images with DALL-E, create charts with Chart.js, build diagrams with
 ## Try It Now (No Install Required)
 
 ```bash
-# Generate a QR code
-npx @teamflojo/floimg qr "https://floimg.com" -o qr.png
-
-# Create a bar chart
-npx @teamflojo/floimg chart bar --labels "Q1,Q2,Q3,Q4" --values "10,20,30,40" -o chart.png
-
-# Resize an image
-npx @teamflojo/floimg resize photo.jpg 800x600 -o thumbnail.jpg
-
-# Convert format
+# Resize and convert for social media
+npx @teamflojo/floimg resize hero.png 1200x630 -o og-image.png
 npx @teamflojo/floimg convert image.png -o image.webp
+
+# Add captions or watermarks
+npx @teamflojo/floimg caption image.png "© 2025 Acme Inc" -o watermarked.png
+
+# Generate charts, diagrams, QR codes
+npx @teamflojo/floimg chart bar --labels "Q1,Q2,Q3,Q4" --values "10,20,30,40" -o chart.png
+npx @teamflojo/floimg qr "https://floimg.com" -o qr.png
 
 # Interactive mode - see all options
 npx @teamflojo/floimg
@@ -60,10 +71,10 @@ npm install -g @teamflojo/floimg-claude
 
 Then just talk to Claude:
 
-- _"Create a bar chart showing quarterly revenue"_
-- _"Generate a QR code for my website"_
-- _"Take a screenshot of github.com"_
-- _"Resize this image to 800x600 and add a watermark"_
+- _"Create a hero image for my blog, resize to 1200x630, and add a caption"_
+- _"Generate a product mockup with a subtle watermark"_
+- _"Resize this image to 800x600 and upload to S3"_
+- _"Create a bar chart of quarterly revenue"_
 
 The plugin includes slash commands, an Image Architect agent, and auto-discovery for image tasks.
 

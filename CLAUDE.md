@@ -1,12 +1,42 @@
 # floimg - Claude Code Quick Reference
 
-Universal image workflow engine for developers and AI agents.
+Composable image workflow engine — any source, any transforms, any destination.
+
+## What FloImg Is
+
+**FloImg is a composable workflow engine** that solves three core problems:
+
+### 1. The Regeneration Problem
+
+When you ask ChatGPT/DALL-E to modify an image, it regenerates—it doesn't edit pixels. "Change the colors" might give you a different composition. FloImg applies **deterministic transforms**: adjust hue mathematically, guaranteed to preserve everything else.
+
+### 2. The Tool Fragmentation Problem
+
+People wrangle remove.bg, Photoshop, Figma, format converters, cloud services. Each requires learning and sign-ups. FloImg consolidates into one pipeline.
+
+### 3. Better Than Glue Code
+
+FloImg isn't just integration code—it's accessible through multiple modalities: visual builder, natural language, SDK/CLI, MCP, YAML. Use whichever fits how you think.
+
+### The Pipeline
+
+```
+Any source → Any transforms → Any destination
+```
+
+| Workflow Type     | Example                                      |
+| ----------------- | -------------------------------------------- |
+| AI + Professional | Generate with DALL-E → resize → caption → S3 |
+| Purely Creative   | AI generate → AI refine → variations         |
+| Purely Practical  | Chart → resize → format convert → CDN        |
+
+**Lead with AI image workflows** in examples, not charts/diagrams/QR.
 
 ## Project Overview
 
 - **Type**: Open-source monorepo
 - **Stack**: TypeScript, pnpm workspaces
-- **Packages**: `packages/*` - Core library + 6 plugins (npm @teamflojo/\*)
+- **Packages**: `packages/*` - Core library + plugins (npm @teamflojo/\*)
 - **Apps**: `apps/studio/*` - Visual workflow builder (React 19, Fastify 5)
 
 ## Git Conventions
