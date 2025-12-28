@@ -144,6 +144,16 @@ export AWS_SECRET_ACCESS_KEY=...
 export S3_BUCKET=my-bucket
 ```
 
+## Security
+
+Your API keys are used locally by the FloImg MCP server. They are not transmitted to Anthropic—only the results of operations (file paths, success messages) are returned to Claude.
+
+**Best practices:**
+
+- Use environment variables for API keys (not CLI arguments or prompts)
+- Never paste API keys directly in conversation
+- See the [Security Guide](https://floimg.com/docs/security) for detailed information
+
 ## Image Architect Agent
 
 A specialized agent for complex image tasks:
