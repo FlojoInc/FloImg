@@ -121,6 +121,26 @@ vault/
 3. **Evergreen docs have no temporal language** - No "will", "recently", "soon"
 4. **Link GitHub Issues to vault tasks** - Vault is source of truth, GH is public interface
 
+## Releases
+
+Packages in `packages/*` are published to npm as `@teamflojo/*`. After making changes:
+
+1. **Check if a release is needed** - Any runtime behavior change in a published package requires a release
+2. **Version bump**:
+   - Patch (0.0.x): Bug fixes, type fixes that affect runtime
+   - Minor (0.x.0): New features, non-breaking additions
+   - Major (x.0.0): Breaking API changes
+3. **Release process**:
+   ```bash
+   # Bump version in package.json
+   # Commit: chore(package-name): release vX.Y.Z
+   # Tag: @teamflojo/package-name@X.Y.Z
+   # Push with tags
+   # Publish: cd packages/package-name && pnpm publish --access public
+   ```
+
+**Proactive rule**: When fixing bugs in published packages, always check if a patch release is needed before closing out the work.
+
 ## Plugin Development
 
 See `vault/architecture/Monorepo-Guide.md` for plugin creation guide. Quick pattern:
