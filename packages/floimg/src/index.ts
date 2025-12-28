@@ -3,7 +3,9 @@ import { ShapesProvider } from "./providers/svg/index.js";
 import { SharpTransformProvider } from "./providers/transform/index.js";
 import FsSaveProvider from "./providers/save/FsSaveProvider.js";
 import S3SaveProvider from "./providers/save/S3SaveProvider.js";
+import { FluentBuilder, createFluent } from "./core/fluent.js";
 import type { FloimgConfig } from "./core/types.js";
+import type { FluentSource } from "./core/fluent.js";
 
 // Export types
 export type {
@@ -114,6 +116,34 @@ export function createClient(config: FloimgConfig = {}): FloImg {
 
 // Export the client class
 export { FloImg };
+
+// Export fluent API
+export { FluentBuilder, createFluent };
+export type { FluentSource };
+
+/**
+ * Pre-configured fluent API using a default client
+ *
+ * For simple use cases where you just need the built-in generators and transforms.
+ * For advanced configuration (AI providers, cloud storage), use createClient() instead.
+ *
+ * @example
+ * ```typescript
+ * import { floimg } from '@teamflojo/floimg';
+ *
+ * // Simple transform workflow
+ * await floimg
+ *   .from('./input.png')
+ *   .transform('resize', { width: 800 })
+ *   .to('./output.png');
+ *
+ * // Generate with built-in shapes
+ * await floimg
+ *   .generate('shapes', { shape: 'circle', width: 100, height: 100 })
+ *   .to('./circle.svg');
+ * ```
+ */
+export const floimg = createFluent(createClient());
 
 // Default export
 export default createClient;

@@ -237,9 +237,19 @@ export class FloImg {
     const variables = new Map<string, ImageBlob | DataBlob | SaveResult>();
     const concurrency = pipeline.concurrency ?? Infinity;
 
+    // Pre-populate with initial variables (e.g., uploaded images from Studio)
+    const preSatisfied = new Set<string>();
+    if (pipeline.initialVariables) {
+      for (const [key, value] of Object.entries(pipeline.initialVariables)) {
+        variables.set(key, value);
+        preSatisfied.add(key);
+        this.logger.debug(`Loaded initial variable: ${key}`);
+      }
+    }
+
     // Build dependency graph and compute execution waves
     const nodes = buildDependencyGraph(pipeline.steps);
-    const waves = computeExecutionWaves(nodes);
+    const waves = computeExecutionWaves(nodes, preSatisfied);
 
     this.logger.debug(`Pipeline has ${waves.length} execution waves, concurrency: ${concurrency}`);
 
