@@ -127,11 +127,60 @@ await floimg.save(resized, "./chart.png");
 // Or: await floimg.save(resized, 's3://bucket/chart.png');
 ```
 
+## Fluent API
+
+Chain operations with a clean, fluent syntax:
+
+```typescript
+import { floimg } from "@teamflojo/floimg";
+
+// Load → Transform → Save
+await floimg
+  .from("./input.png")
+  .transform("resize", { width: 800 })
+  .transform("blur", { sigma: 2 })
+  .to("./output.png");
+
+// Generate → Transform → Save to cloud
+await floimg
+  .generate("openai", { prompt: "A sunset over mountains" })
+  .transform("resize", { width: 1920 })
+  .to("s3://bucket/sunset.png");
+
+// Get the final image as a blob
+const blob = await floimg
+  .from("./photo.jpg")
+  .transform("resize", { width: 400 })
+  .transform("convert", { to: "webp" })
+  .toBlob();
+```
+
+The fluent API builds pipelines internally and executes them efficiently. For custom configurations, create your own client:
+
+```typescript
+import createClient, { createFluent } from "@teamflojo/floimg";
+import openai from "@teamflojo/floimg-openai";
+
+const client = createClient();
+client.registerGenerator(openai({ apiKey: process.env.OPENAI_API_KEY }));
+
+const myFloimg = createFluent(client);
+
+await myFloimg
+  .generate("openai", { prompt: "A forest" })
+  .transform("resize", { width: 1200 })
+  .to("./forest.png");
+```
+
 ## Three Interfaces
 
 ### SDK (TypeScript/JavaScript)
 
 ```typescript
+// Fluent API (recommended for chained operations)
+await floimg.from('./input.png').transform('resize', { width: 800 }).to('./output.png');
+
+// Imperative API (for fine-grained control)
 const chart = await floimg.generate({ generator: 'quickchart', params: {...} });
 const resized = await floimg.transform({ blob: chart, op: 'resize', params: { width: 800 } });
 await floimg.save(resized, 's3://bucket/chart.png');
