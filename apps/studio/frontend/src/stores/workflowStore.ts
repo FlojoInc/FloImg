@@ -12,6 +12,7 @@ import type {
   GalleryTemplate,
 } from "@teamflojo/floimg-studio-shared";
 import { executeWorkflow, exportYaml } from "../api/client";
+import type { StudioNode, StudioEdge } from "@teamflojo/floimg-studio-shared";
 import { useSettingsStore } from "./settingsStore";
 
 type NodeData =
@@ -109,6 +110,9 @@ interface WorkflowStore {
 
   // Export
   exportToYaml: () => Promise<string>;
+
+  // Import
+  importFromYaml: (nodes: StudioNode[], edges: StudioEdge[], name?: string) => void;
 }
 
 let nodeIdCounter = 0;
@@ -420,6 +424,53 @@ export const useWorkflowStore = create<WorkflowStore>()(
 
         const result = await exportYaml(studioNodes, studioEdges);
         return result.yaml;
+      },
+
+      importFromYaml: (studioNodes, studioEdges, name) => {
+        // Convert StudioNodes to React Flow nodes with new IDs
+        const idMap = new Map<string, string>();
+
+        const nodes: Node<NodeData>[] = studioNodes.map((studioNode) => {
+          const newId = generateNodeId();
+          idMap.set(studioNode.id, newId);
+
+          return {
+            id: newId,
+            type: studioNode.type,
+            position: studioNode.position,
+            data: studioNode.data as NodeData,
+          };
+        });
+
+        // Convert edges with mapped IDs
+        const edges: Edge[] = studioEdges.map((studioEdge) => {
+          const newSource = idMap.get(studioEdge.source) || studioEdge.source;
+          const newTarget = idMap.get(studioEdge.target) || studioEdge.target;
+
+          return {
+            id: `edge_${newSource}_${newTarget}`,
+            source: newSource,
+            target: newTarget,
+          };
+        });
+
+        set({
+          nodes,
+          edges,
+          selectedNodeId: null,
+          currentTemplateId: null,
+          previewVisible: {},
+          activeWorkflowId: null,
+          activeWorkflowName: name || "Imported Workflow",
+          hasUnsavedChanges: true,
+          execution: {
+            status: "idle",
+            imageIds: [],
+            previews: {},
+            dataOutputs: {},
+            nodeStatus: {},
+          },
+        });
       },
 
       // Workflow persistence methods

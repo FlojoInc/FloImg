@@ -3,6 +3,8 @@ import { useWorkflowStore } from "../stores/workflowStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { getImageUrl } from "../api/client";
 import { generateJavaScript } from "../utils/codeGenerator";
+import { ImportModal } from "./ImportModal";
+import type { StudioNode, StudioEdge } from "@teamflojo/floimg-studio-shared";
 
 type ExportTab = "yaml" | "javascript";
 
@@ -30,6 +32,7 @@ export function Toolbar({
   const execution = useWorkflowStore((s) => s.execution);
   const execute = useWorkflowStore((s) => s.execute);
   const exportToYaml = useWorkflowStore((s) => s.exportToYaml);
+  const importFromYaml = useWorkflowStore((s) => s.importFromYaml);
   const nodes = useWorkflowStore((s) => s.nodes);
   const edges = useWorkflowStore((s) => s.edges);
   const openSettings = useSettingsStore((s) => s.openSettings);
@@ -42,6 +45,7 @@ export function Toolbar({
   const setActiveWorkflowName = useWorkflowStore((s) => s.setActiveWorkflowName);
 
   const [showExport, setShowExport] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [exportTab, setExportTab] = useState<ExportTab>("yaml");
   const [yamlContent, setYamlContent] = useState("");
   const [jsContent, setJsContent] = useState("");
@@ -109,6 +113,15 @@ export function Toolbar({
     const content = exportTab === "yaml" ? yamlContent : jsContent;
     navigator.clipboard.writeText(content);
   };
+
+  const handleImport = useCallback(
+    (importedNodes: StudioNode[], importedEdges: StudioEdge[], name?: string) => {
+      importFromYaml(importedNodes, importedEdges, name);
+      setNotification("Workflow imported!");
+      setTimeout(() => setNotification(null), 2000);
+    },
+    [importFromYaml]
+  );
 
   return (
     <>
@@ -223,6 +236,13 @@ export function Toolbar({
                 d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
               />
             </svg>
+          </button>
+
+          <button
+            onClick={() => setShowImport(true)}
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-zinc-200 bg-white dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 rounded-md hover:bg-gray-50 dark:hover:bg-zinc-600"
+          >
+            Import
           </button>
 
           <button
@@ -392,6 +412,13 @@ export function Toolbar({
           </div>
         </div>
       )}
+
+      {/* Import modal */}
+      <ImportModal
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        onImport={handleImport}
+      />
     </>
   );
 }

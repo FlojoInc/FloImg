@@ -3,6 +3,7 @@ import { nodesRoutes } from "./nodes.js";
 import { executeRoutes } from "./execute.js";
 import { imagesRoutes } from "./images.js";
 import { uploadsRoutes } from "./uploads.js";
+import { importRoutes } from "./import.js";
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Health check
@@ -21,4 +22,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Upload routes
   await fastify.register(uploadsRoutes, { prefix: "/api/uploads" });
+
+  // Import routes
+  await fastify.register(importRoutes, { prefix: "/api" });
 }

@@ -1,4 +1,9 @@
-import type { NodeDefinition, StudioNode, StudioEdge, ImageMetadata } from "@teamflojo/floimg-studio-shared";
+import type {
+  NodeDefinition,
+  StudioNode,
+  StudioEdge,
+  ImageMetadata,
+} from "@teamflojo/floimg-studio-shared";
 
 const API_BASE = "/api";
 
@@ -145,4 +150,34 @@ export function getUploadBlobUrl(id: string): string {
 // Input nodes
 export async function getInputNodes(): Promise<NodeDefinition[]> {
   return fetchJson(`${API_BASE}/nodes/inputs`);
+}
+
+// Import
+export interface ImportResult {
+  success: boolean;
+  nodes: StudioNode[];
+  edges: StudioEdge[];
+  name: string;
+  error?: string;
+  line?: number;
+  column?: number;
+}
+
+export interface ImportValidationResult {
+  valid: boolean;
+  errors: Array<{ message: string; line?: number; column?: number }>;
+}
+
+export async function importYaml(yaml: string): Promise<ImportResult> {
+  return fetchJson(`${API_BASE}/import`, {
+    method: "POST",
+    body: JSON.stringify({ yaml }),
+  });
+}
+
+export async function validateYaml(yaml: string): Promise<ImportValidationResult> {
+  return fetchJson(`${API_BASE}/import/validate`, {
+    method: "POST",
+    body: JSON.stringify({ yaml }),
+  });
 }
