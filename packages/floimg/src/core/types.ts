@@ -693,6 +693,12 @@ export interface Pipeline {
   concurrency?: number;
   /** Output directory for intermediate files */
   outDir?: string;
+  /**
+   * Pre-loaded variables available before pipeline execution starts.
+   * Use this to inject external data (e.g., uploaded images) that steps can reference.
+   * Keys are variable names that steps can use in their `in` field.
+   */
+  initialVariables?: Record<string, ImageBlob | DataBlob>;
 }
 
 /**
