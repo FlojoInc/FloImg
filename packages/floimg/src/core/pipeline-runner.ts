@@ -59,6 +59,16 @@ export function buildDependencyGraph(steps: PipelineStep[]): StepNode[] {
       if (step.out) {
         outputs.push(step.out);
       }
+    } else if (step.kind === "vision") {
+      // Vision steps depend on their input image
+      dependencies.add(step.in);
+      outputs.push(step.out);
+    } else if (step.kind === "text") {
+      // Text steps may optionally depend on context from previous step
+      if (step.in) {
+        dependencies.add(step.in);
+      }
+      outputs.push(step.out);
     }
 
     return { index, step, dependencies, outputs };
@@ -74,12 +84,16 @@ export function buildDependencyGraph(steps: PipelineStep[]): StepNode[] {
  * - Waves are executed sequentially
  *
  * @param nodes - Step nodes with dependency information
+ * @param preSatisfied - Optional set of variable names that are already available (e.g., from initialVariables)
  * @returns Array of execution waves
  * @throws Error if circular dependency is detected
  */
-export function computeExecutionWaves(nodes: StepNode[]): ExecutionWave[] {
+export function computeExecutionWaves(
+  nodes: StepNode[],
+  preSatisfied?: Set<string>
+): ExecutionWave[] {
   const waves: ExecutionWave[] = [];
-  const completed = new Set<string>(); // Variables that have been produced
+  const completed = new Set<string>(preSatisfied); // Start with pre-satisfied variables
   const remaining = new Set(nodes);
 
   while (remaining.size > 0) {
@@ -87,9 +101,7 @@ export function computeExecutionWaves(nodes: StepNode[]): ExecutionWave[] {
 
     for (const node of remaining) {
       // Check if all dependencies are satisfied
-      const satisfied = [...node.dependencies].every((dep) =>
-        completed.has(dep)
-      );
+      const satisfied = [...node.dependencies].every((dep) => completed.has(dep));
       if (satisfied) {
         wave.push(node);
       }
