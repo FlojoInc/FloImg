@@ -2,6 +2,16 @@
 
 Mermaid diagram generator for floimg - create flowcharts, sequence diagrams, class diagrams, and more using Mermaid syntax.
 
+## Standing on the Shoulders of Giants
+
+This plugin is a thin wrapper around [Mermaid.js](https://mermaid.js.org/). We don't abstract or limit the underlying library—your diagram syntax passes through directly.
+
+- **Full Mermaid power**: Every diagram type and configuration option works
+- **Native syntax**: Use Mermaid syntax, not a FloImg abstraction
+- **Their docs are your docs**: See [Mermaid documentation](https://mermaid.js.org/intro/)
+
+FloImg orchestrates the workflow (generate → transform → save). Mermaid does what it does best.
+
 ## Installation
 
 ```bash
@@ -13,14 +23,14 @@ This will install Mermaid CLI (~50MB including dependencies).
 ## Usage
 
 ```typescript
-import createClient from '@teamflojo/floimg';
-import mermaid from '@teamflojo/floimg-mermaid';
+import createClient from "@teamflojo/floimg";
+import mermaid from "@teamflojo/floimg-mermaid";
 
 const floimg = createClient({
   store: {
-    default: 's3',
-    s3: { region: 'us-east-1', bucket: 'my-diagrams' }
-  }
+    default: "s3",
+    s3: { region: "us-east-1", bucket: "my-diagrams" },
+  },
 });
 
 // Register the Mermaid generator
@@ -28,7 +38,7 @@ floimg.registerGenerator(mermaid());
 
 // Generate a flowchart
 const diagram = await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
     code: `
       graph TD
@@ -37,12 +47,12 @@ const diagram = await floimg.generate({
         B -->|No| D[Debug]
         D --> B
     `,
-    theme: 'dark'
-  }
+    theme: "dark",
+  },
 });
 
 // Upload to S3
-const result = await floimg.save(diagram, './output/flow.svg');
+const result = await floimg.save(diagram, "./output/flow.svg");
 console.log(result.url);
 ```
 
@@ -54,7 +64,7 @@ Mermaid supports many diagram types - all available via pass-through syntax:
 
 ```typescript
 await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
     code: `
       graph LR
@@ -62,8 +72,8 @@ await floimg.generate({
         B --> C{Decision}
         C -->|One| D[Result 1]
         C -->|Two| E[Result 2]
-    `
-  }
+    `,
+  },
 });
 ```
 
@@ -71,15 +81,15 @@ await floimg.generate({
 
 ```typescript
 await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
     code: `
       sequenceDiagram
         Alice->>John: Hello John, how are you?
         John-->>Alice: Great!
         Alice-)John: See you later!
-    `
-  }
+    `,
+  },
 });
 ```
 
@@ -87,7 +97,7 @@ await floimg.generate({
 
 ```typescript
 await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
     code: `
       classDiagram
@@ -101,8 +111,8 @@ await floimg.generate({
           +swim()
           +quack()
         }
-    `
-  }
+    `,
+  },
 });
 ```
 
@@ -110,7 +120,7 @@ await floimg.generate({
 
 ```typescript
 await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
     code: `
       stateDiagram-v2
@@ -120,8 +130,8 @@ await floimg.generate({
         Moving --> Still
         Moving --> Crash
         Crash --> [*]
-    `
-  }
+    `,
+  },
 });
 ```
 
@@ -129,15 +139,15 @@ await floimg.generate({
 
 ```typescript
 await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
     code: `
       erDiagram
         CUSTOMER ||--o{ ORDER : places
         ORDER ||--|{ LINE-ITEM : contains
         CUSTOMER }|..|{ DELIVERY-ADDRESS : uses
-    `
-  }
+    `,
+  },
 });
 ```
 
@@ -145,7 +155,7 @@ await floimg.generate({
 
 ```typescript
 await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
     code: `
       gantt
@@ -154,8 +164,8 @@ await floimg.generate({
         section Section
           A task :a1, 2024-01-01, 30d
           Another task :after a1, 20d
-    `
-  }
+    `,
+  },
 });
 ```
 
@@ -163,15 +173,15 @@ await floimg.generate({
 
 ```typescript
 await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
     code: `
       pie title Pets adopted by volunteers
         "Dogs" : 386
         "Cats" : 85
         "Rats" : 15
-    `
-  }
+    `,
+  },
 });
 ```
 
@@ -179,7 +189,7 @@ await floimg.generate({
 
 ```typescript
 await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
     code: `
       gitGraph
@@ -191,8 +201,8 @@ await floimg.generate({
         commit
         checkout main
         merge develop
-    `
-  }
+    `,
+  },
 });
 ```
 
@@ -201,28 +211,30 @@ await floimg.generate({
 ### Generator Options
 
 ```typescript
-floimg.registerGenerator(mermaid({
-  theme: 'dark',              // Default theme
-  backgroundColor: '#1a1a1a', // Default background
-  format: 'svg',              // 'svg' | 'png'
-  width: 800,                 // Default width (for PNG)
-  height: 600                 // Default height (for PNG)
-}));
+floimg.registerGenerator(
+  mermaid({
+    theme: "dark", // Default theme
+    backgroundColor: "#1a1a1a", // Default background
+    format: "svg", // 'svg' | 'png'
+    width: 800, // Default width (for PNG)
+    height: 600, // Default height (for PNG)
+  })
+);
 ```
 
 ### Per-Diagram Overrides
 
 ```typescript
 await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
-    code: '...',
-    theme: 'forest',          // Override theme
-    backgroundColor: 'transparent',
-    format: 'png',            // Generate PNG instead
+    code: "...",
+    theme: "forest", // Override theme
+    backgroundColor: "transparent",
+    format: "png", // Generate PNG instead
     width: 1200,
-    height: 800
-  }
+    height: 800,
+  },
 });
 ```
 
@@ -239,21 +251,21 @@ Pass Mermaid config object directly:
 
 ```typescript
 await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
-    code: '...',
+    code: "...",
     mermaidConfig: {
-      theme: 'base',
+      theme: "base",
       themeVariables: {
-        primaryColor: '#BB2528',
-        primaryTextColor: '#fff',
-        primaryBorderColor: '#7C0000',
-        lineColor: '#F8B229',
-        secondaryColor: '#006100',
-        tertiaryColor: '#fff'
-      }
-    }
-  }
+        primaryColor: "#BB2528",
+        primaryTextColor: "#fff",
+        primaryBorderColor: "#7C0000",
+        lineColor: "#F8B229",
+        secondaryColor: "#006100",
+        tertiaryColor: "#fff",
+      },
+    },
+  },
 });
 ```
 
@@ -273,7 +285,7 @@ Since this generator uses Mermaid syntax directly, refer to the official Mermaid
 
 ```typescript
 const architecture = await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
     code: `
       graph TB
@@ -291,9 +303,9 @@ const architecture = await floimg.generate({
         C --> D
         D --> E
     `,
-    theme: 'dark',
-    backgroundColor: 'transparent'
-  }
+    theme: "dark",
+    backgroundColor: "transparent",
+  },
 });
 ```
 
@@ -301,7 +313,7 @@ const architecture = await floimg.generate({
 
 ```typescript
 const journey = await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
     code: `
       journey
@@ -313,8 +325,8 @@ const journey = await floimg.generate({
         section Go home
           Go downstairs: 5: Me
           Sit down: 5: Me
-    `
-  }
+    `,
+  },
 });
 ```
 
@@ -322,7 +334,7 @@ const journey = await floimg.generate({
 
 ```typescript
 const mindMap = await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
     code: `
       mindmap
@@ -338,8 +350,8 @@ const mindMap = await floimg.generate({
           Upload
             S3
             Filesystem
-    `
-  }
+    `,
+  },
 });
 ```
 
@@ -350,8 +362,8 @@ const mindMap = await floimg.generate({
 ```typescript
 // Returns scalable vector graphic
 const svg = await floimg.generate({
-  generator: 'mermaid',
-  params: { code: '...', format: 'svg' }
+  generator: "mermaid",
+  params: { code: "...", format: "svg" },
 });
 ```
 
@@ -360,13 +372,13 @@ const svg = await floimg.generate({
 ```typescript
 // Returns raster image
 const png = await floimg.generate({
-  generator: 'mermaid',
+  generator: "mermaid",
   params: {
-    code: '...',
-    format: 'png',
+    code: "...",
+    format: "png",
     width: 1920,
-    height: 1080
-  }
+    height: 1080,
+  },
 });
 ```
 
@@ -381,30 +393,33 @@ const png = await floimg.generate({
 ### "Mermaid code parsing failed"
 
 Check your Mermaid syntax:
+
 ```typescript
 // ❌ Bad syntax
-code: `graph TD A -> B`
+code: `graph TD A -> B`;
 
 // ✅ Correct syntax
-code: `graph TD\n  A --> B`
+code: `graph TD\n  A --> B`;
 ```
 
 ### Diagram not rendering
 
 Ensure proper indentation and whitespace:
+
 ```typescript
 code: `
   graph TD
     A[Start] --> B[End]
-`
+`;
 ```
 
 ### Theme not applying
 
 Make sure theme name is valid:
+
 ```typescript
-theme: 'dark'  // ✅ Valid
-theme: 'blue'  // ❌ Invalid
+theme: "dark"; // ✅ Valid
+theme: "blue"; // ❌ Invalid
 ```
 
 ## Why Mermaid?

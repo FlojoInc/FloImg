@@ -2,6 +2,16 @@
 
 Stability AI integration for floimg, providing Stable Diffusion image generation and AI-powered transforms.
 
+## Standing on the Shoulders of Giants
+
+This plugin integrates with [Stability AI](https://stability.ai/) and their Stable Diffusion models. We provide a consistent FloImg interface while exposing the full power of Stability's generation and editing capabilities.
+
+- **Full Stability power**: All generation, editing, and upscaling features work
+- **Native format**: Use Stability API parameters directly
+- **Their docs are your docs**: See [Stability AI documentation](https://platform.stability.ai/docs/api-reference)
+
+FloImg orchestrates the workflow (generate → transform → save). Stability AI does what it does best.
+
 ## Installation
 
 ```bash

@@ -2,6 +2,16 @@
 
 QR code generator for floimg using the qrcode library.
 
+## Standing on the Shoulders of Giants
+
+This plugin is a thin wrapper around [qrcode](https://www.npmjs.com/package/qrcode). We don't abstract or limit the underlying library—your options pass through directly.
+
+- **Full qrcode power**: All QR code options and error correction levels work
+- **Native format**: Use qrcode options, not a FloImg abstraction
+- **Their docs are your docs**: See [qrcode documentation](https://www.npmjs.com/package/qrcode)
+
+FloImg orchestrates the workflow (generate → transform → save). The qrcode library does what it does best.
+
 ## Installation
 
 ```bash
@@ -11,24 +21,24 @@ npm install @teamflojo/floimg @teamflojo/floimg-qr
 ## Usage
 
 ```typescript
-import createClient from '@teamflojo/floimg';
-import qr from '@teamflojo/floimg-qr';
+import createClient from "@teamflojo/floimg";
+import qr from "@teamflojo/floimg-qr";
 
 const floimg = createClient();
 floimg.registerGenerator(qr());
 
 // Generate a QR code
 const qrCode = await floimg.generate({
-  generator: 'qr',
+  generator: "qr",
   params: {
-    text: 'https://github.com/bcooke/floimg',
+    text: "https://github.com/bcooke/floimg",
     width: 300,
-    errorCorrectionLevel: 'H'
-  }
+    errorCorrectionLevel: "H",
+  },
 });
 
 // Save to filesystem or S3
-const result = await floimg.save(qrCode, './output/qr-github.png');
+const result = await floimg.save(qrCode, "./output/qr-github.png");
 // Or save to S3:
 // const result = await floimg.save(qrCode, 's3://my-bucket/qr/github.png');
 console.log(result.location);
@@ -40,11 +50,11 @@ console.log(result.location);
 
 ```typescript
 const qr = await floimg.generate({
-  generator: 'qr',
+  generator: "qr",
   params: {
-    text: 'Hello World!',
-    width: 200
-  }
+    text: "Hello World!",
+    width: 200,
+  },
 });
 ```
 
@@ -52,12 +62,12 @@ const qr = await floimg.generate({
 
 ```typescript
 const qr = await floimg.generate({
-  generator: 'qr',
+  generator: "qr",
   params: {
-    text: 'https://example.com',
+    text: "https://example.com",
     width: 300,
-    errorCorrectionLevel: 'H'  // High error correction
-  }
+    errorCorrectionLevel: "H", // High error correction
+  },
 });
 ```
 
@@ -65,15 +75,15 @@ const qr = await floimg.generate({
 
 ```typescript
 const qr = await floimg.generate({
-  generator: 'qr',
+  generator: "qr",
   params: {
-    text: 'Styled QR Code',
+    text: "Styled QR Code",
     width: 400,
     color: {
-      dark: '#667eea',   // Purple
-      light: '#ffffff'   // White background
-    }
-  }
+      dark: "#667eea", // Purple
+      light: "#ffffff", // White background
+    },
+  },
 });
 ```
 
@@ -81,12 +91,12 @@ const qr = await floimg.generate({
 
 ```typescript
 const qr = await floimg.generate({
-  generator: 'qr',
+  generator: "qr",
   params: {
-    text: 'https://example.com',
-    format: 'svg',
-    width: 300
-  }
+    text: "https://example.com",
+    format: "svg",
+    width: 300,
+  },
 });
 ```
 
@@ -101,42 +111,42 @@ EMAIL:john@example.com
 END:VCARD`;
 
 const qr = await floimg.generate({
-  generator: 'qr',
+  generator: "qr",
   params: {
     text: vcard,
     width: 350,
-    errorCorrectionLevel: 'H'
-  }
+    errorCorrectionLevel: "H",
+  },
 });
 ```
 
 ### WiFi Network
 
 ```typescript
-const wifi = 'WIFI:T:WPA;S:MyNetwork;P:MyPassword;;';
+const wifi = "WIFI:T:WPA;S:MyNetwork;P:MyPassword;;";
 
 const qr = await floimg.generate({
-  generator: 'qr',
+  generator: "qr",
   params: {
     text: wifi,
-    width: 300
-  }
+    width: 300,
+  },
 });
 ```
 
 ## Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `text` | string | *required* | Text/URL to encode |
-| `width` | number | 300 | Output width in pixels |
-| `errorCorrectionLevel` | 'L'\|'M'\|'Q'\|'H' | 'M' | Error correction level |
-| `margin` | number | 4 | Margin around QR code (in modules) |
-| `color.dark` | string | '#000000' | Dark color |
-| `color.light` | string | '#ffffff' | Light/background color |
-| `format` | 'png'\|'svg' | 'png' | Output format |
-| `version` | number | auto | QR code version (1-40) |
-| `maskPattern` | number | auto | Mask pattern (0-7) |
+| Parameter              | Type               | Default    | Description                        |
+| ---------------------- | ------------------ | ---------- | ---------------------------------- |
+| `text`                 | string             | _required_ | Text/URL to encode                 |
+| `width`                | number             | 300        | Output width in pixels             |
+| `errorCorrectionLevel` | 'L'\|'M'\|'Q'\|'H' | 'M'        | Error correction level             |
+| `margin`               | number             | 4          | Margin around QR code (in modules) |
+| `color.dark`           | string             | '#000000'  | Dark color                         |
+| `color.light`          | string             | '#ffffff'  | Light/background color             |
+| `format`               | 'png'\|'svg'       | 'png'      | Output format                      |
+| `version`              | number             | auto       | QR code version (1-40)             |
+| `maskPattern`          | number             | auto       | Mask pattern (0-7)                 |
 
 ## Error Correction Levels
 
@@ -150,15 +160,17 @@ Higher error correction allows QR codes to be read even if partially damaged, bu
 ## Configuration
 
 ```typescript
-floimg.registerGenerator(qr({
-  errorCorrectionLevel: 'H',  // Default to high error correction
-  width: 400,                  // Default width
-  margin: 5,                   // Default margin
-  color: {
-    dark: '#000000',
-    light: '#ffffff'
-  }
-}));
+floimg.registerGenerator(
+  qr({
+    errorCorrectionLevel: "H", // Default to high error correction
+    width: 400, // Default width
+    margin: 5, // Default margin
+    color: {
+      dark: "#000000",
+      light: "#ffffff",
+    },
+  })
+);
 ```
 
 ## Use Cases
@@ -167,54 +179,55 @@ floimg.registerGenerator(qr({
 
 ```typescript
 const ticketData = JSON.stringify({
-  event: 'Concert',
-  seat: 'A12',
-  code: 'ABC123'
+  event: "Concert",
+  seat: "A12",
+  code: "ABC123",
 });
 
 const ticket = await floimg.generate({
-  generator: 'qr',
+  generator: "qr",
   params: {
     text: ticketData,
     width: 300,
-    errorCorrectionLevel: 'H'
-  }
+    errorCorrectionLevel: "H",
+  },
 });
 ```
 
 ### Payment QR Codes
 
 ```typescript
-const paymentUrl = 'bitcoin:1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa?amount=0.01';
+const paymentUrl = "bitcoin:1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa?amount=0.01";
 
 const payment = await floimg.generate({
-  generator: 'qr',
+  generator: "qr",
   params: {
     text: paymentUrl,
     width: 350,
-    errorCorrectionLevel: 'H'
-  }
+    errorCorrectionLevel: "H",
+  },
 });
 ```
 
 ### App Store Links
 
 ```typescript
-const appStore = 'https://apps.apple.com/app/id123456789';
+const appStore = "https://apps.apple.com/app/id123456789";
 
 const qr = await floimg.generate({
-  generator: 'qr',
+  generator: "qr",
   params: {
     text: appStore,
     width: 250,
-    margin: 6
-  }
+    margin: 6,
+  },
 });
 ```
 
 ## QR Code Library Documentation
 
 This generator uses the qrcode library directly. For advanced options:
+
 - https://github.com/soldair/node-qrcode
 - https://github.com/soldair/node-qrcode#qr-code-options
 

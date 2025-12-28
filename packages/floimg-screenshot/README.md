@@ -2,6 +2,16 @@
 
 Screenshot generator for floimg using Playwright headless browser.
 
+## Standing on the Shoulders of Giants
+
+This plugin is a thin wrapper around [Playwright](https://playwright.dev/). We don't abstract or limit the underlying library—your screenshot options pass through directly.
+
+- **Full Playwright power**: All screenshot options, viewport settings, and selectors work
+- **Native format**: Use Playwright options, not a FloImg abstraction
+- **Their docs are your docs**: See [Playwright documentation](https://playwright.dev/docs/api/class-page#page-screenshot)
+
+FloImg orchestrates the workflow (generate → transform → save). Playwright does what it does best.
+
 ## Installation
 
 ```bash
@@ -13,14 +23,14 @@ This will automatically install Playwright and download Chromium (~200MB).
 ## Usage
 
 ```typescript
-import createClient from '@teamflojo/floimg';
-import screenshot from '@teamflojo/floimg-screenshot';
+import createClient from "@teamflojo/floimg";
+import screenshot from "@teamflojo/floimg-screenshot";
 
 const floimg = createClient({
   store: {
-    default: 's3',
-    s3: { region: 'us-east-1', bucket: 'my-screenshots' }
-  }
+    default: "s3",
+    s3: { region: "us-east-1", bucket: "my-screenshots" },
+  },
 });
 
 // Register the screenshot generator
@@ -28,16 +38,16 @@ floimg.registerGenerator(screenshot());
 
 // Screenshot a website
 const site = await floimg.generate({
-  generator: 'screenshot',
+  generator: "screenshot",
   params: {
-    url: 'https://example.com',
+    url: "https://example.com",
     width: 1920,
-    height: 1080
-  }
+    height: 1080,
+  },
 });
 
 // Upload to S3
-const result = await floimg.save(site, './output/example.png');
+const result = await floimg.save(site, "./output/example.png");
 console.log(result.url);
 ```
 
@@ -47,13 +57,13 @@ console.log(result.url);
 
 ```typescript
 await floimg.generate({
-  generator: 'screenshot',
+  generator: "screenshot",
   params: {
-    url: 'https://github.com/bcooke/floimg',
+    url: "https://github.com/bcooke/floimg",
     width: 1280,
     height: 800,
-    fullPage: true  // Capture entire page
-  }
+    fullPage: true, // Capture entire page
+  },
 });
 ```
 
@@ -63,7 +73,7 @@ Perfect for generating images from HTML/CSS:
 
 ```typescript
 await floimg.generate({
-  generator: 'screenshot',
+  generator: "screenshot",
   params: {
     html: `
       <div style="padding: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
@@ -72,8 +82,8 @@ await floimg.generate({
       </div>
     `,
     width: 800,
-    height: 600
-  }
+    height: 600,
+  },
 });
 ```
 
@@ -83,13 +93,13 @@ Capture specific elements:
 
 ```typescript
 await floimg.generate({
-  generator: 'screenshot',
+  generator: "screenshot",
   params: {
-    url: 'https://example.com',
-    selector: '#main-content',  // CSS selector
+    url: "https://example.com",
+    selector: "#main-content", // CSS selector
     width: 1920,
-    height: 1080
-  }
+    height: 1080,
+  },
 });
 ```
 
@@ -99,12 +109,12 @@ Wait for dynamic content to load:
 
 ```typescript
 await floimg.generate({
-  generator: 'screenshot',
+  generator: "screenshot",
   params: {
-    url: 'https://example.com/dashboard',
-    waitFor: '.chart-loaded',  // Wait for this selector
-    delay: 1000  // Additional 1s delay
-  }
+    url: "https://example.com/dashboard",
+    waitFor: ".chart-loaded", // Wait for this selector
+    delay: 1000, // Additional 1s delay
+  },
 });
 ```
 
@@ -112,13 +122,13 @@ await floimg.generate({
 
 ```typescript
 await floimg.generate({
-  generator: 'screenshot',
+  generator: "screenshot",
   params: {
-    url: 'https://example.com',
+    url: "https://example.com",
     width: 1280,
     height: 720,
-    deviceScaleFactor: 2  // 2x resolution
-  }
+    deviceScaleFactor: 2, // 2x resolution
+  },
 });
 ```
 
@@ -127,15 +137,17 @@ await floimg.generate({
 ### Generator Options
 
 ```typescript
-floimg.registerGenerator(screenshot({
-  persistent: true,        // Reuse browser instance (faster)
-  defaultWidth: 1920,
-  defaultHeight: 1080,
-  launchOptions: {
-    headless: true,
-    args: ['--no-sandbox']  // Browser launch args
-  }
-}));
+floimg.registerGenerator(
+  screenshot({
+    persistent: true, // Reuse browser instance (faster)
+    defaultWidth: 1920,
+    defaultHeight: 1080,
+    launchOptions: {
+      headless: true,
+      args: ["--no-sandbox"], // Browser launch args
+    },
+  })
+);
 ```
 
 ### Persistent Browser Mode
@@ -147,28 +159,28 @@ const screenshotGen = screenshot({ persistent: true });
 floimg.registerGenerator(screenshotGen);
 
 // Take multiple screenshots - browser stays open
-await floimg.generate({ generator: 'screenshot', params: { url: 'https://site1.com' } });
-await floimg.generate({ generator: 'screenshot', params: { url: 'https://site2.com' } });
-await floimg.generate({ generator: 'screenshot', params: { url: 'https://site3.com' } });
+await floimg.generate({ generator: "screenshot", params: { url: "https://site1.com" } });
+await floimg.generate({ generator: "screenshot", params: { url: "https://site2.com" } });
+await floimg.generate({ generator: "screenshot", params: { url: "https://site3.com" } });
 
 // Browser closes when process exits
 ```
 
 ## Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `url` | string | - | URL to screenshot (required if no html) |
-| `html` | string | - | HTML to render (required if no url) |
-| `selector` | string | - | CSS selector to screenshot |
-| `width` | number | 1280 | Viewport width |
-| `height` | number | 720 | Viewport height |
-| `fullPage` | boolean | false | Capture full scrollable page |
-| `waitFor` | string | - | Selector to wait for |
-| `delay` | number | - | Additional delay in ms |
-| `deviceScaleFactor` | number | 1 | Device scale factor (for retina) |
-| `format` | 'png' \| 'jpeg' | 'png' | Output format |
-| `quality` | number | 90 | JPEG quality (0-100) |
+| Parameter           | Type            | Default | Description                             |
+| ------------------- | --------------- | ------- | --------------------------------------- |
+| `url`               | string          | -       | URL to screenshot (required if no html) |
+| `html`              | string          | -       | HTML to render (required if no url)     |
+| `selector`          | string          | -       | CSS selector to screenshot              |
+| `width`             | number          | 1280    | Viewport width                          |
+| `height`            | number          | 720     | Viewport height                         |
+| `fullPage`          | boolean         | false   | Capture full scrollable page            |
+| `waitFor`           | string          | -       | Selector to wait for                    |
+| `delay`             | number          | -       | Additional delay in ms                  |
+| `deviceScaleFactor` | number          | 1       | Device scale factor (for retina)        |
+| `format`            | 'png' \| 'jpeg' | 'png'   | Output format                           |
+| `quality`           | number          | 90      | JPEG quality (0-100)                    |
 
 ## Examples
 
@@ -178,7 +190,7 @@ Generate OG images from HTML:
 
 ```typescript
 const ogImage = await floimg.generate({
-  generator: 'screenshot',
+  generator: "screenshot",
   params: {
     html: `
       <html>
@@ -209,8 +221,8 @@ const ogImage = await floimg.generate({
       </html>
     `,
     width: 1200,
-    height: 630
-  }
+    height: 630,
+  },
 });
 ```
 
@@ -220,14 +232,14 @@ Capture a live dashboard:
 
 ```typescript
 const dashboard = await floimg.generate({
-  generator: 'screenshot',
+  generator: "screenshot",
   params: {
-    url: 'https://internal-dashboard.company.com',
+    url: "https://internal-dashboard.company.com",
     fullPage: true,
-    waitFor: '.dashboard-loaded',
+    waitFor: ".dashboard-loaded",
     width: 1920,
-    height: 1080
-  }
+    height: 1080,
+  },
 });
 ```
 
@@ -235,13 +247,13 @@ const dashboard = await floimg.generate({
 
 ```typescript
 const mobile = await floimg.generate({
-  generator: 'screenshot',
+  generator: "screenshot",
   params: {
-    url: 'https://example.com',
-    width: 375,   // iPhone size
+    url: "https://example.com",
+    width: 375, // iPhone size
     height: 667,
-    deviceScaleFactor: 2
-  }
+    deviceScaleFactor: 2,
+  },
 });
 ```
 
@@ -255,6 +267,7 @@ const mobile = await floimg.generate({
 ## Playwright Documentation
 
 For advanced browser control, see:
+
 - [Playwright API](https://playwright.dev/docs/api/class-playwright)
 - [Browser contexts](https://playwright.dev/docs/browser-contexts)
 - [Selectors](https://playwright.dev/docs/selectors)
@@ -276,11 +289,11 @@ Increase timeout for slow-loading pages:
 
 ```typescript
 await floimg.generate({
-  generator: 'screenshot',
+  generator: "screenshot",
   params: {
-    url: 'https://slow-site.com',
-    delay: 5000  // Wait 5 seconds
-  }
+    url: "https://slow-site.com",
+    delay: 5000, // Wait 5 seconds
+  },
 });
 ```
 
@@ -290,12 +303,12 @@ Ensure selector exists:
 
 ```typescript
 await floimg.generate({
-  generator: 'screenshot',
+  generator: "screenshot",
   params: {
-    url: 'https://example.com',
-    waitFor: '#my-element',  // Wait for it to appear
-    selector: '#my-element'   // Then screenshot it
-  }
+    url: "https://example.com",
+    waitFor: "#my-element", // Wait for it to appear
+    selector: "#my-element", // Then screenshot it
+  },
 });
 ```
 

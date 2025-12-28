@@ -2,6 +2,16 @@
 
 Local AI provider for floimg using [Ollama](https://ollama.ai). Run vision and text models locally with no API key required.
 
+## Standing on the Shoulders of Giants
+
+This plugin integrates with [Ollama](https://ollama.ai/), the amazing local AI runtime. We provide a consistent FloImg interface while exposing the full power of Ollama's models.
+
+- **Full Ollama power**: All models and configuration options work
+- **Native format**: Use Ollama model names and options directly
+- **Their docs are your docs**: See [Ollama documentation](https://ollama.ai/)
+
+FloImg orchestrates the workflow (generate → transform → save). Ollama does what it does best.
+
 ## Features
 
 - **Vision Analysis** - Analyze images with LLaVA or other vision models
@@ -44,8 +54,8 @@ const result = await client.analyzeImage({
   blob: imageBlob,
   params: {
     prompt: "What objects are in this image?",
-    outputFormat: "json"
-  }
+    outputFormat: "json",
+  },
 });
 
 console.log(result.content);
@@ -64,8 +74,8 @@ const result = await client.generateText({
   provider: "ollama-text",
   params: {
     prompt: "Write a creative caption for a sunset photo",
-    temperature: 0.8
-  }
+    temperature: 0.8,
+  },
 });
 
 console.log(result.content);
@@ -81,7 +91,7 @@ const client = createClient();
 const [vision, text] = ollama({
   baseUrl: "http://localhost:11434",
   visionModel: "llava",
-  textModel: "llama3.2"
+  textModel: "llama3.2",
 });
 
 client.registerVisionProvider(vision);
@@ -95,11 +105,21 @@ await client.run({
   name: "local-image-analysis",
   steps: [
     { kind: "generate", generator: "qr", params: { text: "hello" }, out: "qr" },
-    { kind: "vision", in: "qr", provider: "ollama-vision",
-      params: { prompt: "What does this QR code contain?" }, out: "analysis" },
-    { kind: "text", in: "analysis", provider: "ollama-text",
-      params: { prompt: "Summarize this in one sentence" }, out: "summary" }
-  ]
+    {
+      kind: "vision",
+      in: "qr",
+      provider: "ollama-vision",
+      params: { prompt: "What does this QR code contain?" },
+      out: "analysis",
+    },
+    {
+      kind: "text",
+      in: "analysis",
+      provider: "ollama-text",
+      params: { prompt: "Summarize this in one sentence" },
+      out: "summary",
+    },
+  ],
 });
 ```
 
@@ -107,26 +127,28 @@ await client.run({
 
 ### Vision Provider
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `baseUrl` | `http://localhost:11434` | Ollama server URL |
-| `model` | `llava` | Vision model to use |
+| Option    | Default                  | Description         |
+| --------- | ------------------------ | ------------------- |
+| `baseUrl` | `http://localhost:11434` | Ollama server URL   |
+| `model`   | `llava`                  | Vision model to use |
 
 ### Text Provider
 
-| Option | Default | Description |
-|--------|---------|-------------|
+| Option    | Default                  | Description       |
+| --------- | ------------------------ | ----------------- |
 | `baseUrl` | `http://localhost:11434` | Ollama server URL |
-| `model` | `llama3.2` | Text model to use |
+| `model`   | `llama3.2`               | Text model to use |
 
 ## Supported Models
 
 ### Vision Models
+
 - `llava` - LLaVA (default)
 - `llava:13b` - LLaVA 13B
 - `bakllava` - BakLLaVA
 
 ### Text Models
+
 - `llama3.2` - Llama 3.2 (default)
 - `llama3.1` - Llama 3.1
 - `mistral` - Mistral 7B

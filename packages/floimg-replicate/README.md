@@ -2,6 +2,16 @@
 
 Replicate AI model integration for floimg, providing access to popular image processing models.
 
+## Standing on the Shoulders of Giants
+
+This plugin integrates with [Replicate](https://replicate.com/), the amazing platform for running AI models. We provide a consistent FloImg interface while exposing the full power of Replicate's model ecosystem.
+
+- **Full Replicate power**: Access to thousands of community models
+- **Native format**: Use Replicate model names and options directly
+- **Their docs are your docs**: See [Replicate documentation](https://replicate.com/docs)
+
+FloImg orchestrates the workflow (generate → transform → save). Replicate does what it does best.
+
 ## Installation
 
 ```bash

@@ -2,6 +2,16 @@
 
 D3 data visualization generator for floimg using server-side rendering.
 
+## Standing on the Shoulders of Giants
+
+This plugin is a thin wrapper around [D3.js](https://d3js.org/). We don't abstract or limit the underlying library—your render function has full access to D3's API.
+
+- **Full D3 power**: Complete access to all D3 capabilities
+- **Native API**: Write real D3 code, not a FloImg abstraction
+- **Their docs are your docs**: See [D3 documentation](https://d3js.org/) and [D3 gallery](https://observablehq.com/@d3/gallery)
+
+FloImg orchestrates the workflow (generate → transform → save). D3 does what it does best.
+
 ## Installation
 
 ```bash
@@ -11,41 +21,36 @@ npm install @teamflojo/floimg @teamflojo/floimg-d3
 ## Usage
 
 ```typescript
-import createClient from '@teamflojo/floimg';
-import d3viz from '@teamflojo/floimg-d3';
+import createClient from "@teamflojo/floimg";
+import d3viz from "@teamflojo/floimg-d3";
 
 const floimg = createClient();
 floimg.registerGenerator(d3viz());
 
 // Create a bar chart
 const chart = await floimg.generate({
-  generator: 'd3',
+  generator: "d3",
   params: {
     width: 600,
     height: 400,
     render: (svg, d3, data) => {
       // Use D3 directly - full API available
-      svg.selectAll('rect')
+      svg
+        .selectAll("rect")
         .data(data)
-        .join('rect')
-        .attr('x', (d, i) => i * 60)
-        .attr('y', d => 400 - d.value * 3)
-        .attr('width', 50)
-        .attr('height', d => d.value * 3)
-        .attr('fill', 'steelblue');
+        .join("rect")
+        .attr("x", (d, i) => i * 60)
+        .attr("y", (d) => 400 - d.value * 3)
+        .attr("width", 50)
+        .attr("height", (d) => d.value * 3)
+        .attr("fill", "steelblue");
     },
-    data: [
-      { value: 30 },
-      { value: 80 },
-      { value: 45 },
-      { value: 60 },
-      { value: 20 }
-    ]
-  }
+    data: [{ value: 30 }, { value: 80 }, { value: 45 }, { value: 60 }, { value: 20 }],
+  },
 });
 
 // Upload to S3
-await floimg.save(chart, './output/bar.svg');
+await floimg.save(chart, "./output/bar.svg");
 ```
 
 ## Examples
@@ -54,7 +59,7 @@ await floimg.save(chart, './output/bar.svg');
 
 ```typescript
 const barChart = await floimg.generate({
-  generator: 'd3',
+  generator: "d3",
   params: {
     width: 800,
     height: 400,
@@ -63,41 +68,39 @@ const barChart = await floimg.generate({
       const width = 800 - margin.left - margin.right;
       const height = 400 - margin.top - margin.bottom;
 
-      const g = svg.append('g')
-        .attr('transform', `translate(${margin.left},${margin.top})`);
+      const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-      const x = d3.scaleBand()
-        .domain(data.map(d => d.name))
+      const x = d3
+        .scaleBand()
+        .domain(data.map((d) => d.name))
         .range([0, width])
         .padding(0.1);
 
-      const y = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.value)])
+      const y = d3
+        .scaleLinear()
+        .domain([0, d3.max(data, (d) => d.value)])
         .range([height, 0]);
 
-      g.selectAll('rect')
+      g.selectAll("rect")
         .data(data)
-        .join('rect')
-        .attr('x', d => x(d.name))
-        .attr('y', d => y(d.value))
-        .attr('width', x.bandwidth())
-        .attr('height', d => height - y(d.value))
-        .attr('fill', 'steelblue');
+        .join("rect")
+        .attr("x", (d) => x(d.name))
+        .attr("y", (d) => y(d.value))
+        .attr("width", x.bandwidth())
+        .attr("height", (d) => height - y(d.value))
+        .attr("fill", "steelblue");
 
-      g.append('g')
-        .attr('transform', `translate(0,${height})`)
-        .call(d3.axisBottom(x));
+      g.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
 
-      g.append('g')
-        .call(d3.axisLeft(y));
+      g.append("g").call(d3.axisLeft(y));
     },
     data: [
-      { name: 'Q1', value: 120 },
-      { name: 'Q2', value: 200 },
-      { name: 'Q3', value: 150 },
-      { name: 'Q4', value: 170 }
-    ]
-  }
+      { name: "Q1", value: 120 },
+      { name: "Q2", value: 200 },
+      { name: "Q3", value: 150 },
+      { name: "Q4", value: 170 },
+    ],
+  },
 });
 ```
 
@@ -105,7 +108,7 @@ const barChart = await floimg.generate({
 
 ```typescript
 const lineChart = await floimg.generate({
-  generator: 'd3',
+  generator: "d3",
   params: {
     width: 800,
     height: 400,
@@ -114,34 +117,33 @@ const lineChart = await floimg.generate({
       const width = 800 - margin.left - margin.right;
       const height = 400 - margin.top - margin.bottom;
 
-      const g = svg.append('g')
-        .attr('transform', `translate(${margin.left},${margin.top})`);
+      const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-      const x = d3.scaleLinear()
+      const x = d3
+        .scaleLinear()
         .domain([0, data.length - 1])
         .range([0, width]);
 
-      const y = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.value)])
+      const y = d3
+        .scaleLinear()
+        .domain([0, d3.max(data, (d) => d.value)])
         .range([height, 0]);
 
-      const line = d3.line()
+      const line = d3
+        .line()
         .x((d, i) => x(i))
-        .y(d => y(d.value));
+        .y((d) => y(d.value));
 
-      g.append('path')
+      g.append("path")
         .datum(data)
-        .attr('fill', 'none')
-        .attr('stroke', 'steelblue')
-        .attr('stroke-width', 2)
-        .attr('d', line);
+        .attr("fill", "none")
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", 2)
+        .attr("d", line);
 
-      g.append('g')
-        .attr('transform', `translate(0,${height})`)
-        .call(d3.axisBottom(x));
+      g.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
 
-      g.append('g')
-        .call(d3.axisLeft(y));
+      g.append("g").call(d3.axisLeft(y));
     },
     data: [
       { value: 30 },
@@ -149,9 +151,9 @@ const lineChart = await floimg.generate({
       { value: 45 },
       { value: 80 },
       { value: 70 },
-      { value: 90 }
-    ]
-  }
+      { value: 90 },
+    ],
+  },
 });
 ```
 
@@ -159,7 +161,7 @@ const lineChart = await floimg.generate({
 
 ```typescript
 const pieChart = await floimg.generate({
-  generator: 'd3',
+  generator: "d3",
   params: {
     width: 500,
     height: 500,
@@ -168,39 +170,34 @@ const pieChart = await floimg.generate({
       const height = 500;
       const radius = Math.min(width, height) / 2;
 
-      const g = svg.append('g')
-        .attr('transform', `translate(${width / 2},${height / 2})`);
+      const g = svg.append("g").attr("transform", `translate(${width / 2},${height / 2})`);
 
       const color = d3.scaleOrdinal(d3.schemeCategory10);
 
-      const pie = d3.pie()
-        .value(d => d.value);
+      const pie = d3.pie().value((d) => d.value);
 
-      const arc = d3.arc()
-        .innerRadius(0)
-        .outerRadius(radius);
+      const arc = d3.arc().innerRadius(0).outerRadius(radius);
 
-      const arcs = g.selectAll('arc')
-        .data(pie(data))
-        .join('g')
-        .attr('class', 'arc');
+      const arcs = g.selectAll("arc").data(pie(data)).join("g").attr("class", "arc");
 
-      arcs.append('path')
-        .attr('d', arc)
-        .attr('fill', (d, i) => color(i));
+      arcs
+        .append("path")
+        .attr("d", arc)
+        .attr("fill", (d, i) => color(i));
 
-      arcs.append('text')
-        .attr('transform', d => `translate(${arc.centroid(d)})`)
-        .attr('text-anchor', 'middle')
-        .text(d => d.data.label);
+      arcs
+        .append("text")
+        .attr("transform", (d) => `translate(${arc.centroid(d)})`)
+        .attr("text-anchor", "middle")
+        .text((d) => d.data.label);
     },
     data: [
-      { label: 'A', value: 30 },
-      { label: 'B', value: 70 },
-      { label: 'C', value: 45 },
-      { label: 'D', value: 60 }
-    ]
-  }
+      { label: "A", value: 30 },
+      { label: "B", value: 70 },
+      { label: "C", value: 45 },
+      { label: "D", value: 60 },
+    ],
+  },
 });
 ```
 
@@ -208,7 +205,7 @@ const pieChart = await floimg.generate({
 
 ```typescript
 const scatterPlot = await floimg.generate({
-  generator: 'd3',
+  generator: "d3",
   params: {
     width: 600,
     height: 400,
@@ -217,41 +214,39 @@ const scatterPlot = await floimg.generate({
       const width = 600 - margin.left - margin.right;
       const height = 400 - margin.top - margin.bottom;
 
-      const g = svg.append('g')
-        .attr('transform', `translate(${margin.left},${margin.top})`);
+      const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-      const x = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.x)])
+      const x = d3
+        .scaleLinear()
+        .domain([0, d3.max(data, (d) => d.x)])
         .range([0, width]);
 
-      const y = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.y)])
+      const y = d3
+        .scaleLinear()
+        .domain([0, d3.max(data, (d) => d.y)])
         .range([height, 0]);
 
-      g.selectAll('circle')
+      g.selectAll("circle")
         .data(data)
-        .join('circle')
-        .attr('cx', d => x(d.x))
-        .attr('cy', d => y(d.y))
-        .attr('r', 5)
-        .attr('fill', 'steelblue')
-        .attr('opacity', 0.7);
+        .join("circle")
+        .attr("cx", (d) => x(d.x))
+        .attr("cy", (d) => y(d.y))
+        .attr("r", 5)
+        .attr("fill", "steelblue")
+        .attr("opacity", 0.7);
 
-      g.append('g')
-        .attr('transform', `translate(0,${height})`)
-        .call(d3.axisBottom(x));
+      g.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
 
-      g.append('g')
-        .call(d3.axisLeft(y));
+      g.append("g").call(d3.axisLeft(y));
     },
     data: [
       { x: 10, y: 20 },
       { x: 20, y: 40 },
       { x: 30, y: 25 },
       { x: 40, y: 60 },
-      { x: 50, y: 45 }
-    ]
-  }
+      { x: 50, y: 45 },
+    ],
+  },
 });
 ```
 
@@ -259,7 +254,7 @@ const scatterPlot = await floimg.generate({
 
 ```typescript
 const areaChart = await floimg.generate({
-  generator: 'd3',
+  generator: "d3",
   params: {
     width: 800,
     height: 400,
@@ -268,34 +263,29 @@ const areaChart = await floimg.generate({
       const width = 800 - margin.left - margin.right;
       const height = 400 - margin.top - margin.bottom;
 
-      const g = svg.append('g')
-        .attr('transform', `translate(${margin.left},${margin.top})`);
+      const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-      const x = d3.scaleLinear()
+      const x = d3
+        .scaleLinear()
         .domain([0, data.length - 1])
         .range([0, width]);
 
-      const y = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.value)])
+      const y = d3
+        .scaleLinear()
+        .domain([0, d3.max(data, (d) => d.value)])
         .range([height, 0]);
 
-      const area = d3.area()
+      const area = d3
+        .area()
         .x((d, i) => x(i))
         .y0(height)
-        .y1(d => y(d.value));
+        .y1((d) => y(d.value));
 
-      g.append('path')
-        .datum(data)
-        .attr('fill', 'steelblue')
-        .attr('opacity', 0.7)
-        .attr('d', area);
+      g.append("path").datum(data).attr("fill", "steelblue").attr("opacity", 0.7).attr("d", area);
 
-      g.append('g')
-        .attr('transform', `translate(0,${height})`)
-        .call(d3.axisBottom(x));
+      g.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
 
-      g.append('g')
-        .call(d3.axisLeft(y));
+      g.append("g").call(d3.axisLeft(y));
     },
     data: [
       { value: 30 },
@@ -303,9 +293,9 @@ const areaChart = await floimg.generate({
       { value: 45 },
       { value: 80 },
       { value: 70 },
-      { value: 90 }
-    ]
-  }
+      { value: 90 },
+    ],
+  },
 });
 ```
 
@@ -313,7 +303,7 @@ const areaChart = await floimg.generate({
 
 ```typescript
 const heatmap = await floimg.generate({
-  generator: 'd3',
+  generator: "d3",
   params: {
     width: 600,
     height: 400,
@@ -322,25 +312,26 @@ const heatmap = await floimg.generate({
       const rows = data.length;
       const cols = data[0].length;
 
-      const color = d3.scaleSequential(d3.interpolateBlues)
-        .domain([0, d3.max(data.flat())]);
+      const color = d3.scaleSequential(d3.interpolateBlues).domain([0, d3.max(data.flat())]);
 
       for (let i = 0; i < rows; i++) {
         for (let j = 0; j < cols; j++) {
-          svg.append('rect')
-            .attr('x', j * cellSize)
-            .attr('y', i * cellSize)
-            .attr('width', cellSize)
-            .attr('height', cellSize)
-            .attr('fill', color(data[i][j]))
-            .attr('stroke', 'white');
+          svg
+            .append("rect")
+            .attr("x", j * cellSize)
+            .attr("y", i * cellSize)
+            .attr("width", cellSize)
+            .attr("height", cellSize)
+            .attr("fill", color(data[i][j]))
+            .attr("stroke", "white");
 
-          svg.append('text')
-            .attr('x', j * cellSize + cellSize / 2)
-            .attr('y', i * cellSize + cellSize / 2)
-            .attr('text-anchor', 'middle')
-            .attr('dominant-baseline', 'middle')
-            .attr('fill', data[i][j] > 5 ? 'white' : 'black')
+          svg
+            .append("text")
+            .attr("x", j * cellSize + cellSize / 2)
+            .attr("y", i * cellSize + cellSize / 2)
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle")
+            .attr("fill", data[i][j] > 5 ? "white" : "black")
             .text(data[i][j]);
         }
       }
@@ -349,31 +340,33 @@ const heatmap = await floimg.generate({
       [1, 3, 5, 7],
       [2, 4, 6, 8],
       [9, 7, 5, 3],
-      [8, 6, 4, 2]
-    ]
-  }
+      [8, 6, 4, 2],
+    ],
+  },
 });
 ```
 
 ## Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `width` | number | 800 | Output width in pixels |
-| `height` | number | 600 | Output height in pixels |
-| `backgroundColor` | string | 'white' | Background color |
-| `render` | function | *required* | Function that receives (svg, d3, data) |
-| `renderString` | string | - | String version of render function (for serialization) |
-| `data` | any | [] | Data to pass to render function |
+| Parameter         | Type     | Default    | Description                                           |
+| ----------------- | -------- | ---------- | ----------------------------------------------------- |
+| `width`           | number   | 800        | Output width in pixels                                |
+| `height`          | number   | 600        | Output height in pixels                               |
+| `backgroundColor` | string   | 'white'    | Background color                                      |
+| `render`          | function | _required_ | Function that receives (svg, d3, data)                |
+| `renderString`    | string   | -          | String version of render function (for serialization) |
+| `data`            | any      | []         | Data to pass to render function                       |
 
 ## Configuration
 
 ```typescript
-floimg.registerGenerator(d3viz({
-  width: 1000,           // Default width
-  height: 600,           // Default height
-  backgroundColor: '#f0f0f0'  // Default background
-}));
+floimg.registerGenerator(
+  d3viz({
+    width: 1000, // Default width
+    height: 600, // Default height
+    backgroundColor: "#f0f0f0", // Default background
+  })
+);
 ```
 
 ## Features
@@ -387,6 +380,7 @@ floimg.registerGenerator(d3viz({
 ## D3 Documentation
 
 For full D3 capabilities and examples:
+
 - https://d3js.org/
 - https://observablehq.com/@d3/gallery
 
@@ -403,9 +397,9 @@ For full D3 capabilities and examples:
 ```typescript
 // Generate multiple charts for a report
 const charts = await Promise.all([
-  floimg.generate({ generator: 'd3', params: salesChartConfig }),
-  floimg.generate({ generator: 'd3', params: revenueChartConfig }),
-  floimg.generate({ generator: 'd3', params: growthChartConfig })
+  floimg.generate({ generator: "d3", params: salesChartConfig }),
+  floimg.generate({ generator: "d3", params: revenueChartConfig }),
+  floimg.generate({ generator: "d3", params: growthChartConfig }),
 ]);
 ```
 
@@ -416,26 +410,26 @@ const charts = await Promise.all([
 setInterval(async () => {
   const liveData = await fetchLiveData();
   const chart = await floimg.generate({
-    generator: 'd3',
+    generator: "d3",
     params: {
       render: createChartRenderer(),
-      data: liveData
-    }
+      data: liveData,
+    },
   });
-  await floimg.save(chart, './output/dashboard-live.svg');
+  await floimg.save(chart, "./output/dashboard-live.svg");
 }, 60000);
 ```
 
 ### API Endpoints
 
 ```typescript
-app.get('/api/chart/:type', async (req, res) => {
+app.get("/api/chart/:type", async (req, res) => {
   const data = await fetchData(req.params.type);
   const chart = await floimg.generate({
-    generator: 'd3',
-    params: { render: getRenderer(req.params.type), data }
+    generator: "d3",
+    params: { render: getRenderer(req.params.type), data },
   });
-  res.type('image/svg+xml').send(chart.bytes);
+  res.type("image/svg+xml").send(chart.bytes);
 });
 ```
 

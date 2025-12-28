@@ -2,6 +2,16 @@
 
 OpenAI integration for floimg, providing DALL-E image generation, GPT-4 Vision analysis, and image transforms.
 
+## Standing on the Shoulders of Giants
+
+This plugin integrates with [OpenAI's DALL-E](https://openai.com/dall-e-3) and [GPT-4 Vision](https://platform.openai.com/docs/guides/vision) APIs. We provide a consistent FloImg interface while exposing the full power of OpenAI's models.
+
+- **Full OpenAI power**: All generation parameters, model options, and features work
+- **Native format**: Use OpenAI parameters, not a FloImg abstraction
+- **Their docs are your docs**: See [OpenAI API documentation](https://platform.openai.com/docs/api-reference/images)
+
+FloImg orchestrates the workflow (generate → transform → save). OpenAI does what it does best.
+
 ## Installation
 
 ```bash
