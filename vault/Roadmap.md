@@ -1,61 +1,39 @@
 # Roadmap
 
-High-level direction for floimg development.
+Current version: **v0.6.0**
 
-## Vision
+## Now (v0.6.0)
 
-floimg is a universal image workflow engine designed for:
-- Developers building image processing pipelines
-- AI agents that need image generation capabilities
-- Automation scripts and CI/CD workflows
+Latest release highlights:
 
-## Current State (v0.4.x)
+- **Fluent API** - Chainable syntax for building workflows: `floimg.from().transform().to()`
+- **AI provider packages** - OpenAI, Stability AI, Google Imagen, and Replicate as separate packages
+- **Transform providers** - Self-dispatching architecture with I/O type metadata for visual builder validation
+- **Studio alignment** - FloImg Studio now uses the core pipeline runner (same execution path as CLI/API)
 
-### Core Capabilities
-- Workflow definition via YAML or programmatic API
-- Generator and transform pipeline execution
-- S3-compatible storage support
-- CLI for local development and scripts
-- MCP server for AI agent integration
+See [CHANGELOG](../CHANGELOG.md) for full details.
 
-### Plugin Ecosystem
-- QR code generation (floimg-qr)
-- Diagram rendering (floimg-mermaid, floimg-d3)
-- Chart generation (floimg-quickchart)
-- Screenshots (floimg-screenshot)
+## Next
 
-## Focus Areas
+Work in progress or committed for upcoming releases:
 
-### Stability & Polish
-- Comprehensive error handling
-- Improved TypeScript types
-- Better documentation and examples
+- **YAML import** - Import workflows into FloImg Studio from CLI/API exports
+- **Additional AI transforms** - More Replicate models, improved stability transforms
+- **Test coverage** - Targeting 80%+ coverage on core library
 
-### Plugin Ecosystem
-- Additional generator plugins
-- Transform plugin development
-- Community contribution guidelines
+## Later
 
-### AI Integration
-- Enhanced MCP server capabilities
-- Better parameter schemas for AI consumption
-- Workflow templates for common use cases
+Directional ideas (not committed, no timeline):
 
-### Performance
-- Caching strategies
-- Parallel execution optimization
-- Memory management for large images
+- Additional AI providers as they become available
+- Workflow branching and fan-out (parallel generation → composite)
+- Performance optimizations (caching, memory management)
+- Community plugin contribution guidelines
 
 ## Non-Goals
 
-These are explicitly out of scope:
-- Real-time image editing UI (see floimg-studio)
-- Photo editing features (filters, adjustments)
+Explicitly out of scope:
+
+- Real-time image editing UI (use FloImg Studio)
+- Traditional photo editing features (use transforms)
 - Video processing
-
-## Contributing
-
-See GitHub Issues for current work items. External contributions welcome for:
-- Bug fixes
-- Documentation improvements
-- New plugin ideas (discuss in issue first)
