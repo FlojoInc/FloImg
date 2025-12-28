@@ -14,10 +14,19 @@ interface AIProviderConfig {
   lmstudio?: { baseUrl: string };
 }
 
+// Cloud config injected by floimg-cloud for cloud save functionality
+interface CloudConfig {
+  enabled: boolean;
+  userId: string;
+  apiBaseUrl: string;
+  authToken: string;
+}
+
 interface ExecuteBody {
   nodes: StudioNode[];
   edges: StudioEdge[];
   aiProviders?: AIProviderConfig;
+  cloudConfig?: CloudConfig;
 }
 
 // In-memory store for execution results (for PoC)
@@ -77,7 +86,7 @@ export async function executeRoutes(fastify: FastifyInstance) {
 
   // Execute workflow synchronously (for simpler PoC testing)
   fastify.post<{ Body: ExecuteBody }>("/execute/sync", async (request, reply) => {
-    const { nodes, edges, aiProviders } = request.body;
+    const { nodes, edges, aiProviders, cloudConfig } = request.body;
 
     if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
       reply.code(400);
@@ -85,7 +94,7 @@ export async function executeRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      const result = await executeWorkflow(nodes, edges, { aiProviders });
+      const result = await executeWorkflow(nodes, edges, { aiProviders, cloudConfig });
 
       // Build previews map: nodeId -> base64 data URL
       const previews: Record<string, string> = {};

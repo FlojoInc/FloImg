@@ -70,6 +70,15 @@ export interface AIProviderConfig {
   lmstudio?: { baseUrl: string };
 }
 
+// Cloud config for FloImg Cloud save functionality
+// Injected by floimg-cloud when running in cloud context
+export interface CloudConfig {
+  enabled: boolean;
+  userId: string;
+  apiBaseUrl: string;
+  authToken: string;
+}
+
 export interface ExecutionOptions {
   /** Optional template ID if workflow was loaded from a template */
   templateId?: string;
@@ -77,6 +86,8 @@ export interface ExecutionOptions {
   callbacks?: ExecutionCallbacks;
   /** AI provider configurations (API keys, base URLs) */
   aiProviders?: AIProviderConfig;
+  /** Cloud config for FloImg Cloud save functionality */
+  cloudConfig?: CloudConfig;
 }
 
 export interface ExecutionResult {
@@ -120,7 +131,7 @@ export async function executeWorkflow(
   edges: StudioEdge[],
   options?: ExecutionOptions
 ): Promise<ExecutionResult> {
-  const { templateId, callbacks } = options || {};
+  const { templateId, callbacks, cloudConfig } = options || {};
   const imageIds: string[] = [];
   const images = new Map<string, Buffer>();
   const nodeIdByImageId = new Map<string, string>();
@@ -128,6 +139,17 @@ export async function executeWorkflow(
 
   // Get the shared floimg client
   const client = getClient();
+
+  // Dynamically register CloudSaveProvider when running in cloud context
+  if (cloudConfig?.enabled) {
+    const { CloudSaveProvider } = await import("./providers/CloudSaveProvider.js");
+    const provider = new CloudSaveProvider(
+      cloudConfig.userId,
+      cloudConfig.apiBaseUrl,
+      cloudConfig.authToken
+    );
+    client.registerSaveProvider(provider);
+  }
 
   try {
     // Step 1: Pre-load all input nodes

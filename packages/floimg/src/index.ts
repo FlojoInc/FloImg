@@ -37,6 +37,9 @@ export type {
   TextProviderSchema,
   VisionInput,
   TextGenerateInput,
+  // Save provider types
+  SaveProvider,
+  SaveResult,
   // Legacy aliases
   SvgProvider,
   AiProvider,
