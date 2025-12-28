@@ -60,7 +60,7 @@ export { SharpTransformProvider } from "./providers/transform/index.js";
 // Export save providers
 export { default as FsSaveProvider } from "./providers/save/FsSaveProvider.js";
 export { default as S3SaveProvider } from "./providers/save/S3SaveProvider.js";
-export type { S3SaveProviderConfig } from "./providers/save/S3SaveProvider.js";
+export type { S3SaveProviderConfig, PresignOptions } from "./providers/save/S3SaveProvider.js";
 
 /**
  * Create a floimg client with automatic provider registration

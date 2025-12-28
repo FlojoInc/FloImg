@@ -64,6 +64,7 @@
   "homepage": "https://github.com/TeamFlojo/floimg#readme",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.709.0",
+    "@aws-sdk/s3-request-presigner": "^3.958.0",
     "@modelcontextprotocol/sdk": "^1.20.0",
     "@napi-rs/canvas": "^0.1.80",
     "@resvg/resvg-js": "^2.6.2",

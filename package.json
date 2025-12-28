@@ -73,5 +73,8 @@
     "prettier": "^3.7.4",
     "typescript": "^5.7.2",
     "vitest": "^4.0.16"
+  },
+  "dependencies": {
+    "@aws-sdk/s3-request-presigner": "^3.958.0"
   }
 }
