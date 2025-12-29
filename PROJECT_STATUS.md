@@ -4,11 +4,12 @@
 
 ## Current Focus
 
-None - ready for next task
+**T-2025-004**: Add AI Image Editing Node to FloImg Studio (Gemini API)
+
+- Branch: `feat/T-2025-004-studio-ai-editing`
 
 ## Next Up
 
-- **T-2025-004**: Add AI Image Editing Node to FloImg Studio (Gemini API)
 - Create PR for T-2025-003 fixes
 - Additional FloImg Studio UX improvements
 

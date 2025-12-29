@@ -1,6 +1,6 @@
 ---
 tags: [type/task]
-status: backlog
+status: in-progress
 priority: p2
 created: 2025-12-29
 updated: 2025-12-29
@@ -14,7 +14,7 @@ github_issue:
 ## Task Details
 
 **Task ID**: T-2025-004
-**Status**: backlog
+**Status**: in-progress
 **Priority**: p2
 **Created**: 2025-12-29
 **Completed**:
