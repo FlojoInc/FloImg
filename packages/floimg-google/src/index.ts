@@ -215,3 +215,6 @@ export default function googleImagen(config: GoogleImagenConfig = {}): ImageGene
 
 // Named export for convenience
 export { googleImagen };
+
+// Transform provider exports
+export { geminiTransform, geminiEditSchema, type GeminiTransformConfig } from "./transforms.js";
