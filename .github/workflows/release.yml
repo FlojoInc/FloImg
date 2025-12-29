@@ -53,6 +53,15 @@ jobs:
           pnpm --filter @teamflojo/floimg-quickchart publish --no-git-checks --access public
           pnpm --filter @teamflojo/floimg-screenshot publish --no-git-checks --access public
 
+          # Publish AI provider packages
+          pnpm --filter @teamflojo/floimg-openai publish --no-git-checks --access public
+          pnpm --filter @teamflojo/floimg-google publish --no-git-checks --access public
+          pnpm --filter @teamflojo/floimg-stability publish --no-git-checks --access public
+          pnpm --filter @teamflojo/floimg-replicate publish --no-git-checks --access public
+
+          # Publish Claude Code plugin
+          pnpm --filter @teamflojo/floimg-claude publish --no-git-checks --access public
+
           # Publish studio packages
           pnpm --filter @teamflojo/floimg-studio-shared publish --no-git-checks --access public
           pnpm --filter @teamflojo/floimg-studio-ui publish --no-git-checks --access public
