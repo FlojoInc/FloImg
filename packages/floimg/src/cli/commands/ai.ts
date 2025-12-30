@@ -188,6 +188,13 @@ aiCommand
     "Pre-prompt instructions",
     "Edit this image by incorporating the following concept while preserving the original composition and style:"
   )
+  .option(
+    "--aspect-ratio <ratio>",
+    "Output aspect ratio (1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9)",
+    "1:1"
+  )
+  .option("--image-size <size>", "Output resolution: 1K, 2K, or 4K", "1K")
+  .option("--grounding", "Enable Google Search grounding for real-time data")
   .option("--config <path>", "Path to config file")
   .action(async (options) => {
     try {
@@ -216,6 +223,9 @@ aiCommand
           prompt: options.prompt,
           prePrompt: options.prePrompt,
           model: options.model,
+          aspectRatio: options.aspectRatio,
+          imageSize: options.imageSize,
+          groundingWithSearch: options.grounding || false,
           apiKey, // Pass for per-request override
         },
       });
@@ -244,6 +254,13 @@ aiCommand
   .requiredOption("--out <path>", "Output image path")
   .option("--api-key <key>", "Google AI API key (or set GOOGLE_AI_API_KEY)")
   .option("--model <model>", "Gemini image model", "gemini-2.5-flash-image")
+  .option(
+    "--aspect-ratio <ratio>",
+    "Output aspect ratio (1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9)",
+    "1:1"
+  )
+  .option("--image-size <size>", "Output resolution: 1K, 2K, or 4K", "1K")
+  .option("--grounding", "Enable Google Search grounding for real-time data")
   .option("--config <path>", "Path to config file")
   .action(async (options) => {
     try {
@@ -262,6 +279,9 @@ aiCommand
         params: {
           prompt: options.prompt,
           model: options.model,
+          aspectRatio: options.aspectRatio,
+          imageSize: options.imageSize,
+          groundingWithSearch: options.grounding || false,
           apiKey, // Pass for per-request override
         },
       });

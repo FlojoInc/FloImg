@@ -19,6 +19,55 @@ const GEMINI_IMAGE_MODELS = ["gemini-2.5-flash-image", "gemini-3-pro-image-previ
 type GeminiImageModel = (typeof GEMINI_IMAGE_MODELS)[number];
 
 /**
+ * Supported aspect ratios for Gemini image generation
+ */
+const GEMINI_ASPECT_RATIOS = [
+  "1:1",
+  "2:3",
+  "3:2",
+  "3:4",
+  "4:3",
+  "4:5",
+  "5:4",
+  "9:16",
+  "16:9",
+  "21:9",
+] as const;
+
+type GeminiAspectRatio = (typeof GEMINI_ASPECT_RATIOS)[number];
+
+/**
+ * Supported image sizes for Gemini image generation
+ * Note: Must use uppercase K (1K, 2K, 4K)
+ */
+const GEMINI_IMAGE_SIZES = ["1K", "2K", "4K"] as const;
+
+type GeminiImageSize = (typeof GEMINI_IMAGE_SIZES)[number];
+
+/**
+ * Map image size to approximate dimensions
+ */
+function getApproximateDimensionsFromSize(
+  size: GeminiImageSize,
+  aspectRatio: GeminiAspectRatio = "1:1"
+): { width: number; height: number } {
+  // Base size from imageSize
+  const baseSize = size === "4K" ? 4096 : size === "2K" ? 2048 : 1024;
+
+  // Calculate dimensions from aspect ratio
+  const [w, h] = aspectRatio.split(":").map(Number);
+  const ratio = w / h;
+
+  if (ratio >= 1) {
+    // Landscape or square
+    return { width: baseSize, height: Math.round(baseSize / ratio) };
+  } else {
+    // Portrait
+    return { width: Math.round(baseSize * ratio), height: baseSize };
+  }
+}
+
+/**
  * Schema for the Gemini image edit operation
  */
 export const geminiEditSchema: TransformOperationSchema = {
@@ -45,6 +94,26 @@ export const geminiEditSchema: TransformOperationSchema = {
       description: "Gemini model to use: Nano Banana (fast) or Nano Banana Pro (high quality)",
       enum: [...GEMINI_IMAGE_MODELS],
       default: "gemini-2.5-flash-image",
+    },
+    aspectRatio: {
+      type: "string",
+      title: "Aspect Ratio",
+      description: "Output image aspect ratio",
+      enum: [...GEMINI_ASPECT_RATIOS],
+      default: "1:1",
+    },
+    imageSize: {
+      type: "string",
+      title: "Image Size",
+      description: "Output resolution: 1K (1024px), 2K (2048px), or 4K (4096px)",
+      enum: [...GEMINI_IMAGE_SIZES],
+      default: "1K",
+    },
+    groundingWithSearch: {
+      type: "boolean",
+      title: "Ground with Google Search",
+      description: "Enable Google Search grounding for real-time data (weather, stocks, events)",
+      default: false,
     },
     apiKey: {
       type: "string",
@@ -135,11 +204,17 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
       prompt,
       prePrompt,
       model = defaultModel,
+      aspectRatio = "1:1",
+      imageSize = "1K",
+      groundingWithSearch = false,
       apiKey: requestApiKey,
     } = params as {
       prompt: string;
       prePrompt?: string;
       model?: GeminiImageModel;
+      aspectRatio?: GeminiAspectRatio;
+      imageSize?: GeminiImageSize;
+      groundingWithSearch?: boolean;
       apiKey?: string;
     };
 
@@ -165,6 +240,21 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
     // prePrompt helps guide the model when receiving dynamic prompts from text nodes
     const fullPrompt = prePrompt ? `${prePrompt}\n\n${prompt}` : prompt;
 
+    // Build config with imageConfig for aspect ratio and size
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: Record<string, any> = {
+      responseModalities: ["TEXT", "IMAGE"],
+      imageConfig: {
+        aspectRatio,
+        imageSize,
+      },
+    };
+
+    // Add Google Search grounding if enabled
+    if (groundingWithSearch) {
+      config.tools = [{ googleSearch: {} }];
+    }
+
     // Call Gemini with image + text prompt
     const response = await client.models.generateContent({
       model,
@@ -182,9 +272,7 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
           ],
         },
       ],
-      config: {
-        responseModalities: ["TEXT", "IMAGE"],
-      },
+      config,
     });
 
     // Extract the generated image from the response
@@ -219,18 +307,23 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
         ? "image/webp"
         : "image/png";
 
+    // Get dimensions from imageSize and aspectRatio
+    const dimensions = getApproximateDimensionsFromSize(imageSize, aspectRatio);
+
     return {
       bytes,
       mime,
-      // Gemini doesn't return dimensions, estimate from input or use defaults
-      width: input.width || 1024,
-      height: input.height || 1024,
+      width: dimensions.width,
+      height: dimensions.height,
       source: `ai:gemini:${model}`,
       metadata: {
         operation: "edit",
         prompt: fullPrompt,
         prePrompt,
         model,
+        aspectRatio,
+        imageSize,
+        groundingWithSearch,
       },
     };
   }
@@ -293,6 +386,26 @@ export const geminiGenerateSchema: GeneratorSchema = {
       description: "Gemini model to use: Nano Banana (fast) or Nano Banana Pro (high quality)",
       enum: [...GEMINI_IMAGE_MODELS],
       default: "gemini-2.5-flash-image",
+    },
+    aspectRatio: {
+      type: "string",
+      title: "Aspect Ratio",
+      description: "Output image aspect ratio",
+      enum: [...GEMINI_ASPECT_RATIOS],
+      default: "1:1",
+    },
+    imageSize: {
+      type: "string",
+      title: "Image Size",
+      description: "Output resolution: 1K (1024px), 2K (2048px), or 4K (4096px)",
+      enum: [...GEMINI_IMAGE_SIZES],
+      default: "1K",
+    },
+    groundingWithSearch: {
+      type: "boolean",
+      title: "Ground with Google Search",
+      description: "Enable Google Search grounding for real-time data (weather, stocks, events)",
+      default: false,
     },
     apiKey: {
       type: "string",
@@ -363,10 +476,16 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
       const {
         prompt,
         model = defaultModel,
+        aspectRatio = "1:1",
+        imageSize = "1K",
+        groundingWithSearch = false,
         apiKey: requestApiKey,
       } = params as {
         prompt: string;
         model?: GeminiImageModel;
+        aspectRatio?: GeminiAspectRatio;
+        imageSize?: GeminiImageSize;
+        groundingWithSearch?: boolean;
         apiKey?: string;
       };
 
@@ -384,6 +503,21 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
 
       const client = getClient(apiKey);
 
+      // Build config with imageConfig for aspect ratio and size
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const config: Record<string, any> = {
+        responseModalities: ["TEXT", "IMAGE"],
+        imageConfig: {
+          aspectRatio,
+          imageSize,
+        },
+      };
+
+      // Add Google Search grounding if enabled
+      if (groundingWithSearch) {
+        config.tools = [{ googleSearch: {} }];
+      }
+
       // Call Gemini with just text prompt (no input image)
       const response = await client.models.generateContent({
         model,
@@ -393,9 +527,7 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
             parts: [{ text: prompt }],
           },
         ],
-        config: {
-          responseModalities: ["TEXT", "IMAGE"],
-        },
+        config,
       });
 
       // Extract the generated image from the response
@@ -428,16 +560,22 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
           ? "image/webp"
           : "image/png";
 
+      // Get dimensions from imageSize and aspectRatio
+      const dimensions = getApproximateDimensionsFromSize(imageSize, aspectRatio);
+
       return {
         bytes,
         mime,
-        width: 1024,
-        height: 1024,
+        width: dimensions.width,
+        height: dimensions.height,
         source: `ai:gemini:${model}`,
         metadata: {
           operation: "generate",
           prompt,
           model,
+          aspectRatio,
+          imageSize,
+          groundingWithSearch,
         },
       };
     },
