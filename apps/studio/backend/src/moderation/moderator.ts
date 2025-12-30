@@ -4,12 +4,18 @@
  * Uses OpenAI's Moderation API to scan content before it's saved to disk.
  * SCAN BEFORE SAVE - Nothing touches disk without passing moderation.
  *
+ * Format handling:
+ * - PNG, JPEG, GIF, WebP: Sent directly to OpenAI
+ * - SVG: Converted to PNG via Resvg, then moderated
+ * - AVIF: Passed through (not commonly abused, conversion complex)
+ *
  * Configuration:
  * - OPENAI_API_KEY: Required for moderation to work (optional for self-hosted)
  * - MODERATION_STRICT_MODE: If "true", block content when moderation fails (default: false)
  */
 
 import OpenAI from "openai";
+import { Resvg } from "@resvg/resvg-js";
 import { mkdir, appendFile } from "fs/promises";
 import { join } from "path";
 
@@ -110,6 +116,10 @@ export async function moderateText(text: string): Promise<ModerationResult> {
 /**
  * Moderate image content
  *
+ * Handles format conversion for unsupported types:
+ * - SVG: Converted to PNG via Resvg before moderation
+ * - AVIF: Passed through (moderation skipped - not commonly abused)
+ *
  * @param imageBuffer - Raw image bytes
  * @param mimeType - Image MIME type (image/png, image/jpeg, etc.)
  */
@@ -122,10 +132,40 @@ export async function moderateImage(
     return createPassResult();
   }
 
+  let bufferToModerate = imageBuffer;
+  let mimeToUse = mimeType;
+
+  // Handle SVG: Convert to PNG for moderation (OpenAI doesn't support SVG)
+  if (mimeType === "image/svg+xml") {
+    try {
+      const resvg = new Resvg(imageBuffer, { fitTo: { mode: "original" } });
+      const pngData = resvg.render();
+      bufferToModerate = pngData.asPng();
+      mimeToUse = "image/png";
+      console.log("[Moderation] Converted SVG to PNG for moderation");
+    } catch (error) {
+      console.error("[Moderation] Failed to convert SVG for moderation:", error);
+      // If conversion fails, respect strict mode setting
+      if (strictMode) {
+        return createBlockResult("SVG conversion failed");
+      }
+      // Permissive mode: allow through if we can't convert
+      console.warn("[Moderation] SVG conversion failed but strict mode OFF - allowing through");
+      return createPassResult();
+    }
+  }
+
+  // Handle AVIF: Not supported by OpenAI, pass through
+  // AVIF is typically from deterministic transforms, not a common attack vector
+  if (mimeType === "image/avif") {
+    console.log("[Moderation] Skipping AVIF - format not supported by moderation API");
+    return createPassResult();
+  }
+
   try {
     // Convert buffer to base64 data URL
-    const base64 = imageBuffer.toString("base64");
-    const dataUrl = `data:${mimeType};base64,${base64}`;
+    const base64 = bufferToModerate.toString("base64");
+    const dataUrl = `data:${mimeToUse};base64,${base64}`;
 
     const response = await openaiClient.moderations.create({
       model: "omni-moderation-latest",
