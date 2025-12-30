@@ -51,7 +51,8 @@ export async function imagesRoutes(fastify: FastifyInstance) {
 
     try {
       const files = await readdir(OUTPUT_DIR);
-      const file = files.find((f) => f.startsWith(id));
+      // Exclude .meta.json files - only match actual image files
+      const file = files.find((f) => f.startsWith(id) && !f.endsWith(".meta.json"));
 
       if (!file) {
         reply.code(404);
