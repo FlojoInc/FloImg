@@ -100,47 +100,130 @@ function detectMimeFromPath(path: string): MimeType {
   return mimeMap[ext || ""] || "image/png";
 }
 
+// Plugin type definitions
+interface GeneratorPlugin {
+  name: string;
+  module: string;
+  type: "generator";
+}
+
+interface AIPlugin {
+  name: string;
+  module: string;
+  type: "ai";
+  // Named exports for AI providers
+  exports: {
+    textProvider?: string;
+    visionProvider?: string;
+    transformProvider?: string;
+    generator?: string;
+  };
+}
+
+type PluginDef = GeneratorPlugin | AIPlugin;
+
 // Plugin auto-discovery
 async function loadAvailablePlugins(client: any): Promise<string[]> {
   const plugins: string[] = [];
 
   console.error("[floimg-mcp] Starting plugin discovery...");
 
-  const potentialPlugins = [
-    { name: "quickchart", module: "@teamflojo/floimg-quickchart" },
-    { name: "d3", module: "@teamflojo/floimg-d3" },
-    { name: "mermaid", module: "@teamflojo/floimg-mermaid" },
-    { name: "qr", module: "@teamflojo/floimg-qr" },
-    { name: "screenshot", module: "@teamflojo/floimg-screenshot" },
+  const potentialPlugins: PluginDef[] = [
+    // Generator plugins (default export)
+    { name: "quickchart", module: "@teamflojo/floimg-quickchart", type: "generator" },
+    { name: "d3", module: "@teamflojo/floimg-d3", type: "generator" },
+    { name: "mermaid", module: "@teamflojo/floimg-mermaid", type: "generator" },
+    { name: "qr", module: "@teamflojo/floimg-qr", type: "generator" },
+    { name: "screenshot", module: "@teamflojo/floimg-screenshot", type: "generator" },
+    // AI provider plugins (named exports)
+    {
+      name: "google",
+      module: "@teamflojo/floimg-google",
+      type: "ai",
+      exports: {
+        textProvider: "geminiText",
+        visionProvider: "geminiVision",
+        transformProvider: "geminiTransform",
+        generator: "geminiGenerate",
+      },
+    },
   ];
 
-  for (const { name, module } of potentialPlugins) {
+  for (const pluginDef of potentialPlugins) {
     try {
-      console.error(`[floimg-mcp] Attempting to load ${module}...`);
-      const plugin = await import(module);
+      console.error(`[floimg-mcp] Attempting to load ${pluginDef.module}...`);
+      const plugin = await import(pluginDef.module);
 
-      if (!plugin.default) {
-        console.error(`[floimg-mcp] ⚠ ${module} has no default export`);
-        continue;
+      if (pluginDef.type === "generator") {
+        // Generator plugin - use default export
+        if (!plugin.default) {
+          console.error(`[floimg-mcp] ⚠ ${pluginDef.module} has no default export`);
+          continue;
+        }
+        const generator = typeof plugin.default === "function" ? plugin.default() : plugin.default;
+        client.registerGenerator(generator);
+        plugins.push(pluginDef.name);
+        console.error(`[floimg-mcp] ✓ Loaded generator: ${pluginDef.name}`);
+      } else if (pluginDef.type === "ai") {
+        // AI provider plugin - use named exports
+        const aiPlugin = pluginDef;
+        let loadedAny = false;
+
+        // Load text provider
+        if (aiPlugin.exports.textProvider && plugin[aiPlugin.exports.textProvider]) {
+          const textProviderFn = plugin[aiPlugin.exports.textProvider];
+          const textProvider =
+            typeof textProviderFn === "function" ? textProviderFn() : textProviderFn;
+          client.registerTextProvider(textProvider);
+          console.error(`[floimg-mcp] ✓ Loaded text provider: ${textProvider.name}`);
+          loadedAny = true;
+        }
+
+        // Load vision provider
+        if (aiPlugin.exports.visionProvider && plugin[aiPlugin.exports.visionProvider]) {
+          const visionProviderFn = plugin[aiPlugin.exports.visionProvider];
+          const visionProvider =
+            typeof visionProviderFn === "function" ? visionProviderFn() : visionProviderFn;
+          client.registerVisionProvider(visionProvider);
+          console.error(`[floimg-mcp] ✓ Loaded vision provider: ${visionProvider.name}`);
+          loadedAny = true;
+        }
+
+        // Load transform provider
+        if (aiPlugin.exports.transformProvider && plugin[aiPlugin.exports.transformProvider]) {
+          const transformProviderFn = plugin[aiPlugin.exports.transformProvider];
+          const transformProvider =
+            typeof transformProviderFn === "function" ? transformProviderFn() : transformProviderFn;
+          client.registerTransformProvider(transformProvider);
+          console.error(`[floimg-mcp] ✓ Loaded transform provider: ${transformProvider.name}`);
+          loadedAny = true;
+        }
+
+        // Load generator
+        if (aiPlugin.exports.generator && plugin[aiPlugin.exports.generator]) {
+          const generatorFn = plugin[aiPlugin.exports.generator];
+          const generator = typeof generatorFn === "function" ? generatorFn() : generatorFn;
+          client.registerGenerator(generator);
+          console.error(`[floimg-mcp] ✓ Loaded generator: ${generator.name}`);
+          loadedAny = true;
+        }
+
+        if (loadedAny) {
+          plugins.push(aiPlugin.name);
+        }
       }
-
-      const generator = typeof plugin.default === "function" ? plugin.default() : plugin.default;
-
-      client.registerGenerator(generator);
-      plugins.push(name);
-      console.error(`[floimg-mcp] ✓ Loaded plugin: ${name}`);
     } catch (err) {
       const error = err as Error;
-      console.error(`[floimg-mcp] ✗ Failed to load ${module}: ${error.message}`);
+      console.error(`[floimg-mcp] ✗ Failed to load ${pluginDef.module}: ${error.message}`);
     }
   }
 
   console.error(`[floimg-mcp] Plugin discovery complete. Loaded: ${plugins.join(", ") || "none"}`);
 
   if (plugins.length === 0) {
-    console.error("[floimg-mcp] ⚠ No generator plugins found!");
+    console.error("[floimg-mcp] ⚠ No plugins found!");
     console.error(
-      "[floimg-mcp] Install with: npm install -g @teamflojo/floimg-quickchart @teamflojo/floimg-mermaid @teamflojo/floimg-qr @teamflojo/floimg-d3 @teamflojo/floimg-screenshot"
+      "[floimg-mcp] Install with: npm install -g @teamflojo/floimg-quickchart @teamflojo/floimg-mermaid @teamflojo/floimg-qr @teamflojo/floimg-d3 @teamflojo/floimg-screenshot @teamflojo/floimg-google"
     );
     console.error("[floimg-mcp] Only built-in generators (shapes, openai) will be available.");
   }

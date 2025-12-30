@@ -10,6 +10,7 @@ import { pluginsCommand } from "./commands/plugins.js";
 import { mcpCommand } from "./commands/mcp.js";
 import { filterCommand, presetCommand } from "./commands/filter.js";
 import { textCommand } from "./commands/text.js";
+import { aiCommand } from "./commands/ai.js";
 // Shorthand commands for common operations
 import { qrCommand } from "./commands/qr.js";
 import { resizeCommand } from "./commands/resize.js";
@@ -55,6 +56,7 @@ program.addCommand(mcpCommand);
 program.addCommand(filterCommand);
 program.addCommand(presetCommand);
 program.addCommand(textCommand);
+program.addCommand(aiCommand);
 
 // Shorthand commands (convenience wrappers)
 program.addCommand(qrCommand);
