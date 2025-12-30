@@ -123,23 +123,47 @@ vault/
 
 ## Releases
 
-Packages in `packages/*` are published to npm as `@teamflojo/*`. After making changes:
+Packages in `packages/*` are published to npm as `@teamflojo/*`.
 
-1. **Check if a release is needed** - Any runtime behavior change in a published package requires a release
-2. **Version bump**:
-   - Patch (0.0.x): Bug fixes, type fixes that affect runtime
-   - Minor (0.x.0): New features, non-breaking additions
-   - Major (x.0.0): Breaking API changes
-3. **Release process**:
-   ```bash
-   # Bump version in package.json
-   # Commit: chore(package-name): release vX.Y.Z
-   # Tag: @teamflojo/package-name@X.Y.Z
-   # Push with tags
-   # Publish: cd packages/package-name && pnpm publish --access public
-   ```
+### When to Release
 
-**Proactive rule**: When fixing bugs in published packages, always check if a patch release is needed before closing out the work.
+- Any runtime behavior change in a published package requires a release
+- Bug fixes in published packages need a patch release
+- **Proactive rule**: Check if a release is needed before closing out work
+
+### Version Bumps
+
+- **Patch** (0.0.x): Bug fixes, type fixes that affect runtime
+- **Minor** (0.x.0): New features, non-breaking additions
+- **Major** (x.0.0): Breaking API changes
+
+### Release Process
+
+**CRITICAL**: Use `vX.Y.Z` tags (not `@teamflojo/pkg@X.Y.Z`). The `v*` tag triggers the release workflow.
+
+```bash
+# 1. Bump version in package.json(s)
+# 2. Commit
+git commit -m "chore: release vX.Y.Z"
+
+# 3. Create version tag
+git tag vX.Y.Z
+
+# 4. Push (PR for public repo)
+git push origin main --tags
+
+# 5. Verify BOTH:
+#    - GitHub Releases page shows vX.Y.Z
+#    - npm shows new version
+```
+
+The `v*` tag triggers `.github/workflows/release.yml` which:
+
+- Publishes all @teamflojo/\* packages to npm
+- Builds and pushes Docker image to ghcr.io
+- Creates GitHub Release with changelog
+
+**Common mistake**: Creating `@teamflojo/floimg@0.6.1` tags does NOT trigger a release. Always use simple `v0.6.1` format.
 
 ## Plugin Development
 
