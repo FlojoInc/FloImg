@@ -31,6 +31,14 @@ export const geminiEditSchema: TransformOperationSchema = {
       title: "Prompt",
       description: "Describe the edits you want to make to the image",
     },
+    prePrompt: {
+      type: "string",
+      title: "Pre-Prompt",
+      description:
+        "Instructions prepended to the prompt (useful when receiving dynamic prompts from text nodes)",
+      default:
+        "Edit this image by incorporating the following concept while preserving the original composition and style:",
+    },
     model: {
       type: "string",
       title: "Model",
@@ -125,10 +133,12 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
   async function edit(input: ImageBlob, params: Record<string, unknown>): Promise<ImageBlob> {
     const {
       prompt,
+      prePrompt,
       model = defaultModel,
       apiKey: requestApiKey,
     } = params as {
       prompt: string;
+      prePrompt?: string;
       model?: GeminiImageModel;
       apiKey?: string;
     };
@@ -151,6 +161,10 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
     // Convert input image to base64
     const base64Image = input.bytes.toString("base64");
 
+    // Build full prompt: prePrompt (if set) + prompt
+    // prePrompt helps guide the model when receiving dynamic prompts from text nodes
+    const fullPrompt = prePrompt ? `${prePrompt}\n\n${prompt}` : prompt;
+
     // Call Gemini with image + text prompt
     const response = await client.models.generateContent({
       model,
@@ -158,7 +172,7 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
         {
           role: "user",
           parts: [
-            { text: prompt },
+            { text: fullPrompt },
             {
               inlineData: {
                 mimeType: input.mime,
@@ -214,7 +228,8 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
       source: `ai:gemini:${model}`,
       metadata: {
         operation: "edit",
-        prompt,
+        prompt: fullPrompt,
+        prePrompt,
         model,
       },
     };
