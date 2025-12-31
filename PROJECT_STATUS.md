@@ -1,19 +1,27 @@
 # PROJECT STATUS
 
-**Last Updated**: 2025-12-29
+**Last Updated**: 2025-12-31
 
 ## Current Focus
 
-**T-2025-004**: Add AI Image Editing Node to FloImg Studio (Gemini API)
-
-- Branch: `feat/T-2025-004-studio-ai-editing`
+No active task. Ready for new work.
 
 ## Next Up
 
-- Create PR for T-2025-003 fixes
 - Additional FloImg Studio UX improvements
+- STUDIO-T-2025-001: Workflow persistence
+- STUDIO-T-2025-002: Remove cloud code from OSS
 
 ## Just Completed
+
+**T-2025-004: AI Text/Vision/Editing Nodes** (2025-12-31)
+
+- PR #46 merged (Brandon's implementation)
+- Added Gemini Text, Gemini Vision, Gemini Edit nodes
+- Added Grok Text, Grok Vision nodes (floimg-xai package)
+- Multi-output routing with outputSchema support
+- Provider-specific naming with providerLabel field
+- Published floimg-google@0.2.0 to npm
 
 **T-2025-003: Fix Node Dragging + UX Issues** (2025-12-26)
 
@@ -48,7 +56,7 @@
 | @teamflojo/floimg               | 0.3.2       | Core library                       |
 | @teamflojo/floimg-openai        | 0.1.0       | OpenAI DALL-E + transforms         |
 | @teamflojo/floimg-stability     | 0.1.0       | Stability AI SDXL/SD3 + transforms |
-| @teamflojo/floimg-google        | 0.1.0       | Google Imagen                      |
+| @teamflojo/floimg-google        | 0.2.0       | Google Imagen + Gemini Text/Vision |
 | @teamflojo/floimg-replicate     | 0.1.0       | Replicate AI transforms            |
 | @teamflojo/floimg-ollama        | 0.1.0       | Ollama local AI                    |
 | @teamflojo/floimg-qr            | 0.1.0       | QR code generator                  |
@@ -56,6 +64,7 @@
 | @teamflojo/floimg-quickchart    | 0.1.0       | Chart.js via QuickChart            |
 | @teamflojo/floimg-studio-ui     | 0.1.2       | Studio React components            |
 | @teamflojo/floimg-studio-shared | 0.1.0       | Studio shared types                |
+| @teamflojo/floimg-xai           | 0.1.0       | Grok Text/Vision                   |
 
 ## FloImg Studio
 

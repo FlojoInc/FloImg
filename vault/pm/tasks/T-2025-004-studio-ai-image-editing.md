@@ -1,9 +1,9 @@
 ---
 tags: [type/task]
-status: in-progress
+status: completed
 priority: p2
 created: 2025-12-29
-updated: 2025-12-29
+updated: 2025-12-31
 parent:
 children: []
 github_issue:
@@ -14,11 +14,11 @@ github_issue:
 ## Task Details
 
 **Task ID**: T-2025-004
-**Status**: in-progress
+**Status**: completed
 **Priority**: p2
 **Created**: 2025-12-29
-**Completed**:
-**GitHub Issue**:
+**Completed**: 2025-12-31
+**GitHub Issue**: PR #46
 
 ## Description
 
@@ -98,6 +98,7 @@ The node should accept user-provided API keys (stored client-side or in Studio s
 ### Work Log
 
 - **2025-12-29**: Task created
+- **2025-12-31**: PR #46 merged (Brandon's implementation). Added Gemini Text, Gemini Vision, Gemini Edit, Grok Text, Grok Vision nodes. Updated FSC with text/vision provider registration, tier gating, and usage tracking. Published floimg-google@0.2.0 to npm.
 
 ## Review Checklist
 
