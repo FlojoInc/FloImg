@@ -130,6 +130,15 @@ function visionProviderToNode(schema: VisionProviderSchema): NodeDefinition {
 
 /**
  * Generate a human-readable label from name and description
+ *
+ * Priority:
+ * 1. If description starts with a short phrase (≤20 chars before punctuation), use it
+ * 2. Otherwise, convert name from kebab-case to Title Case
+ *
+ * Examples:
+ *   - "gemini-text" → "Gemini Text"
+ *   - "grok-vision" → "Grok Vision"
+ *   - "dalle-3" (desc: "DALL-E 3 image generation") → "DALL-E 3 image generation" (too long) → "Dalle 3"
  */
 function formatLabel(name: string, description?: string): string {
   // If description exists, use first word/phrase as label
@@ -139,8 +148,11 @@ function formatLabel(name: string, description?: string): string {
       return firstWord;
     }
   }
-  // Otherwise capitalize the name
-  return name.charAt(0).toUpperCase() + name.slice(1).replace(/([A-Z])/g, " $1");
+  // Convert kebab-case to Title Case (e.g., "gemini-text" → "Gemini Text")
+  return name
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 /**

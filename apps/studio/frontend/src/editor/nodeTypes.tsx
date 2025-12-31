@@ -358,7 +358,7 @@ export const VisionNode = memo(function VisionNode({
             />
           </svg>
           <span className="font-semibold text-sm text-cyan-700 dark:text-cyan-400">
-            {data.providerName}
+            {data.providerLabel || data.providerName}
           </span>
         </div>
         <div className="text-xs text-gray-500 dark:text-zinc-400">
@@ -456,7 +456,7 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
             />
           </svg>
           <span className="font-semibold text-sm text-pink-700 dark:text-pink-400">
-            {data.providerName}
+            {data.providerLabel || data.providerName}
           </span>
         </div>
         <div className="text-xs text-gray-500 dark:text-zinc-400">
