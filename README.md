@@ -316,6 +316,16 @@ See the [Contributing Guide](./vault/community/Contributing.md) for details.
 - [Discord](https://discord.gg/jcczptnX) - Chat with the community
 - [GitHub Discussions](https://github.com/TeamFlojo/floimg/discussions) - Ask questions, share ideas
 
+## Contributors
+
+<a href="https://github.com/teamflojo/floimg/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=teamflojo/floimg" />
+</a>
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=teamflojo/floimg&type=Date)](https://star-history.com/#teamflojo/floimg&Date)
+
 ## License
 
 MIT - Maintained by [Flojo, Inc](https://flojo.io)
