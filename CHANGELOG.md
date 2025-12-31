@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes._
 
+## [0.7.0] - 2025-12-31
+
+### Added
+
+#### New Plugin: xAI Grok
+
+- **`@teamflojo/floimg-xai`** - xAI integration (NEW)
+  - Grok text generation
+  - Grok vision analysis
+
+#### CLI AI Commands
+
+- **`floimg ai text`** - Generate text using configured AI providers
+- **`floimg ai vision`** - Analyze images using configured AI vision models
+- **MCP provider discovery** - Dynamic provider detection for MCP server
+
+#### Google AI Enhancements
+
+- **Gemini Generate** - Text-to-image generation with Gemini
+- **Gemini Edit** - AI-powered image editing transform with dynamic prePrompt
+- **New parameters**: `aspectRatio`, `imageSize`, `groundingWithSearch`
+- **Updated models**: Gemini 2.5-flash and 3-flash-preview
+
+#### FloImg Studio
+
+- **AI text/vision nodes** - Multi-output support for AI transforms
+- **Dynamic text inputs** - Text input support for AI transforms
+- **Provider routing** - AI transform provider routing and API key injection
+- **providerLabel** - Cleaner display names for AI nodes
+
 ## [0.6.0] - 2025-12-28
 
 ### Added
