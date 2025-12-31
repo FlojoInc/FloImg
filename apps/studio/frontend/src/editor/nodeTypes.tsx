@@ -61,7 +61,7 @@ function PreviewToggle({ nodeId, color }: { nodeId: string; color: string }) {
 }
 
 // Generator Node (source nodes - have output only)
-// AI generators may also have a references input handle
+// AI generators may also have a text input handle and/or references input handle
 export const GeneratorNode = memo(function GeneratorNode({
   id,
   data,
@@ -74,6 +74,8 @@ export const GeneratorNode = memo(function GeneratorNode({
   const executionClass = getExecutionClass(nodeStatus);
   const borderClass = executionClass || (selected ? "border-blue-500" : "border-blue-200");
 
+  // AI generators get a text input handle for dynamic prompts
+  const isAI = data.isAI;
   // Check if this generator accepts reference images
   const acceptsReferences = data.acceptsReferenceImages;
 
@@ -81,6 +83,16 @@ export const GeneratorNode = memo(function GeneratorNode({
     <div
       className={`rounded-lg border-2 bg-white dark:bg-zinc-800 shadow-md min-w-[180px] overflow-hidden ${borderClass}`}
     >
+      {/* Text input handle for AI generators (optional - for dynamic prompts) */}
+      {isAI && (
+        <Handle
+          type="target"
+          position={Position.Top}
+          id="text"
+          className="w-3 h-3 !bg-pink-500"
+          title="Text input (optional prompt from text/vision node)"
+        />
+      )}
       {/* Reference images input handle (for AI generators) */}
       {acceptsReferences && (
         <Handle
@@ -105,6 +117,11 @@ export const GeneratorNode = memo(function GeneratorNode({
           </span>
           <PreviewToggle nodeId={id} color="text-blue-500 dark:text-blue-400" />
         </div>
+        {isAI && (
+          <div className="text-[10px] text-pink-500 dark:text-pink-400 mb-1">
+            ↑ Connect text node for dynamic prompt
+          </div>
+        )}
         {acceptsReferences && (
           <div className="text-[10px] text-violet-500 dark:text-violet-400 mb-1">
             ← Connect reference images

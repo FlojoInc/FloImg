@@ -410,6 +410,13 @@ export const geminiGenerateSchema: GeneratorSchema = {
       title: "Prompt",
       description: "Describe the image you want to generate",
     },
+    prePrompt: {
+      type: "string",
+      title: "Pre-Prompt",
+      description:
+        "Instructions prepended to the prompt (useful when receiving dynamic prompts from text nodes)",
+      default: "Generate an image based on the following description:",
+    },
     model: {
       type: "string",
       title: "Model",
@@ -519,6 +526,7 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
     async generate(params: Record<string, unknown>): Promise<ImageBlob> {
       const {
         prompt,
+        prePrompt,
         model = defaultModel,
         aspectRatio = "1:1",
         imageSize = "1K",
@@ -527,6 +535,7 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
         referenceImages,
       } = params as {
         prompt: string;
+        prePrompt?: string;
         model?: GeminiImageModel;
         aspectRatio?: GeminiAspectRatio;
         imageSize?: GeminiImageSize;
@@ -546,6 +555,10 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
       if (!prompt) {
         throw new Error("prompt is required for Gemini image generation");
       }
+
+      // Build full prompt: prePrompt (if set) + prompt
+      // prePrompt helps guide the model when receiving dynamic prompts from text nodes
+      const fullPrompt = prePrompt ? `${prePrompt}\n\n${prompt}` : prompt;
 
       // Validate reference images count (max 14 per Google docs)
       if (referenceImages && referenceImages.length > 14) {
@@ -573,7 +586,7 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
 
       // Build parts array: text prompt + reference images (if any)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const parts: any[] = [{ text: prompt }];
+      const parts: any[] = [{ text: fullPrompt }];
 
       // Add reference images as inline data parts
       if (referenceImages && referenceImages.length > 0) {

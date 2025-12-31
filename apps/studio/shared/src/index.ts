@@ -21,6 +21,8 @@ export interface Position {
 export interface GeneratorNodeData {
   generatorName: string;
   params: Record<string, unknown>;
+  /** Whether this generator uses AI/ML models */
+  isAI?: boolean;
   /** Whether this generator accepts reference images */
   acceptsReferenceImages?: boolean;
   /** Maximum number of reference images supported */

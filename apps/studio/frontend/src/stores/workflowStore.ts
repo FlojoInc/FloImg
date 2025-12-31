@@ -247,6 +247,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
           data = {
             generatorName: definition.name,
             params: getDefaultParams(definition),
+            isAI: definition.isAI, // Track if this is an AI generator (can accept text input)
             acceptsReferenceImages: definition.acceptsReferenceImages,
             maxReferenceImages: definition.maxReferenceImages,
           } as GeneratorNodeData;

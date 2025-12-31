@@ -246,18 +246,18 @@ export async function executeWorkflow(
       initialVariables,
     };
 
-    // Step 4.5: Resolve text inputs for AI transforms
-    // If any transform has _promptFromVar, we need to execute text nodes first
+    // Step 4.5: Resolve text inputs for AI generators and transforms
+    // If any generator/transform has _promptFromVar, we need to execute text nodes first
     // and inject their output as the prompt
     const textVarToResolve = new Set<string>();
     for (const step of pipeline.steps) {
-      if (step.kind === "transform" && step.params._promptFromVar) {
+      if ((step.kind === "generate" || step.kind === "transform") && step.params?._promptFromVar) {
         textVarToResolve.add(step.params._promptFromVar as string);
       }
     }
 
     if (textVarToResolve.size > 0) {
-      console.log(`Resolving ${textVarToResolve.size} text inputs for AI transforms`);
+      console.log(`Resolving ${textVarToResolve.size} text inputs for AI generators/transforms`);
 
       // Execute text/vision nodes first to get their outputs
       const textSteps = pipeline.steps.filter(
@@ -285,9 +285,12 @@ export async function executeWorkflow(
           }
         }
 
-        // Inject resolved prompts into transform steps
+        // Inject resolved prompts into generator/transform steps
         for (const step of pipeline.steps) {
-          if (step.kind === "transform" && step.params._promptFromVar) {
+          if (
+            (step.kind === "generate" || step.kind === "transform") &&
+            step.params?._promptFromVar
+          ) {
             const varName = step.params._promptFromVar as string;
             const propertyName = step.params._promptFromProperty as string | undefined;
 
@@ -317,7 +320,7 @@ export async function executeWorkflow(
             if (text) {
               // Use resolved text as prompt (override any existing prompt)
               step.params.prompt = text;
-              console.log(`Injected dynamic prompt for transform: "${text.slice(0, 50)}..."`);
+              console.log(`Injected dynamic prompt for ${step.kind}: "${text.slice(0, 50)}..."`);
             }
             // Clean up the markers
             delete step.params._promptFromVar;
@@ -631,6 +634,22 @@ export function toPipeline(
       const apiKey = getApiKeyForProvider(data.generatorName, aiProviders);
       if (apiKey && !params.apiKey) {
         params = { ...params, apiKey };
+      }
+
+      // Find text input edge (for AI generators with dynamic prompts)
+      const textEdge = edges.find((e) => e.target === node.id && e.targetHandle === "text");
+      const textSourceVar = textEdge ? nodeToVar.get(textEdge.source) : undefined;
+      // Capture source handle for property extraction (e.g., "output.prompt" extracts just the prompt property)
+      const textSourceHandle = textEdge?.sourceHandle;
+
+      // If there's a text input, mark it for resolution
+      // The actual text will be injected during execution after text nodes complete
+      if (textSourceVar) {
+        params = { ...params, _promptFromVar: textSourceVar };
+        // If sourceHandle specifies a property (e.g., "output.prompt"), mark it for extraction
+        if (textSourceHandle?.startsWith("output.")) {
+          params = { ...params, _promptFromProperty: textSourceHandle.slice(7) }; // Extract "prompt" from "output.prompt"
+        }
       }
 
       // Find reference image edges (for AI generators that accept reference images)
