@@ -4,11 +4,12 @@
 
 ## Current Focus
 
-No active task. Ready for new work.
+**T-2025-005**: Add prompt input handle to gemini-generate node
+- Branch: `feat/T-2025-005-gemini-generate-prompt-input`
+- Status: IN PROGRESS
 
 ## Next Up
 
-- **T-2025-005**: Add prompt input handle to gemini-generate node
 - Additional FloImg Studio UX improvements
 
 ## Just Completed
