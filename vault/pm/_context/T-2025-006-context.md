@@ -2,7 +2,7 @@
 
 **Task**: [[T-2025-006-node-duplication]]
 **Created**: 2025-12-31
-**Status**: Planning
+**Status**: In Progress
 
 ## Overview
 
