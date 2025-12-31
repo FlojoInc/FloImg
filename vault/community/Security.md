@@ -8,7 +8,7 @@ If you discover a security vulnerability in floimg, please report it responsibly
 
 ### Email
 
-Send details to: **security@floimg.com**
+Send details to: **security@goflojo.com**
 
 ### What to Include
 
@@ -137,7 +137,7 @@ Past security advisories are published on:
 
 ## Contact
 
-- **Security issues**: security@floimg.com
+- **Security issues**: security@goflojo.com
 - **General questions**: [GitHub Discussions](https://github.com/TeamFlojo/floimg/discussions)
 
 ## See Also
