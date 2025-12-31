@@ -125,9 +125,14 @@ export async function executeRoutes(fastify: FastifyInstance) {
         };
       }
 
+      // Build imageUrls: direct URLs for accessing saved images
+      // In OSS, these are local API URLs. In FSC, Cloud API overwrites with presigned URLs.
+      const imageUrls = result.imageIds.map((id) => `/api/images/${id}/blob`);
+
       return {
         status: "completed",
         imageIds: result.imageIds,
+        imageUrls,
         previews,
         dataOutputs,
       };

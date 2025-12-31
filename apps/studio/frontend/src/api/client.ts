@@ -51,6 +51,7 @@ export async function executeWorkflow(
 ): Promise<{
   status: string;
   imageIds: string[];
+  imageUrls?: string[]; // Presigned cloud URLs (FSC only)
   previews?: Record<string, string>;
   dataOutputs?: Record<
     string,

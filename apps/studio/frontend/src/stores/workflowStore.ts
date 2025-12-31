@@ -45,6 +45,7 @@ export interface SavedWorkflow {
 interface ExecutionState {
   status: "idle" | "running" | "completed" | "error";
   imageIds: string[];
+  imageUrls: string[]; // Presigned cloud URLs for thumbnails (FSC only)
   previews: Record<string, string>; // nodeId -> data URL
   dataOutputs: Record<string, DataOutput>; // nodeId -> text/json output (for vision/text nodes)
   nodeStatus: Record<string, NodeExecutionStatus>; // per-node execution status
@@ -149,6 +150,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
       execution: {
         status: "idle",
         imageIds: [],
+        imageUrls: [],
         previews: {},
         dataOutputs: {},
         nodeStatus: {},
@@ -191,6 +193,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
           execution: {
             status: "idle",
             imageIds: [],
+            imageUrls: [],
             previews: {},
             dataOutputs: {},
             nodeStatus: {},
@@ -208,6 +211,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
           execution: {
             status: "idle",
             imageIds: [],
+            imageUrls: [],
             previews: {},
             dataOutputs: {},
             nodeStatus: {},
@@ -353,6 +357,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
           execution: {
             status: "running",
             imageIds: [],
+            imageUrls: [],
             previews: {},
             dataOutputs: {},
             nodeStatus: initialNodeStatus,
@@ -373,6 +378,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
               execution: {
                 status: "completed",
                 imageIds: result.imageIds,
+                imageUrls: result.imageUrls || [],
                 previews: result.previews || {},
                 dataOutputs: result.dataOutputs || {},
                 nodeStatus: finalNodeStatus,
@@ -383,6 +389,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
               execution: {
                 status: "error",
                 imageIds: [],
+                imageUrls: [],
                 previews: {},
                 dataOutputs: {},
                 nodeStatus: finalNodeStatus,
@@ -401,6 +408,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
             execution: {
               status: "error",
               imageIds: [],
+              imageUrls: [],
               previews: {},
               dataOutputs: {},
               nodeStatus: errorNodeStatus,
@@ -470,6 +478,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
           execution: {
             status: "idle",
             imageIds: [],
+            imageUrls: [],
             previews: {},
             dataOutputs: {},
             nodeStatus: {},
@@ -497,6 +506,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
           execution: {
             status: "idle",
             imageIds: [],
+            imageUrls: [],
             previews: {},
             dataOutputs: {},
             nodeStatus: {},
@@ -567,6 +577,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
           execution: {
             status: "idle",
             imageIds: [],
+            imageUrls: [],
             previews: {},
             dataOutputs: {},
             nodeStatus: {},
@@ -593,6 +604,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
             execution: {
               status: "idle",
               imageIds: [],
+              imageUrls: [],
               previews: {},
               dataOutputs: {},
               nodeStatus: {},

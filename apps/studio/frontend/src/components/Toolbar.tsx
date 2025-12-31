@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { useWorkflowStore } from "../stores/workflowStore";
 import { useSettingsStore } from "../stores/settingsStore";
-import { getImageUrl } from "../api/client";
 import { generateJavaScript } from "../utils/codeGenerator";
 import { ImportModal } from "./ImportModal";
 import type { StudioNode, StudioEdge } from "@teamflojo/floimg-studio-shared";
@@ -310,16 +309,10 @@ export function Toolbar({
               {execution.imageIds.length !== 1 ? "s" : ""}
             </span>
             <div className="flex gap-2">
-              {execution.imageIds.slice(0, 4).map((id) => (
-                <a
-                  key={id}
-                  href={getImageUrl(id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
+              {execution.imageUrls.slice(0, 4).map((url, idx) => (
+                <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block">
                   <img
-                    src={getImageUrl(id)}
+                    src={url}
                     alt="Generated"
                     className="h-12 w-12 object-cover rounded border border-green-300 dark:border-green-700"
                   />
