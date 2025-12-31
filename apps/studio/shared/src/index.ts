@@ -49,7 +49,8 @@ export interface InputNodeData {
 
 // Vision node data (AI image analysis)
 export interface VisionNodeData {
-  providerName: string; // e.g., "openai-vision", "ollama-vision"
+  providerName: string; // Provider ID for execution (e.g., "gemini-vision", "grok-vision")
+  providerLabel?: string; // Human-readable label for display (e.g., "Gemini Vision")
   params: Record<string, unknown>; // prompt, outputFormat, etc.
   /** Output schema for structured JSON - defines what properties are available as outputs */
   outputSchema?: OutputSchema;
@@ -57,7 +58,8 @@ export interface VisionNodeData {
 
 // Text node data (AI text generation)
 export interface TextNodeData {
-  providerName: string; // e.g., "openai-text", "ollama-text"
+  providerName: string; // Provider ID for execution (e.g., "gemini-text", "grok-text")
+  providerLabel?: string; // Human-readable label for display (e.g., "Gemini Text")
   params: Record<string, unknown>; // prompt, systemPrompt, temperature, etc.
   /** Output schema for structured JSON - defines what properties are available as outputs */
   outputSchema?: OutputSchema;

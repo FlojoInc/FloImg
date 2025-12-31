@@ -264,11 +264,13 @@ export const useWorkflowStore = create<WorkflowStore>()(
         } else if (definition.type === "vision") {
           data = {
             providerName: definition.name,
+            providerLabel: definition.label, // Human-readable label (e.g., "Gemini Vision")
             params: getDefaultParams(definition),
           } as VisionNodeData;
         } else if (definition.type === "text") {
           data = {
             providerName: definition.name,
+            providerLabel: definition.label, // Human-readable label (e.g., "Gemini Text")
             params: getDefaultParams(definition),
           } as TextNodeData;
         } else {
