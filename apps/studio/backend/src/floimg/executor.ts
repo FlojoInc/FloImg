@@ -328,7 +328,53 @@ export async function executeWorkflow(
     }
 
     // Step 4.6: Resolve reference images for AI generators/transforms
-    // Reference images from input nodes are available in initialVariables
+    // Reference images can come from:
+    // 1. Input nodes (pre-loaded in initialVariables)
+    // 2. Generator/transform nodes (need to execute first)
+    const refImageVarsToResolve = new Set<string>();
+    for (const step of pipeline.steps) {
+      if (
+        (step.kind === "generate" || step.kind === "transform") &&
+        step.params?._referenceImageVars
+      ) {
+        const refVars = step.params._referenceImageVars as string[];
+        for (const varName of refVars) {
+          // Only need to resolve if not already in initialVariables
+          if (!initialVariables[varName]) {
+            refImageVarsToResolve.add(varName);
+          }
+        }
+      }
+    }
+
+    // Execute reference image source steps first if needed
+    const resolvedRefImages = new Map<string, ImageBlob>();
+    if (refImageVarsToResolve.size > 0) {
+      console.log(`Resolving ${refImageVarsToResolve.size} reference image sources`);
+
+      // Find steps that produce the needed reference images
+      const refSourceSteps = pipeline.steps.filter(
+        (s) => (s.kind === "generate" || s.kind === "transform") && refImageVarsToResolve.has(s.out)
+      );
+
+      if (refSourceSteps.length > 0) {
+        const refPipeline: Pipeline = {
+          name: "Reference Image Resolution",
+          steps: refSourceSteps as Pipeline["steps"],
+          initialVariables,
+        };
+
+        const refResults = await client.run(refPipeline);
+
+        for (const result of refResults) {
+          if (isImageBlob(result.value)) {
+            resolvedRefImages.set(result.out, result.value);
+          }
+        }
+      }
+    }
+
+    // Now inject reference images into steps that need them
     for (const step of pipeline.steps) {
       if (
         (step.kind === "generate" || step.kind === "transform") &&
@@ -338,11 +384,18 @@ export async function executeWorkflow(
         const referenceImages: ImageBlob[] = [];
 
         for (const varName of refVars) {
-          const blob = initialVariables[varName];
-          if (blob && isImageBlob(blob)) {
-            referenceImages.push(blob);
+          // Check initialVariables first (input nodes)
+          const fromInitial = initialVariables[varName];
+          if (fromInitial && isImageBlob(fromInitial)) {
+            referenceImages.push(fromInitial);
           } else {
-            console.warn(`Reference image variable ${varName} not found or not an image`);
+            // Check resolved images (from generator/transform nodes)
+            const fromResolved = resolvedRefImages.get(varName);
+            if (fromResolved) {
+              referenceImages.push(fromResolved);
+            } else {
+              console.warn(`Reference image variable ${varName} not found`);
+            }
           }
         }
 
