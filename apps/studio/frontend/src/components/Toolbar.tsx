@@ -43,6 +43,10 @@ export function Toolbar({
   const toggleLibrary = useWorkflowStore((s) => s.toggleLibrary);
   const setActiveWorkflowName = useWorkflowStore((s) => s.setActiveWorkflowName);
 
+  // Node operations
+  const selectedNodeId = useWorkflowStore((s) => s.selectedNodeId);
+  const duplicateNode = useWorkflowStore((s) => s.duplicateNode);
+
   const [showExport, setShowExport] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [exportTab, setExportTab] = useState<ExportTab>("yaml");
@@ -84,17 +88,28 @@ export function Toolbar({
     setIsEditingName(false);
   };
 
-  // Keyboard shortcut for save
+  // Handle duplicate with Cmd+D / Ctrl+D
+  const handleDuplicate = useCallback(() => {
+    if (selectedNodeId) {
+      duplicateNode(selectedNodeId);
+    }
+  }, [selectedNodeId, duplicateNode]);
+
+  // Keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
         handleSave();
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === "d") {
+        e.preventDefault();
+        handleDuplicate();
+      }
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleSave]);
+  }, [handleSave, handleDuplicate]);
 
   const handleExecute = async () => {
     await execute();

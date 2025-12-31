@@ -99,6 +99,7 @@ interface WorkflowStore {
   addNode: (definition: NodeDefinition, position: { x: number; y: number }) => void;
   updateNodeData: (id: string, data: Partial<NodeData>) => void;
   deleteNode: (id: string) => void;
+  duplicateNode: (id: string) => void;
   setNodes: (nodes: Node<NodeData>[]) => void;
 
   // Edge operations
@@ -315,6 +316,29 @@ export const useWorkflowStore = create<WorkflowStore>()(
           edges: state.edges.filter((e) => e.source !== id && e.target !== id),
           selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId,
         }));
+      },
+
+      duplicateNode: (id) => {
+        const state = get();
+        const nodeToDuplicate = state.nodes.find((n) => n.id === id);
+        if (!nodeToDuplicate) return;
+
+        const newId = generateNodeId();
+        const newNode: Node<NodeData> = {
+          ...nodeToDuplicate,
+          id: newId,
+          position: {
+            x: nodeToDuplicate.position.x + 50,
+            y: nodeToDuplicate.position.y + 50,
+          },
+          data: JSON.parse(JSON.stringify(nodeToDuplicate.data)), // Deep clone
+          selected: false,
+        };
+
+        set({
+          nodes: [...state.nodes, newNode],
+          selectedNodeId: newId, // Select the new node
+        });
       },
 
       setNodes: (nodes) => set({ nodes }),
