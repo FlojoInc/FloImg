@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes._
 
+## [0.7.1] - 2025-12-31
+
+### Fixed
+
+- Added `@teamflojo/floimg-xai` to npm publish workflow
+- Added floimg-xai to Docker build for FloImg Studio
+
 ## [0.7.0] - 2025-12-31
 
 ### Added

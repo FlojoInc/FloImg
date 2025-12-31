@@ -22,6 +22,7 @@ COPY packages/floimg-openai/package.json ./packages/floimg-openai/
 COPY packages/floimg-stability/package.json ./packages/floimg-stability/
 COPY packages/floimg-google/package.json ./packages/floimg-google/
 COPY packages/floimg-replicate/package.json ./packages/floimg-replicate/
+COPY packages/floimg-xai/package.json ./packages/floimg-xai/
 COPY apps/studio/shared/package.json ./apps/studio/shared/
 COPY apps/studio/backend/package.json ./apps/studio/backend/
 COPY apps/studio/frontend/package.json ./apps/studio/frontend/
@@ -38,6 +39,7 @@ COPY packages/floimg-openai ./packages/floimg-openai
 COPY packages/floimg-stability ./packages/floimg-stability
 COPY packages/floimg-google ./packages/floimg-google
 COPY packages/floimg-replicate ./packages/floimg-replicate
+COPY packages/floimg-xai ./packages/floimg-xai
 COPY apps/studio ./apps/studio
 
 # Build packages in dependency order
@@ -49,6 +51,7 @@ RUN pnpm --filter @teamflojo/floimg-openai build
 RUN pnpm --filter @teamflojo/floimg-stability build
 RUN pnpm --filter @teamflojo/floimg-google build
 RUN pnpm --filter @teamflojo/floimg-replicate build
+RUN pnpm --filter @teamflojo/floimg-xai build
 RUN pnpm --filter @teamflojo/floimg-studio-shared build
 RUN pnpm --filter @teamflojo/floimg-studio-backend build
 RUN pnpm --filter @teamflojo/floimg-studio-ui build
@@ -72,6 +75,7 @@ COPY packages/floimg-openai/package.json ./packages/floimg-openai/
 COPY packages/floimg-stability/package.json ./packages/floimg-stability/
 COPY packages/floimg-google/package.json ./packages/floimg-google/
 COPY packages/floimg-replicate/package.json ./packages/floimg-replicate/
+COPY packages/floimg-xai/package.json ./packages/floimg-xai/
 COPY apps/studio/shared/package.json ./apps/studio/shared/
 COPY apps/studio/backend/package.json ./apps/studio/backend/
 
@@ -87,6 +91,7 @@ COPY --from=builder /app/packages/floimg-openai/dist ./packages/floimg-openai/di
 COPY --from=builder /app/packages/floimg-stability/dist ./packages/floimg-stability/dist
 COPY --from=builder /app/packages/floimg-google/dist ./packages/floimg-google/dist
 COPY --from=builder /app/packages/floimg-replicate/dist ./packages/floimg-replicate/dist
+COPY --from=builder /app/packages/floimg-xai/dist ./packages/floimg-xai/dist
 COPY --from=builder /app/apps/studio/shared/dist ./apps/studio/shared/dist
 COPY --from=builder /app/apps/studio/backend/dist ./apps/studio/backend/dist
 COPY --from=builder /app/apps/studio/frontend/dist ./apps/studio/frontend/dist
@@ -99,6 +104,7 @@ ENV PORT=5100
 # STABILITY_API_KEY - Stability AI image generation & transforms (Stable Diffusion)
 # GOOGLE_AI_API_KEY - Google Imagen image generation
 # REPLICATE_API_TOKEN - Replicate AI transforms
+# XAI_API_KEY - xAI Grok text & vision
 #
 # CORS_ORIGIN - Comma-separated allowed origins (defaults to allow all)
 
