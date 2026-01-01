@@ -225,8 +225,10 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
               <div className="mt-4 space-y-2">
                 {[
                   "Generate an image of a sunset and resize it to 800x600",
-                  "Take my uploaded image and remove the background",
-                  "Create a DALL-E image of a cat, then apply a blur effect",
+                  "Use Gemini text to generate 3 creative image prompts about space exploration, then generate images from each prompt",
+                  "Generate an image with Gemini, then use it as a reference to create a variation with different lighting",
+                  "Create a product mockup: generate a minimalist logo, then composite it onto a t-shirt image",
+                  "Build an AI art pipeline: generate a base image, apply artistic style transfer, then upscale to 4K",
                 ].map((example, i) => (
                   <button
                     key={i}

@@ -136,6 +136,7 @@ For each node, provide:
 
 ## Examples
 
+### Simple: Generate and resize
 **User**: "Generate an image of a cat and resize it to 800x600"
 
 Response nodes:
@@ -144,6 +145,38 @@ Response nodes:
 
 Response edges:
 - source: "node_1", target: "node_2"
+
+### Advanced: AI text generates prompts for image generation
+**User**: "Use Gemini text to create a creative prompt, then generate an image from it"
+
+Response nodes:
+- id: "node_1", nodeType: "text:gemini-text", parametersJson: '{"prompt": "Generate a detailed, creative image prompt for a fantasy landscape with magical elements. Output only the prompt, nothing else."}'
+- id: "node_2", nodeType: "generator:gemini-generate", parametersJson: '{"prompt": ""}'
+
+Response edges:
+- source: "node_1", target: "node_2", sourceHandle: "text", targetHandle: "prompt"
+
+### Advanced: Image as reference for another generation
+**User**: "Generate an image, then use it as reference to create a variation"
+
+Response nodes:
+- id: "node_1", nodeType: "generator:gemini-generate", parametersJson: '{"prompt": "a serene mountain landscape at sunset"}'
+- id: "node_2", nodeType: "generator:gemini-generate", parametersJson: '{"prompt": "same scene but during a thunderstorm with dramatic lighting"}'
+
+Response edges:
+- source: "node_1", target: "node_2", sourceHandle: "image", targetHandle: "referenceImage"
+
+### Advanced: Multi-step pipeline with transforms
+**User**: "Generate art, apply effects, and upscale"
+
+Response nodes:
+- id: "node_1", nodeType: "generator:gemini-generate", parametersJson: '{"prompt": "abstract digital art with vibrant colors"}'
+- id: "node_2", nodeType: "transform:sharp:blur", parametersJson: '{"sigma": 2}'
+- id: "node_3", nodeType: "transform:sharp:resize", parametersJson: '{"width": 2048, "height": 2048, "fit": "contain"}'
+
+Response edges:
+- source: "node_1", target: "node_2"
+- source: "node_2", target: "node_3"
 
 Now generate a workflow for the user's request.`;
 }
