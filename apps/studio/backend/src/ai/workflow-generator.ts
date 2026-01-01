@@ -126,6 +126,27 @@ A workflow consists of:
 6. For image generation, prefer AI generators like "generator:gemini-generate" or "generator:dalle-3"
 7. For transforms, use the correct provider format: "transform:{provider}:{operation}"
 
+## Text Node Structured Output
+
+When using text:gemini-text to generate multiple prompts or structured data:
+
+1. Set "outputFormat": "json" to enable JSON mode
+2. Define "jsonSchema" with the exact structure you want
+3. Use sourceHandle "output.{property}" to extract specific fields
+
+Example jsonSchema for multiple prompts:
+{
+  "type": "object",
+  "properties": {
+    "landscape": { "type": "string", "description": "Fantasy landscape prompt" },
+    "character": { "type": "string", "description": "Character prompt" },
+    "item": { "type": "string", "description": "Item prompt" }
+  },
+  "required": ["landscape", "character", "item"]
+}
+
+Then connect edges with sourceHandle "output.landscape", "output.character", etc.
+
 ## Output Format
 
 For each node, provide:
@@ -146,7 +167,7 @@ Response nodes:
 Response edges:
 - source: "node_1", target: "node_2"
 
-### Advanced: AI text generates prompts for image generation
+### Advanced: AI text generates prompts for image generation (simple)
 **User**: "Use Gemini text to create a creative prompt, then generate an image from it"
 
 Response nodes:
@@ -154,7 +175,35 @@ Response nodes:
 - id: "node_2", nodeType: "generator:gemini-generate", parametersJson: '{"prompt": ""}'
 
 Response edges:
-- source: "node_1", target: "node_2", sourceHandle: "text", targetHandle: "prompt"
+- source: "node_1", target: "node_2", sourceHandle: "text", targetHandle: "text"
+
+### Advanced: Structured output with multiple image generators
+**User**: "Generate structured prompts for a landscape, wizard, and weapon, then generate images from each"
+
+Response nodes:
+- id: "text_1", nodeType: "text:gemini-text", parametersJson: '{"prompt": "Generate three detailed image prompts for a fantasy art series.", "outputFormat": "json", "jsonSchema": {"type": "object", "properties": {"landscape": {"type": "string", "description": "A detailed fantasy landscape prompt"}, "wizard": {"type": "string", "description": "A detailed wizard character prompt"}, "weapon": {"type": "string", "description": "A detailed magical weapon prompt"}}, "required": ["landscape", "wizard", "weapon"]}}'
+- id: "gen_landscape", nodeType: "generator:gemini-generate", label: "Landscape", parametersJson: '{"prompt": "", "aspectRatio": "16:9"}'
+- id: "gen_wizard", nodeType: "generator:gemini-generate", label: "Wizard", parametersJson: '{"prompt": "", "aspectRatio": "1:1"}'
+- id: "gen_weapon", nodeType: "generator:gemini-generate", label: "Weapon", parametersJson: '{"prompt": "", "aspectRatio": "1:1"}'
+
+Response edges:
+- source: "text_1", target: "gen_landscape", sourceHandle: "output.landscape", targetHandle: "text"
+- source: "text_1", target: "gen_wizard", sourceHandle: "output.wizard", targetHandle: "text"
+- source: "text_1", target: "gen_weapon", sourceHandle: "output.weapon", targetHandle: "text"
+
+### Advanced: Multiple reference images combined into one
+**User**: "Generate 3 images and combine them as references for a final composite"
+
+Response nodes:
+- id: "gen_1", nodeType: "generator:gemini-generate", parametersJson: '{"prompt": "fantasy landscape"}'
+- id: "gen_2", nodeType: "generator:gemini-generate", parametersJson: '{"prompt": "wizard character"}'
+- id: "gen_3", nodeType: "generator:gemini-generate", parametersJson: '{"prompt": "magical staff"}'
+- id: "final", nodeType: "generator:gemini-generate", parametersJson: '{"prompt": "Combine these reference images: place the wizard holding the staff in the landscape. Cinematic, high detail.", "imageSize": "2K"}'
+
+Response edges:
+- source: "gen_1", target: "final", sourceHandle: "image", targetHandle: "references"
+- source: "gen_2", target: "final", sourceHandle: "image", targetHandle: "references"
+- source: "gen_3", target: "final", sourceHandle: "image", targetHandle: "references"
 
 ### Advanced: Image as reference for another generation
 **User**: "Generate an image, then use it as reference to create a variation"
