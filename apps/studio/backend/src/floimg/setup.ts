@@ -54,10 +54,11 @@ export function initializeClient(config: { verbose?: boolean } = {}): FloimgClie
     client.registerGenerator(stability({ apiKey: process.env.STABILITY_API_KEY }));
     client.registerTransformProvider(stabilityTransform({ apiKey: process.env.STABILITY_API_KEY }));
   }
-  if (process.env.GOOGLE_AI_API_KEY) {
-    client.registerGenerator(googleImagen({ apiKey: process.env.GOOGLE_AI_API_KEY }));
-    client.registerGenerator(geminiGenerate({ apiKey: process.env.GOOGLE_AI_API_KEY }));
-    client.registerTransformProvider(geminiTransform({ apiKey: process.env.GOOGLE_AI_API_KEY }));
+  const googleApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
+  if (googleApiKey) {
+    client.registerGenerator(googleImagen({ apiKey: googleApiKey }));
+    client.registerGenerator(geminiGenerate({ apiKey: googleApiKey }));
+    client.registerTransformProvider(geminiTransform({ apiKey: googleApiKey }));
   } else {
     // Register Gemini providers without API key - users provide their own per-request
     // This enables the AI nodes in the Studio even without server-side API key
@@ -71,10 +72,10 @@ export function initializeClient(config: { verbose?: boolean } = {}): FloimgClie
   }
 
   // Register text and vision providers
-  // Users provide their own API keys per-request, so we register without server keys
-  client.registerTextProvider(geminiText());
+  // Use server keys if available, otherwise users can provide their own per-request
+  client.registerTextProvider(geminiText(googleApiKey ? { apiKey: googleApiKey } : {}));
   client.registerTextProvider(grokText());
-  client.registerVisionProvider(geminiVision());
+  client.registerVisionProvider(geminiVision(googleApiKey ? { apiKey: googleApiKey } : {}));
   client.registerVisionProvider(grokVision());
 
   // Cache capabilities
