@@ -10,6 +10,8 @@ import type {
   TextNodeData,
   NodeDefinition,
   GalleryTemplate,
+  GeneratedWorkflowData,
+  StudioNodeType,
 } from "@teamflojo/floimg-studio-shared";
 import { executeWorkflow, exportYaml } from "../api/client";
 import type { StudioNode, StudioEdge } from "@teamflojo/floimg-studio-shared";
@@ -119,6 +121,9 @@ interface WorkflowStore {
 
   // Import
   importFromYaml: (nodes: StudioNode[], edges: StudioEdge[], name?: string) => void;
+
+  // AI-generated workflow
+  loadGeneratedWorkflow: (workflow: GeneratedWorkflowData) => void;
 }
 
 let nodeIdCounter = 0;
@@ -696,6 +701,118 @@ export const useWorkflowStore = create<WorkflowStore>()(
         };
         set({ savedWorkflows: [...savedWorkflows, duplicate] });
         return newId;
+      },
+
+      loadGeneratedWorkflow: (workflow: GeneratedWorkflowData) => {
+        // Convert AI-generated workflow to React Flow nodes
+        const idMap = new Map<string, string>();
+
+        // Auto-layout: arrange nodes in a grid
+        const GRID_SPACING_X = 250;
+        const GRID_SPACING_Y = 150;
+        const NODES_PER_ROW = 3;
+
+        const nodes: Node<NodeData>[] = workflow.nodes.map((genNode, index) => {
+          const newId = generateNodeId();
+          idMap.set(genNode.id, newId);
+
+          // Parse nodeType to extract type and name
+          // Format: "generator:dalle-3", "transform:sharp:resize", "input:upload", etc.
+          const parts = genNode.nodeType.split(":");
+          const nodeType = parts[0] as StudioNodeType;
+
+          // Calculate grid position
+          const row = Math.floor(index / NODES_PER_ROW);
+          const col = index % NODES_PER_ROW;
+          const position = {
+            x: 100 + col * GRID_SPACING_X,
+            y: 100 + row * GRID_SPACING_Y,
+          };
+
+          // Build node data based on type
+          let data: NodeData;
+
+          if (nodeType === "generator") {
+            const generatorName = parts.slice(1).join(":");
+            data = {
+              generatorName,
+              params: genNode.parameters,
+              isAI: true, // Assume AI since we're generating from AI
+            } as GeneratorNodeData;
+          } else if (nodeType === "transform") {
+            const providerName = parts[1];
+            const operation = parts.slice(2).join(":");
+            data = {
+              operation,
+              providerName,
+              params: genNode.parameters,
+            } as TransformNodeData;
+          } else if (nodeType === "input") {
+            data = {
+              uploadId: undefined,
+              filename: undefined,
+              mime: undefined,
+            } as InputNodeData;
+          } else if (nodeType === "vision") {
+            const providerName = parts.slice(1).join(":");
+            data = {
+              providerName,
+              params: genNode.parameters,
+            } as VisionNodeData;
+          } else if (nodeType === "text") {
+            const providerName = parts.slice(1).join(":");
+            data = {
+              providerName,
+              params: genNode.parameters,
+            } as TextNodeData;
+          } else {
+            // Default to save node
+            data = {
+              destination: (genNode.parameters.destination as string) || "./output/image.png",
+              provider: (genNode.parameters.provider as string) || "filesystem",
+            } as SaveNodeData;
+          }
+
+          return {
+            id: newId,
+            type: nodeType,
+            position,
+            data,
+          };
+        });
+
+        // Convert edges with mapped IDs
+        const edges: Edge[] = workflow.edges.map((genEdge) => {
+          const newSource = idMap.get(genEdge.source) || genEdge.source;
+          const newTarget = idMap.get(genEdge.target) || genEdge.target;
+
+          return {
+            id: `edge_${newSource}_${newTarget}`,
+            source: newSource,
+            target: newTarget,
+            sourceHandle: genEdge.sourceHandle ?? undefined,
+            targetHandle: genEdge.targetHandle ?? undefined,
+          };
+        });
+
+        set({
+          nodes,
+          edges,
+          selectedNodeId: null,
+          currentTemplateId: null,
+          previewVisible: {},
+          activeWorkflowId: null,
+          activeWorkflowName: "AI Generated Workflow",
+          hasUnsavedChanges: true,
+          execution: {
+            status: "idle",
+            imageIds: [],
+            imageUrls: [],
+            previews: {},
+            dataOutputs: {},
+            nodeStatus: {},
+          },
+        });
       },
     }),
     {
