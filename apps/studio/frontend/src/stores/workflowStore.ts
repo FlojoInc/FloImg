@@ -761,9 +761,30 @@ export const useWorkflowStore = create<WorkflowStore>()(
             } as VisionNodeData;
           } else if (nodeType === "text") {
             const providerName = parts.slice(1).join(":");
+            // Extract jsonSchema from params and convert to outputSchema for UI
+            const jsonSchema = genNode.parameters.jsonSchema as
+              | { properties?: Record<string, { type?: string; description?: string }> }
+              | undefined;
+            const outputSchema = jsonSchema?.properties
+              ? {
+                  type: "object" as const,
+                  properties: Object.fromEntries(
+                    Object.entries(jsonSchema.properties).map(([key, prop]) => [
+                      key,
+                      {
+                        type:
+                          (prop.type as "string" | "number" | "boolean" | "object" | "array") ||
+                          "string",
+                        description: prop.description,
+                      },
+                    ])
+                  ),
+                }
+              : undefined;
             data = {
               providerName,
               params: genNode.parameters,
+              outputSchema,
             } as TextNodeData;
           } else {
             // Default to save node
@@ -786,8 +807,16 @@ export const useWorkflowStore = create<WorkflowStore>()(
           const newSource = idMap.get(genEdge.source) || genEdge.source;
           const newTarget = idMap.get(genEdge.target) || genEdge.target;
 
+          // Include handles in edge ID for uniqueness (multiple edges from same source)
+          const handleSuffix = [genEdge.sourceHandle, genEdge.targetHandle]
+            .filter(Boolean)
+            .join("_");
+          const edgeId = handleSuffix
+            ? `edge_${newSource}_${newTarget}_${handleSuffix}`
+            : `edge_${newSource}_${newTarget}`;
+
           return {
-            id: `edge_${newSource}_${newTarget}`,
+            id: edgeId,
             source: newSource,
             target: newTarget,
             sourceHandle: genEdge.sourceHandle ?? undefined,
