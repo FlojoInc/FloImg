@@ -180,7 +180,8 @@ export interface GeminiTransformConfig {
  * ```
  */
 export function geminiTransform(config: GeminiTransformConfig = {}): TransformProvider {
-  const defaultApiKey = config.apiKey || process.env.GOOGLE_AI_API_KEY;
+  const defaultApiKey =
+    config.apiKey || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
   const defaultModel = config.model || "gemini-2.5-flash-image";
 
   // Cache clients by API key to avoid recreating for same key
@@ -504,7 +505,8 @@ export interface GeminiGenerateConfig {
  * ```
  */
 export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerator {
-  const defaultApiKey = config.apiKey || process.env.GOOGLE_AI_API_KEY;
+  const defaultApiKey =
+    config.apiKey || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
   const defaultModel = config.model || "gemini-2.5-flash-image";
 
   // Cache clients by API key

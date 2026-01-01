@@ -135,7 +135,7 @@ export const geminiTextSchema: TextProviderSchema = {
  */
 export function geminiText(config: GeminiTextConfig = {}): TextProvider {
   // Config API key is optional - user can provide per-request
-  const configApiKey = config.apiKey || process.env.GOOGLE_AI_API_KEY;
+  const configApiKey = config.apiKey || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
 
   // Cache clients by API key
   const clientCache = new Map<string, GoogleGenAI>();
@@ -338,7 +338,7 @@ export const geminiVisionSchema: VisionProviderSchema = {
  */
 export function geminiVision(config: GeminiVisionConfig = {}): VisionProvider {
   // Config API key is optional - user can provide per-request
-  const configApiKey = config.apiKey || process.env.GOOGLE_AI_API_KEY;
+  const configApiKey = config.apiKey || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
 
   // Cache clients by API key
   const clientCache = new Map<string, GoogleGenAI>();
