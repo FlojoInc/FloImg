@@ -112,8 +112,34 @@ From the docs:
 2. ~~Build backend Gemini integration~~ - Done
 3. ~~Create chat UI component~~ - Done
 4. ~~Integrate with canvas~~ - Done
-5. Create PR for review
-6. Test with real Gemini API key
+5. ~~Create PR for review~~ - Done (PR #64)
+6. ~~Test with real Gemini API key~~ - Done
+7. Merge PR and release
+
+## Session Notes (2025-12-31)
+
+### Accomplished
+
+- Fixed Gemini API 400 error by using `parametersJson` (STRING) instead of `parameters` (OBJECT) in schema
+- Added GEMINI_API_KEY env var fallback to all floimg-google providers
+- Enhanced system prompt with structured output examples (jsonSchema, outputFormat)
+- Added prePrompt usage examples for dynamic prompt workflows
+- Fixed `loadGeneratedWorkflow` to convert jsonSchema → outputSchema for UI rendering
+- Fixed edge IDs for uniqueness when multiple edges from same source
+- Created PR #64 with comprehensive test plan
+
+### Key Decisions
+
+- Use STRING type for parametersJson to avoid Gemini's OBJECT property requirement
+- Support both GOOGLE_AI_API_KEY and GEMINI_API_KEY env vars
+- Include prePrompt in examples to guide dynamic prompt workflows
+- Extract jsonSchema from params and convert to outputSchema for text node UI
+
+### Resolved Questions
+
+- API key management: Check env vars (GOOGLE_AI_API_KEY or GEMINI_API_KEY) as fallback
+- Node registry: Embed full registry in system prompt with detailed examples
+- Layout: Auto-layout in grid pattern after generation
 
 ## Implementation Summary
 

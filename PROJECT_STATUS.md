@@ -4,9 +4,14 @@
 
 ## Current Focus
 
-**T-2025-007: Gemini 3 Pro Workflow Generation** (in-progress)
+**T-2025-007: Gemini 3 Pro Workflow Generation** (PR #64 ready for merge)
 
 Natural language to workflow JSON using Gemini 3 Pro structured outputs.
+
+- AI chat interface with example prompts
+- Structured output support (jsonSchema → multiple output handles)
+- Reference image chaining for composite workflows
+- prePrompt for dynamic prompt context
 
 ## Next Up
 
