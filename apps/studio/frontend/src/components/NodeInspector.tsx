@@ -48,12 +48,15 @@ export function NodeInspector() {
     schema = def?.params?.properties;
     nodeLabel = def?.label || data.operation;
   } else if (selectedNode.type === "save") {
-    nodeLabel = "Save";
+    const data = selectedNode.data as SaveNodeData;
+    const isCloudSave = data.provider === "floimg-cloud";
+
+    nodeLabel = isCloudSave ? "Save to FloImg Cloud" : "Save";
     schema = {
       destination: {
         type: "string",
-        title: "Destination",
-        description: "File path to save the image",
+        title: isCloudSave ? "Filename" : "Destination",
+        description: isCloudSave ? "Filename for cloud storage" : "File path to save the image",
       },
     };
   } else if (selectedNode.type === "text") {
