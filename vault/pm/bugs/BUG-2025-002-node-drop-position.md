@@ -1,9 +1,10 @@
 ---
 tags: [type/bug, area/studio]
-status: in-progress
+status: in-review
 priority: p2
 created: 2025-12-31
 updated: 2025-12-31
+pr: 66
 ---
 
 # Bug: Second node dropped on canvas appears in wrong position
