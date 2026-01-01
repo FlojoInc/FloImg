@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, DragEvent } from "react";
-import { ReactFlowProvider } from "reactflow";
+import { ReactFlowProvider, useReactFlow } from "reactflow";
 import { WorkflowEditor } from "./editor/WorkflowEditor";
 import { NodePalette } from "./components/NodePalette";
 import { NodeInspector } from "./components/NodeInspector";
@@ -13,12 +13,54 @@ import { useWorkflowStore } from "./stores/workflowStore";
 import { getTemplateById } from "./templates";
 import type { NodeDefinition, GeneratedWorkflowData } from "@teamflojo/floimg-studio-shared";
 
+// EditorDropZone - handles node drops with correct coordinate conversion
+// Must be inside ReactFlowProvider to access useReactFlow hook
+function EditorDropZone() {
+  const { screenToFlowPosition } = useReactFlow();
+  const addNode = useWorkflowStore((s) => s.addNode);
+
+  const handleDrop = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+
+      const data = event.dataTransfer.getData("application/json");
+      if (!data) return;
+
+      try {
+        const definition: NodeDefinition = JSON.parse(data);
+
+        // Use screenToFlowPosition to correctly convert screen coordinates
+        // to flow coordinates, accounting for zoom and pan
+        const position = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+
+        addNode(definition, position);
+      } catch (e) {
+        console.error("Failed to parse dropped node:", e);
+      }
+    },
+    [addNode, screenToFlowPosition]
+  );
+
+  const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
+
+  return (
+    <div className="flex-1" onDrop={handleDrop} onDragOver={handleDragOver}>
+      <WorkflowEditor />
+    </div>
+  );
+}
+
 type TabType = "editor" | "gallery" | "templates";
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>("editor");
   const [showAIChat, setShowAIChat] = useState(false);
-  const addNode = useWorkflowStore((s) => s.addNode);
   const loadTemplate = useWorkflowStore((s) => s.loadTemplate);
   const loadGeneratedWorkflow = useWorkflowStore((s) => s.loadGeneratedWorkflow);
 
@@ -69,39 +111,6 @@ function App() {
     [loadGeneratedWorkflow]
   );
 
-  // Handle drop from palette
-  const handleDrop = useCallback(
-    (event: DragEvent) => {
-      event.preventDefault();
-
-      const data = event.dataTransfer.getData("application/json");
-      if (!data) return;
-
-      try {
-        const definition: NodeDefinition = JSON.parse(data);
-
-        // Get drop position relative to the canvas
-        const reactFlowBounds = document.querySelector(".react-flow")?.getBoundingClientRect();
-
-        if (!reactFlowBounds) return;
-
-        const position = {
-          x: event.clientX - reactFlowBounds.left,
-          y: event.clientY - reactFlowBounds.top,
-        };
-
-        addNode(definition, position);
-      } catch (e) {
-        console.error("Failed to parse dropped node:", e);
-      }
-    },
-    [addNode]
-  );
-
-  const handleDragOver = useCallback((event: DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  }, []);
 
   return (
     <ReactFlowProvider>
@@ -180,9 +189,7 @@ function App() {
           {activeTab === "editor" && (
             <>
               <NodePalette />
-              <div className="flex-1" onDrop={handleDrop} onDragOver={handleDragOver}>
-                <WorkflowEditor />
-              </div>
+              <EditorDropZone />
               <NodeInspector />
             </>
           )}
