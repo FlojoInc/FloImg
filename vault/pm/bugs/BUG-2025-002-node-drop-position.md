@@ -1,6 +1,6 @@
 ---
 tags: [type/bug, area/studio]
-status: in-review
+status: completed
 priority: p2
 created: 2025-12-31
 updated: 2025-12-31
@@ -12,7 +12,7 @@ pr: 66
 ## Bug Details
 
 **Bug ID**: BUG-2025-002
-**Status**: in-progress
+**Status**: completed
 **Priority**: p2
 **Created**: 2025-12-31
 
@@ -43,13 +43,23 @@ Second and subsequent nodes appear in wrong positions on the canvas.
 ## Technical Notes
 
 Likely related to:
+
 - React Flow's `screenToFlowPosition` calculation
 - Canvas viewport/zoom state
 - Drop event coordinate handling
 
 ## Fix Details
 
-- [ ] Reproduce issue with Chrome DevTools MCP
-- [ ] Identify root cause in drop handler
-- [ ] Implement fix
-- [ ] Test with multiple nodes
+- [x] Reproduce issue with Chrome DevTools MCP
+- [x] Identify root cause in drop handler
+- [x] Implement fix
+- [x] Test with multiple nodes
+
+## Resolution
+
+**Root Cause**: The drop handler in `App.tsx` calculated position using simple subtraction (`clientX - reactFlowBounds.left`) which didn't account for React Flow's viewport transform (zoom/pan).
+
+**Fix**: Created `EditorDropZone` component that uses `useReactFlow` hook's `screenToFlowPosition()` to correctly convert screen coordinates to flow coordinates, accounting for zoom and pan.
+
+**PR**: #66 (merged)
+**Verified**: Tested on studio.floimg.com - nodes now appear at correct drop positions

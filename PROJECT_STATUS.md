@@ -20,6 +20,12 @@ Natural language to workflow JSON using Gemini 3 Pro structured outputs.
 
 ## Just Completed
 
+**BUG-2025-002: Fix node drop position on canvas** (2025-12-31)
+
+- Second node dropped on canvas now appears at correct position
+- Created EditorDropZone component using `screenToFlowPosition` for proper coordinate conversion
+- PR #66 merged
+
 **BUG-2025-001: Fix cloud save node inspector** (2025-12-31)
 
 - Cloud save nodes now show "Save to FloImg Cloud" header and "Filename" field
