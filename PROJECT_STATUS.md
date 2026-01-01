@@ -1,6 +1,6 @@
 # PROJECT STATUS
 
-**Last Updated**: 2025-12-31
+**Last Updated**: 2026-01-01
 
 ## Current Focus
 
@@ -19,6 +19,12 @@ Natural language to workflow JSON using Gemini 3 Pro structured outputs.
 - Additional FloImg Studio UX improvements
 
 ## Just Completed
+
+**Gallery → Images Rename** (2026-01-01)
+
+- Renamed Studio "Gallery" tab to "Images" (PR #67 merged)
+- Part of EPIC-2025-010 nomenclature overhaul
+- Published floimg-studio-ui@0.2.1
 
 **BUG-2025-002: Fix node drop position on canvas** (2025-12-31)
 
@@ -114,7 +120,7 @@ Natural language to workflow JSON using Gemini 3 Pro structured outputs.
 | @teamflojo/floimg-qr            | 0.2.1       | QR code generator                  |
 | @teamflojo/floimg-mermaid       | 0.2.1       | Mermaid diagrams                   |
 | @teamflojo/floimg-quickchart    | 0.2.1       | Chart.js via QuickChart            |
-| @teamflojo/floimg-studio-ui     | 0.2.0       | Studio React components            |
+| @teamflojo/floimg-studio-ui     | 0.2.1       | Studio React components            |
 | @teamflojo/floimg-studio-shared | 0.2.0       | Studio shared types                |
 | @teamflojo/floimg-xai           | 0.1.0       | Grok Text/Vision                   |
 
