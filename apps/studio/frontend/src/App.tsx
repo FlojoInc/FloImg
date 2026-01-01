@@ -111,7 +111,6 @@ function App() {
     [loadGeneratedWorkflow]
   );
 
-
   return (
     <ReactFlowProvider>
       {/* AI Settings Modal */}
@@ -152,7 +151,7 @@ function App() {
                     : "border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200"
                 }`}
               >
-                Gallery
+                Images
               </button>
               <button
                 onClick={() => setActiveTab("templates")}

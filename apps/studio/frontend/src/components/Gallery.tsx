@@ -76,9 +76,12 @@ export function Gallery() {
   return (
     <div className="p-4 bg-gray-100 dark:bg-zinc-900 min-h-full">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-          Gallery ({images.length} image{images.length !== 1 ? "s" : ""})
-        </h2>
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+            Images ({images.length})
+          </h2>
+          <p className="text-xs text-gray-500 dark:text-zinc-500">Your generated images</p>
+        </div>
         <button
           onClick={() => refetch()}
           className="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-violet-300"
