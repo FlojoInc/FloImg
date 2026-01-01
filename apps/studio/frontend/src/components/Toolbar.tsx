@@ -20,7 +20,7 @@ export interface ToolbarProps {
   afterActionsSlot?: ReactNode;
   /** Hide the "by Flojo" attribution link */
   hideAttribution?: boolean;
-  /** Hide the "My Workflows" library toggle button (for cloud wrapper with its own workspace) */
+  /** Hide the "My Workflows" library toggle button (for wrappers providing custom workflow management) */
   hideWorkflowLibrary?: boolean;
 }
 
@@ -144,7 +144,7 @@ export function Toolbar({
     <>
       <div className="h-14 bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          {/* My Workflows button - hidden when cloud wrapper provides its own workspace */}
+          {/* My Workflows button - can be hidden when custom workflow management is provided */}
           {!hideWorkflowLibrary && (
             <button
               onClick={toggleLibrary}
