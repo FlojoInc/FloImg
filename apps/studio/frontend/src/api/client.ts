@@ -3,6 +3,8 @@ import type {
   StudioNode,
   StudioEdge,
   ImageMetadata,
+  GenerateWorkflowRequest,
+  GenerateWorkflowResponse,
 } from "@teamflojo/floimg-studio-shared";
 
 const API_BASE = "/api";
@@ -190,4 +192,22 @@ export async function validateYaml(yaml: string): Promise<ImportValidationResult
     method: "POST",
     body: JSON.stringify({ yaml }),
   });
+}
+
+// Workflow Generation
+export async function generateWorkflow(
+  request: GenerateWorkflowRequest
+): Promise<GenerateWorkflowResponse> {
+  return fetchJson(`${API_BASE}/generate/workflow`, {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+export async function getGenerateStatus(): Promise<{
+  available: boolean;
+  model: string;
+  message: string;
+}> {
+  return fetchJson(`${API_BASE}/generate/status`);
 }

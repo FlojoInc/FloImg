@@ -39,6 +39,8 @@ const browserGlobals = {
   sessionStorage: "readonly",
   HTMLElement: "readonly",
   HTMLInputElement: "readonly",
+  HTMLDivElement: "readonly",
+  HTMLTextAreaElement: "readonly",
   Event: "readonly",
   CustomEvent: "readonly",
   KeyboardEvent: "readonly",
