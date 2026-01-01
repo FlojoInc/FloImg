@@ -77,6 +77,15 @@ Natural language to workflow JSON using Gemini 3 Pro structured outputs.
 
 ## Recent Releases
 
+**v0.8.0** (2025-12-31)
+
+- AI text/vision nodes (Gemini Text, Vision, Edit; Grok Text, Vision)
+- AI workflow generation chat (Gemini 3 Pro structured outputs)
+- Node duplication (Cmd+D)
+- Multi-reference image support for Gemini nodes
+- Fix: node drop position accounts for viewport zoom/pan
+- floimg-studio-ui@0.2.0, floimg-studio-shared@0.2.0
+
 **v0.6.0** (2025-12-31)
 
 - AI Chat workflow generation (Gemini 3 Pro structured outputs)
@@ -105,8 +114,8 @@ Natural language to workflow JSON using Gemini 3 Pro structured outputs.
 | @teamflojo/floimg-qr            | 0.2.1       | QR code generator                  |
 | @teamflojo/floimg-mermaid       | 0.2.1       | Mermaid diagrams                   |
 | @teamflojo/floimg-quickchart    | 0.2.1       | Chart.js via QuickChart            |
-| @teamflojo/floimg-studio-ui     | 0.1.7       | Studio React components            |
-| @teamflojo/floimg-studio-shared | 0.1.2       | Studio shared types                |
+| @teamflojo/floimg-studio-ui     | 0.2.0       | Studio React components            |
+| @teamflojo/floimg-studio-shared | 0.2.0       | Studio shared types                |
 | @teamflojo/floimg-xai           | 0.1.0       | Grok Text/Vision                   |
 
 ## FloImg Studio
