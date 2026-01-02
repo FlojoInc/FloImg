@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes._
 
+## [v0.8.3] - 2026-01-01
+
+### @teamflojo/floimg (0.7.2)
+
+- docs: add README.md for npm package page
+
+### @teamflojo/floimg-studio-ui (0.2.3)
+
+- docs: add README.md for npm package page
+
+### @teamflojo/floimg-studio-shared (0.2.1)
+
+- docs: add README.md for npm package page
+- chore: add README.md to package.json files array
+
+### Repository
+
+- docs: add Repository Structure section to main README
+- docs: update Monorepo Guide with current package list
+
 ## [v0.8.2] - 2026-01-01
 
 ### @teamflojo/floimg-studio-ui (0.2.2)
