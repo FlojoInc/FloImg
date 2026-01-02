@@ -10,19 +10,20 @@
 
 ## Why FloImg?
 
-FloImg solves three core problems:
+### Deterministic Transforms
 
-### The Probabilistic Editing Problem
+When you ask ChatGPT to modify an image, DALL-E generates a new image—it doesn't edit pixels. Even AI "editing" like inpainting is probabilistic. "Change the colors" might give you a completely different composition. FloImg applies deterministic transforms: adjust hue mathematically, resize to exact dimensions, add caption at precise position. The image stays intact except for exactly what you requested.
 
-When you ask ChatGPT to modify an image, DALL-E generates a new image from a new prompt—it doesn't edit pixels. Even AI "editing" like inpainting is probabilistic. "Change the colors" might give you a completely different composition. FloImg applies **deterministic transforms**: adjust hue mathematically, guaranteed to preserve everything else.
+### A Unified API
 
-### The Tool Fragmentation Problem
+FloImg models image manipulation as a series of composable steps—each transform takes an image and returns an image. This functional approach consolidates the patchwork of tools and SDKs into one abstraction layer.
 
-People wrangle multiple apps: remove.bg, Photoshop, Figma, format converters, cloud upload services. Each requires learning, signing up, downloading files. FloImg consolidates into one pipeline.
+The same workflow definition is portable across interfaces:
 
-### Better Than Glue Code
-
-FloImg isn't just integration code—it's accessible through multiple modalities: visual builder (FloImg Studio), natural language (Claude Code), SDK/CLI, MCP for AI agents, YAML for config. Use whichever fits how you think.
+- **SDK**: Embed in any JS/TS application
+- **CLI**: Terminal workflows and CI/CD pipelines
+- **Visual builder**: Prototyping and non-technical users
+- **MCP**: AI agents and LLM-driven automation
 
 | Workflow Type         | Example                                                           |
 | --------------------- | ----------------------------------------------------------------- |

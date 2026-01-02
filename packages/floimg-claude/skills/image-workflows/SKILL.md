@@ -6,13 +6,11 @@ allowed-tools: mcp__floimg__generate_image, mcp__floimg__transform_image, mcp__f
 
 # Image Workflows Skill
 
-This skill enables you to create and execute image workflows using floimg—the composable workflow engine that solves three core problems:
+This skill enables you to create and execute image workflows using floimg—the composable workflow engine with two core differentiators:
 
-1. **The Probabilistic Editing Problem**: AI image modification is probabilistic—DALL-E generates new images, inpainting runs diffusion. FloImg applies deterministic transforms—the image stays intact except for exactly what you requested.
+1. **Deterministic Transforms**: AI image modification is probabilistic—DALL-E generates new images, inpainting runs diffusion. FloImg applies deterministic transforms: adjust hue mathematically, resize to exact dimensions. The image stays intact except for exactly what you requested.
 
-2. **The Tool Fragmentation Problem**: People wrangle multiple apps (remove.bg, Photoshop, Figma). FloImg consolidates into one pipeline.
-
-3. **Better Than Glue Code**: Multiple modalities (natural language, SDK, CLI, MCP)—use whichever fits.
+2. **A Unified API**: FloImg models image manipulation as a series of composable steps. This functional approach consolidates the patchwork of tools and SDKs into one abstraction layer—portable across SDK, CLI, visual builder, and MCP.
 
 ## Architecture: CLI Simple, MCP Complex
 

@@ -4,19 +4,22 @@ Composable image workflow engine — any source, any transforms, any destination
 
 ## What FloImg Is
 
-**FloImg is a composable workflow engine** that solves three core problems:
+**FloImg is a composable workflow engine for images** with two core differentiators:
 
-### 1. The Probabilistic Editing Problem
+### 1. Deterministic Transforms
 
-When you ask ChatGPT to modify an image, DALL-E generates a new image—it doesn't edit pixels. Even AI "editing" like inpainting is probabilistic. "Change the colors" might give you a different composition. FloImg applies **deterministic transforms**: adjust hue mathematically, guaranteed to preserve everything else.
+When you ask ChatGPT to modify an image, DALL-E generates a new image—it doesn't edit pixels. Even AI "editing" like inpainting is probabilistic. FloImg applies deterministic transforms: adjust hue mathematically, resize to exact dimensions, add caption at precise position. The image stays intact except for exactly what you requested.
 
-### 2. The Tool Fragmentation Problem
+### 2. A Unified API
 
-People wrangle remove.bg, Photoshop, Figma, format converters, cloud services. Each requires learning and sign-ups. FloImg consolidates into one pipeline.
+FloImg models image manipulation as a series of composable steps—each transform takes an image and returns an image. This functional approach consolidates the patchwork of tools and SDKs into one abstraction layer.
 
-### 3. Better Than Glue Code
+The same workflow definition is portable across interfaces:
 
-FloImg isn't just integration code—it's accessible through multiple modalities: visual builder, natural language, SDK/CLI, MCP, YAML. Use whichever fits how you think.
+- **SDK**: Embed in any JS/TS application
+- **CLI**: Terminal workflows and CI/CD pipelines
+- **Visual builder**: Prototyping and non-technical users
+- **MCP**: AI agents and LLM-driven automation
 
 ### The Pipeline
 

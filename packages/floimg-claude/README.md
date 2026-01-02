@@ -4,11 +4,9 @@ Claude Code plugin for [floimg](https://floimg.com) — composable image workflo
 
 ## Why?
 
-**The Probabilistic Editing Problem**: When you ask ChatGPT to modify an image, DALL-E generates a new image—it doesn't edit pixels. Even AI "editing" like inpainting is probabilistic. FloImg applies deterministic transforms: adjust hue, resize, add caption—the image stays intact except for exactly what you asked.
+**Deterministic Transforms**: When you ask ChatGPT to modify an image, DALL-E generates a new image—it doesn't edit pixels. Even AI "editing" like inpainting is probabilistic. FloImg applies deterministic transforms: adjust hue mathematically, resize to exact dimensions, add caption at precise position. The image stays intact except for exactly what you requested.
 
-**The Tool Fragmentation Problem**: People wrangle remove.bg, Photoshop, Figma, format converters, cloud services. FloImg consolidates into one pipeline.
-
-**Better Than Glue Code**: FloImg isn't just integration code—it's accessible through natural language in Claude Code, visual builder in FloImg Studio, SDK, CLI, or MCP.
+**A Unified API**: FloImg models image manipulation as a series of composable steps. This functional approach consolidates the patchwork of tools and SDKs into one abstraction layer—portable across SDK, CLI, visual builder, and MCP.
 
 Generate AI images, resize for social media, add captions, upload to S3—all through natural conversation.
 
