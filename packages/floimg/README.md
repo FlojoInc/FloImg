@@ -1,19 +1,20 @@
 # @teamflojo/floimg
 
-> Composable image workflow engine — any source, any transforms, any destination
+> Core engine for composable image workflows
 
 [![npm version](https://img.shields.io/npm/v/@teamflojo/floimg.svg?style=flat)](https://www.npmjs.com/package/@teamflojo/floimg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**FloImg** unifies image generation, transformation, and delivery into composable pipelines. Whether you're generating AI images, resizing for social media, or building complex multi-step workflows, FloImg handles it through one consistent interface.
+The core FloImg package provides the pipeline engine, built-in image transforms, save providers, and CLI. Add generator plugins to create images from AI, charts, diagrams, and more.
 
-## Why FloImg?
+## What's Included
 
-1. **The Probabilistic Editing Problem** — AI image "editing" is probabilistic. "Change the colors" might give you a different composition. FloImg applies deterministic transforms: adjust hue mathematically, guaranteed to preserve everything else.
-
-2. **The Tool Fragmentation Problem** — Stop wrangling remove.bg, Photoshop, format converters, and cloud services. FloImg consolidates into one pipeline.
-
-3. **Multiple Modalities** — SDK, CLI, YAML config, MCP for AI agents, visual builder. Use whichever fits how you think.
+- **Pipeline Engine** — Chain generate → transform → save operations
+- **Image Transforms** — Resize, crop, blur, sharpen, rotate, format conversion (via sharp)
+- **Save Providers** — Filesystem and S3-compatible storage
+- **CLI** — Command-line interface with plugin auto-install
+- **Fluent API** — Chainable syntax for building pipelines
+- **MCP Server** — Model Context Protocol for AI agent integration
 
 ## Installation
 
