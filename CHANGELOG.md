@@ -9,6 +9,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes._
 
+## [v0.8.2] - 2026-01-01
+
+### @teamflojo/floimg-studio-ui (0.2.2)
+
+- feat: add `hideWorkflowLibrary` prop to Toolbar for embedding
+
+## [v0.8.1] - 2026-01-01
+
+### @teamflojo/floimg-studio-ui (0.2.1)
+
+- chore: rename Gallery tab to Images
+- fix: add pull_policy always to oss service in docker-compose
+
+## [v0.8.0] - 2026-01-01
+
+### @teamflojo/floimg-studio-ui (0.2.0)
+
+- feat: AI-powered workflow generation with Gemini 3 Pro
+- feat: add node duplication with Cmd+D
+- feat: add prompt input handle to gemini-generate node
+- feat: multi-reference image support for Gemini nodes
+- feat: support generator/transform outputs as reference images
+- feat: enhance AI workflow generator with structured output examples
+- feat: add advanced workflow examples for AI generation
+- fix: use screenToFlowPosition for correct node drop coordinates
+- fix: set outputSchema on text nodes when loading AI workflows
+- fix: transform Gemini parametersJson to parameters object
+- fix: distinguish cloud save from filesystem save in inspector
+
+### @teamflojo/floimg-google (0.3.1)
+
+- feat: support GEMINI_API_KEY env var as fallback
+
 ## [0.7.1] - 2025-12-31
 
 ### Fixed

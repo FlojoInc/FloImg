@@ -125,17 +125,72 @@ vault/
 
 Packages in `packages/*` are published to npm as `@teamflojo/*`.
 
+### Naming Clarification
+
+**Important**: The name "floimg" is used in two contexts:
+
+| Term                  | Meaning                                     | Example                         |
+| --------------------- | ------------------------------------------- | ------------------------------- |
+| **floimg monorepo**   | This git repository containing all packages | `github.com/TeamFlojo/floimg`   |
+| **@teamflojo/floimg** | The core library npm package                | `npm install @teamflojo/floimg` |
+
+**Git tags (vX.Y.Z) represent monorepo releases**, not individual package versions. Each package has its own independent semver in `package.json`. A release publishes whichever packages changed since last release.
+
 ### When to Release
 
-- Any runtime behavior change in a published package requires a release
-- Bug fixes in published packages need a patch release
-- **Proactive rule**: Check if a release is needed before closing out work
+**Release immediately:**
+
+- Bug fixes affecting users in production
+- Security patches
+- Breaking changes (let users migrate promptly)
+
+**Batch for later:**
+
+- New features (accumulate until meaningful value)
+- Non-urgent improvements
+- Single small additions (combine with other changes)
+
+**Don't release:**
+
+- Documentation-only changes
+- Test improvements
+- Internal refactors with no API change
+
+**Key principle**: Release when there's value, not on a schedule.
 
 ### Version Bumps
 
-- **Patch** (0.0.x): Bug fixes, type fixes that affect runtime
-- **Minor** (0.x.0): New features, non-breaking additions
-- **Major** (x.0.0): Breaking API changes
+| Change Type                       | Bump          | Example                      |
+| --------------------------------- | ------------- | ---------------------------- |
+| Bug fix                           | Patch (0.0.x) | Fix presigned URL expiration |
+| New feature, non-breaking         | Minor (0.x.0) | Add hideWorkflowLibrary prop |
+| Breaking API change               | Major (x.0.0) | Remove deprecated method     |
+| Internal refactor (no API change) | None          | Reorganize internal modules  |
+
+**Rule**: Only bump versions for changes that affect consumers of the package.
+
+### Changelog Discipline
+
+**CRITICAL**: Never tag a release without updating CHANGELOG.md first.
+
+```markdown
+## [v0.9.0] - 2026-01-15
+
+### @teamflojo/floimg-studio-ui (0.2.3)
+
+- feat: add hideWorkflowLibrary prop to Toolbar
+
+### @teamflojo/floimg (0.7.2)
+
+- fix: correct presigned URL expiration
+```
+
+Format rules:
+
+- Section header = git tag (monorepo release)
+- Sub-sections = only packages that changed
+- Include npm package version in parentheses
+- Prefix with conventional commit type (feat/fix/breaking)
 
 ### Release Process
 
@@ -147,17 +202,18 @@ git tag --sort=-v:refname | head -1        # Shows highest git tag
 npm view @teamflojo/floimg version         # Shows npm latest
 # New version MUST be higher than both!
 
-# 2. Bump version in package.json(s) to NEW version
-# 3. Commit
+# 2. Update CHANGELOG.md with all changes (REQUIRED before tagging)
+# 3. Bump version in package.json(s) to NEW version
+# 4. Commit
 git commit -m "chore: release vX.Y.Z"
 
-# 4. Create version tag (must be HIGHER than step 1)
+# 5. Create version tag (must be HIGHER than step 1)
 git tag vX.Y.Z
 
-# 5. Push (PR for public repo)
+# 6. Push (PR for public repo)
 git push origin main --tags
 
-# 6. Verify BOTH:
+# 7. Verify BOTH:
 #    - GitHub Releases page shows vX.Y.Z
 #    - npm shows new version
 ```
@@ -169,9 +225,11 @@ The `v*` tag triggers `.github/workflows/release.yml` which:
 - Creates GitHub Release with changelog
 
 **Common mistakes**:
+
 - Creating `@teamflojo/floimg@0.6.1` tags does NOT trigger a release. Always use simple `v0.6.1` format.
 - Creating a tag with version LOWER than existing (e.g., v0.6.0 when v0.7.1 exists). Always check highest version first!
 - Forgetting to check npm version - git tags and npm can diverge if releases fail.
+- Tagging without updating CHANGELOG.md first - always document before releasing.
 
 ## Plugin Development
 
