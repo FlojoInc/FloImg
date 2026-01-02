@@ -301,6 +301,27 @@ FloImg Studio includes built-in content moderation to prevent harmful content:
 
 Learn more at [floimg.com/safety](https://floimg.com/safety).
 
+## Repository Structure
+
+This is a **monorepo** containing multiple npm packages:
+
+```
+packages/
+├── floimg/           # Core engine, CLI, MCP server (@teamflojo/floimg)
+├── floimg-openai/    # DALL-E + GPT-4 Vision plugin
+├── floimg-stability/ # Stability AI plugin
+├── floimg-*/         # Other generator/transform plugins
+└── floimg-claude/    # Claude Code plugin
+
+apps/
+└── studio/           # FloImg Studio visual workflow builder
+    ├── frontend/     # React UI (@teamflojo/floimg-studio-ui)
+    ├── backend/      # Fastify API server
+    └── shared/       # Shared types (@teamflojo/floimg-studio-shared)
+```
+
+Each package in `packages/` is published to npm under `@teamflojo/*`.
+
 ## Contributing
 
 We welcome contributions—generators, storage backends, tests, docs.
