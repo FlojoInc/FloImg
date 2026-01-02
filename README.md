@@ -320,7 +320,7 @@ apps/
     └── shared/       # Shared types (@teamflojo/floimg-studio-shared)
 ```
 
-Each package in `packages/` is published to npm under `@teamflojo/*`.
+Each package in `packages/` is published to npm under `@teamflojo/*`. See the [Monorepo Guide](./vault/architecture/Monorepo-Guide.md) for development setup and creating new plugins.
 
 ## Contributing
 

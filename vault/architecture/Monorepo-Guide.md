@@ -1,23 +1,37 @@
 # floimg Monorepo
 
-This repository uses a pnpm workspace monorepo structure to manage the core library and plugin packages.
+This repository uses a pnpm workspace monorepo structure to manage the core library, plugins, and FloImg Studio.
 
 ## Structure
 
 ```
 floimg/
 ├── packages/
-│   ├── floimg/              # Core library
-│   ├── floimg-d3/           # D3 visualization plugin
-│   ├── floimg-mermaid/      # Mermaid diagram plugin
-│   ├── floimg-qr/           # QR code plugin
-│   ├── floimg-quickchart/   # QuickChart plugin
-│   └── floimg-screenshot/   # Screenshot plugin
+│   ├── floimg/              # Core engine, CLI, MCP server (@teamflojo/floimg)
+│   ├── floimg-claude/       # Claude Code plugin (@teamflojo/floimg-claude)
+│   ├── floimg-openai/       # DALL-E + GPT-4 Vision (@teamflojo/floimg-openai)
+│   ├── floimg-stability/    # Stability AI (@teamflojo/floimg-stability)
+│   ├── floimg-google/       # Google Imagen (@teamflojo/floimg-google)
+│   ├── floimg-replicate/    # Replicate models (@teamflojo/floimg-replicate)
+│   ├── floimg-ollama/       # Ollama local AI (@teamflojo/floimg-ollama)
+│   ├── floimg-xai/          # xAI Grok (@teamflojo/floimg-xai)
+│   ├── floimg-quickchart/   # Chart.js charts (@teamflojo/floimg-quickchart)
+│   ├── floimg-d3/           # D3 visualizations (@teamflojo/floimg-d3)
+│   ├── floimg-mermaid/      # Mermaid diagrams (@teamflojo/floimg-mermaid)
+│   ├── floimg-qr/           # QR codes (@teamflojo/floimg-qr)
+│   └── floimg-screenshot/   # Playwright screenshots (@teamflojo/floimg-screenshot)
+├── apps/
+│   └── studio/              # FloImg Studio visual workflow builder
+│       ├── frontend/        # React 19 UI (@teamflojo/floimg-studio-ui)
+│       ├── backend/         # Fastify 5 API server
+│       └── shared/          # Shared types (@teamflojo/floimg-studio-shared)
 ├── vault/                   # Documentation (Obsidian-compatible)
 ├── pnpm-workspace.yaml      # Workspace config
 ├── package.json             # Root scripts
 └── README.md                # Main documentation
 ```
+
+All packages are published to npm under the `@teamflojo/*` scope.
 
 ## Why Monorepo?
 
