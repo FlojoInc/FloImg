@@ -2,10 +2,7 @@
  * Template Types
  *
  * Extended template interface that serves as the single source of truth
- * for template definitions across:
- * - FloImg Studio OSS (offline, self-hosted)
- * - FloImg Studio Cloud (FSC)
- * - floimg-web (marketing site)
+ * for template definitions across all FloImg surfaces.
  */
 
 import type { StudioNode, StudioEdge } from "@teamflojo/floimg-studio-shared";
@@ -63,8 +60,8 @@ export interface Template {
   // ============================================
 
   /**
-   * Requires cloud API access (FSC-only templates)
-   * AI generation templates need cloud for API keys
+   * Requires cloud API access (e.g., OpenAI API keys)
+   * AI generation templates need API keys to execute
    */
   requiresCloud?: boolean;
 
@@ -112,7 +109,7 @@ export interface Template {
   };
 
   // ============================================
-  // Cloud-Specific (FSC onboarding)
+  // Cloud-Specific (onboarding, credits)
   // ============================================
 
   /** Whether this template uses AI generation (not just transforms) */

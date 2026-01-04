@@ -137,8 +137,8 @@ importers:
   apps/studio/frontend:
     dependencies:
       '@teamflojo/floimg-studio-shared':
-        specifier: ^0.1.0
-        version: 0.1.2
+        specifier: workspace:*
+        version: link:../shared
       '@teamflojo/floimg-templates':
         specifier: workspace:*
         version: link:../../../packages/floimg-templates
@@ -2041,9 +2041,6 @@ packages:
 
   '@tanstack/virtual-core@3.13.13':
     resolution: {integrity: sha512-uQFoSdKKf5S8k51W5t7b2qpfkyIbdHMzAn+AMQvHPxKUPeo1SsGaA4JRISQT87jm28b7z8OEqPcg1IOZagQHcA==}
-
-  '@teamflojo/floimg-studio-shared@0.1.2':
-    resolution: {integrity: sha512-IZdbQpYii8SyOCYTReRs0lJ0p+Xf9R5BDMr2P/vXwkyo1tazHlvRggv7YXXzVofr1FOdsOypequIckvtcaFdww==}
 
   '@teamflojo/floimg@0.4.0':
     resolution: {integrity: sha512-iTLu5iHiMPoC35IbR5Otr8ltDsV5dZoz0VkCLYOAI++9Lkd5T4CwvBk3aqRgCf8RStf5Es1pvabAHaKjT6THGg==}
@@ -7509,8 +7506,6 @@ snapshots:
       react-dom: 19.2.3(react@19.2.3)
 
   '@tanstack/virtual-core@3.13.13': {}
-
-  '@teamflojo/floimg-studio-shared@0.1.2': {}
 
   '@teamflojo/floimg@0.4.0(ws@8.18.3)(zod@4.2.1)':
     dependencies:

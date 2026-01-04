@@ -2,7 +2,7 @@
  * AI Workflow Templates
  *
  * Templates that use AI image generation (OpenAI DALL-E, etc.)
- * These require cloud API access and are FSC-only.
+ * These require API keys (cloud deployment) to execute.
  */
 
 import type { Template } from "../types.js";

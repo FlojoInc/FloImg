@@ -2,23 +2,20 @@
  * @teamflojo/floimg-templates
  *
  * Official workflow templates for FloImg Studio.
- * Single source of truth consumed by:
- * - FloImg Studio OSS (offline, self-hosted)
- * - FloImg Studio Cloud (FSC)
- * - floimg-web (marketing site)
+ * Single source of truth for template definitions.
  *
  * @example
  * ```typescript
- * // OSS Studio: Get only templates that work offline
+ * // Self-hosted: Get only templates that work offline
  * import { getCoreTemplates } from '@teamflojo/floimg-templates';
  * const templates = getCoreTemplates();
  *
- * // FSC: Get all templates including cloud-only
+ * // Cloud/full: Get all templates including those requiring API keys
  * import { getAllTemplates } from '@teamflojo/floimg-templates';
  * const templates = getAllTemplates();
  *
- * // Marketing: Get templates with metadata for SEO
- * import { getAllTemplates, getTemplateById } from '@teamflojo/floimg-templates';
+ * // Get specific template with metadata
+ * import { getTemplateById } from '@teamflojo/floimg-templates';
  * const template = getTemplateById('revenue-chart');
  * ```
  */
@@ -63,7 +60,7 @@ export const coreTemplates: Template[] = allTemplates.filter(
 );
 
 /**
- * Cloud-only templates (require FSC)
+ * Cloud-only templates (require API keys like OpenAI, etc.)
  */
 export const cloudTemplates: Template[] = allTemplates.filter(
   (t) => t.requiresCloud
@@ -74,7 +71,7 @@ export const cloudTemplates: Template[] = allTemplates.filter(
 // ============================================
 
 /**
- * Get all templates (for FSC and floimg-web)
+ * Get all templates (includes cloud-only templates)
  */
 export function getAllTemplates(): Template[] {
   return allTemplates;
@@ -88,7 +85,7 @@ export function getCoreTemplates(): Template[] {
 }
 
 /**
- * Get cloud-only templates (for FSC onboarding)
+ * Get cloud-only templates (require API keys)
  */
 export function getCloudTemplates(): Template[] {
   return cloudTemplates;
