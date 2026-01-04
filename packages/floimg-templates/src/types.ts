@@ -10,11 +10,7 @@ import type { StudioNode, StudioEdge } from "@teamflojo/floimg-studio-shared";
 /**
  * Template categories organized by USE CASE, not generator type
  */
-export type TemplateCategory =
-  | "AI Workflows"
-  | "Data Viz"
-  | "Marketing"
-  | "Utilities";
+export type TemplateCategory = "AI Workflows" | "Data Viz" | "Marketing" | "Utilities";
 
 /**
  * Extended template interface with full metadata
@@ -88,8 +84,6 @@ export interface Template {
   capabilities?: {
     /** Works with Claude Code CLI */
     claudeCodeReady?: boolean;
-    /** Works in Studio visual editor */
-    studioCompatible?: boolean;
     /** Multi-step pipeline workflow */
     pipeline?: boolean;
   };

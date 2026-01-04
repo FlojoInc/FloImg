@@ -14,13 +14,11 @@ import type { Template } from "../types.js";
 export const socialMediaKit: Template = {
   id: "social-media-kit",
   name: "Social Media Kit",
-  description:
-    "Generate optimized images for all social platforms from one source",
+  description: "Generate optimized images for all social platforms from one source",
   category: "Marketing",
   generator: "pipeline",
   tags: ["social", "og-image", "twitter", "instagram", "resize"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
     pipeline: true,
   },
@@ -36,15 +34,8 @@ const socialKit = await floimg.pipeline(heroImage, [
 ]);`,
   seo: {
     title: "Social Media Kit Generator",
-    description:
-      "Generate optimized images for all social platforms from one source image",
-    keywords: [
-      "social media",
-      "og image",
-      "twitter card",
-      "instagram",
-      "image resize",
-    ],
+    description: "Generate optimized images for all social platforms from one source image",
+    keywords: ["social media", "og image", "twitter card", "instagram", "image resize"],
   },
   workflow: {
     nodes: [
@@ -109,13 +100,11 @@ const socialKit = await floimg.pipeline(heroImage, [
 export const avatarPipeline: Template = {
   id: "avatar-pipeline",
   name: "Avatar Processing",
-  description:
-    "Generate consistent avatar sizes with circular crop and optimization",
+  description: "Generate consistent avatar sizes with circular crop and optimization",
   category: "Marketing",
   generator: "pipeline",
   tags: ["avatar", "profile", "resize", "crop", "user"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
     pipeline: true,
   },
@@ -131,8 +120,7 @@ export const avatarPipeline: Template = {
 ]);`,
   seo: {
     title: "Avatar Processing Pipeline",
-    description:
-      "Generate consistent avatar sizes with circular crop and optimization",
+    description: "Generate consistent avatar sizes with circular crop and optimization",
     keywords: ["avatar", "profile picture", "image resize", "circular crop"],
   },
   workflow: {
@@ -213,7 +201,6 @@ export const watermarkBranding: Template = {
   generator: "pipeline",
   tags: ["watermark", "branding", "logo", "protection", "copyright"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
     pipeline: true,
   },
@@ -299,7 +286,6 @@ export const filterShowcase: Template = {
   generator: "pipeline",
   tags: ["filter", "vintage", "effects", "artistic", "photo"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
     pipeline: true,
   },
