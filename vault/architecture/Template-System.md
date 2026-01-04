@@ -45,32 +45,27 @@ interface Template {
 }
 ```
 
-## Consumer Patterns
+## Usage
 
-### OSS Studio (Offline)
+### FloImg Studio
 ```typescript
 import {
-  coreTemplates,        // Templates without requiresCloud
+  coreTemplates,        // Templates that work offline
   getCoreCategories,    // Categories from core templates
   resolveTemplate       // Handles legacy ID mapping
 } from "@teamflojo/floimg-templates";
 ```
 
-### FSC (All Templates)
+### All Templates (Including Cloud-Only)
 ```typescript
 import {
   allTemplates,         // All templates including cloud-only
-  getCategories         // All categories
-} from "@teamflojo/floimg-templates";
-```
-
-### floimg-web (Marketing)
-```typescript
-import {
-  allTemplates,         // Show all with badges
+  getCategories,        // All categories
   getStudioUrl          // Generate Studio URLs
 } from "@teamflojo/floimg-templates";
 ```
+
+Templates with `requiresCloud: true` require API keys for AI providers (OpenAI, etc.).
 
 ## Legacy ID Resolution
 
@@ -97,4 +92,4 @@ URLs like `?template=sales-dashboard` resolve to the canonical `revenue-chart` t
 ## Related Docs
 
 - [[Monorepo-Guide]] - Package development
-- EPIC-2026-002 (floimg-hq) - Template system overhaul
+- [README](../../packages/floimg-templates/README.md) - Package usage

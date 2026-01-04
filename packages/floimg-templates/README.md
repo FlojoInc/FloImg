@@ -29,7 +29,7 @@ const categories = getCoreCategories();
 const template = resolveTemplate("revenue-chart");
 ```
 
-### FSC (All Templates)
+### All Templates (Including Cloud-Only)
 
 ```typescript
 import {
@@ -38,14 +38,16 @@ import {
   getTemplateById,
 } from "@teamflojo/floimg-templates";
 
-// Get all templates including cloud-only
+// Get all templates including those requiring API keys
 const templates = allTemplates;
 
 // Get a specific template
 const template = getTemplateById("ai-product-shot");
 ```
 
-### Marketing Site
+Templates with `requiresCloud: true` need API keys (OpenAI, etc.) to execute.
+
+### Marketing/Integration
 
 ```typescript
 import {

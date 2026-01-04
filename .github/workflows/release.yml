@@ -66,6 +66,7 @@ jobs:
           # Publish studio packages
           pnpm --filter @teamflojo/floimg-studio-shared publish --no-git-checks --access public
           pnpm --filter @teamflojo/floimg-studio-ui publish --no-git-checks --access public
+          pnpm --filter @teamflojo/floimg-templates publish --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

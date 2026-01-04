@@ -55,7 +55,7 @@
     "zustand": "^4.0.0 || ^5.0.0"
   },
   "dependencies": {
-    "@teamflojo/floimg-studio-shared": "^0.1.0",
+    "@teamflojo/floimg-studio-shared": "workspace:*",
     "@teamflojo/floimg-templates": "workspace:*"
   },
   "devDependencies": {
