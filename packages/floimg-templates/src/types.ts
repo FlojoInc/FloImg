@@ -117,6 +117,16 @@ export interface Template {
 
   /** Icon identifier for template cards */
   icon?: "sparkles" | "image" | "share" | "chart" | "diagram" | "qr";
+
+  // ============================================
+  // Computed Metadata (derived from workflow)
+  // ============================================
+
+  /**
+   * Number of nodes in the workflow
+   * Can be explicitly set or computed from workflow.nodes.length
+   */
+  nodeCount?: number;
 }
 
 /**

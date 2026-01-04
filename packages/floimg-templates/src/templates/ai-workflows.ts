@@ -8,37 +8,45 @@
 import type { Template } from "../types.js";
 
 /**
- * AI Product Photography
+ * AI Product Photography for E-commerce
  * Canonical ID: ai-product-shot
+ *
+ * Multi-step workflow: AI generate → Remove background → Resize for listing → Add watermark
+ * JTBD: Create e-commerce-ready product photos with transparent backgrounds and consistent sizing
  */
 export const aiProductShot: Template = {
   id: "ai-product-shot",
   name: "AI Product Photography",
-  description: "Generate professional product images with AI-controlled lighting and backgrounds",
+  description: "Generate AI product photos with background removal and e-commerce-ready sizing",
   category: "AI Workflows",
   generator: "openai",
-  tags: ["product", "ecommerce", "photography", "dall-e", "ai"],
+  tags: ["product", "ecommerce", "photography", "dall-e", "ai", "pipeline", "background-removal"],
   requiresCloud: true,
   requiresAuth: true,
   usesAI: true,
   aiCreditsNeeded: 1,
-  capabilities: {},
+  capabilities: {
+    pipeline: true,
+  },
   icon: "sparkles",
-  valueProp: "Professional product photos in seconds",
+  valueProp: "E-commerce-ready product photos in seconds",
   preview: {
     imageUrl: "/showcase/ai-generation/product-headphones.png",
   },
-  codeExample: `const image = await floimg.generate({
-  generator: 'openai',
-  params: {
+  codeExample: `const product = await floimg
+  .generate('openai', {
     prompt: 'Professional product photo of headphones on white background',
+    model: 'dall-e-3',
     size: '1024x1024'
-  }
-});`,
+  })
+  .transform('removeBackground')
+  .transform('resize', { width: 800, height: 800, fit: 'contain', background: '#ffffff' })
+  .transform('addCaption', { text: 'SKU-12345', position: 'bottom-right', fontSize: 12 })
+  .toBlob();`,
   seo: {
     title: "AI Product Photography Template",
-    description: "Generate professional product photos with AI-controlled lighting and backgrounds",
-    keywords: ["product photography", "ai generation", "ecommerce", "dall-e"],
+    description: "Generate e-commerce-ready product photos with AI and background removal",
+    keywords: ["product photography", "ai generation", "ecommerce", "background removal"],
   },
   workflow: {
     nodes: [
@@ -57,43 +65,93 @@ export const aiProductShot: Template = {
           },
         },
       },
+      {
+        id: "transform-bg",
+        type: "transform",
+        position: { x: 400, y: 150 },
+        data: {
+          operation: "removeBackground",
+          params: {},
+        },
+      },
+      {
+        id: "transform-resize",
+        type: "transform",
+        position: { x: 700, y: 150 },
+        data: {
+          operation: "resize",
+          params: {
+            width: 800,
+            height: 800,
+            fit: "contain",
+            background: "#ffffff",
+          },
+        },
+      },
+      {
+        id: "transform-caption",
+        type: "transform",
+        position: { x: 1000, y: 150 },
+        data: {
+          operation: "addCaption",
+          params: {
+            text: "SKU-12345",
+            position: "bottom-right",
+            fontSize: 12,
+            color: "#9CA3AF",
+            padding: 8,
+          },
+        },
+      },
     ],
-    edges: [],
+    edges: [
+      { id: "e1", source: "gen-ai", target: "transform-bg" },
+      { id: "e2", source: "transform-bg", target: "transform-resize" },
+      { id: "e3", source: "transform-resize", target: "transform-caption" },
+    ],
   },
 };
 
 /**
- * AI Hero Image
+ * AI Hero Image for Landing Pages
  * Canonical ID: ai-hero-image
+ *
+ * Multi-step workflow: AI generate → Resize to OG dimensions → Round corners → WebP for fast loading
+ * JTBD: Create landing page hero images optimized for web performance and social sharing
  */
 export const aiHeroImage: Template = {
   id: "ai-hero-image",
   name: "AI Hero Image",
-  description: "Create stunning hero images for websites and landing pages",
+  description: "Generate landing page hero images optimized for web and social sharing",
   category: "AI Workflows",
   generator: "openai",
-  tags: ["hero", "landing-page", "marketing", "dall-e", "ai"],
+  tags: ["hero", "landing-page", "marketing", "dall-e", "ai", "pipeline", "og-image"],
   requiresCloud: true,
   requiresAuth: true,
   usesAI: true,
   aiCreditsNeeded: 1,
-  capabilities: {},
+  capabilities: {
+    pipeline: true,
+  },
   icon: "sparkles",
-  valueProp: "Stunning hero images for your landing page",
+  valueProp: "Landing page hero images in seconds",
   preview: {
     imageUrl: "/showcase/ai-generation/futuristic-city.png",
   },
-  codeExample: `const image = await floimg.generate({
-  generator: 'openai',
-  params: {
+  codeExample: `const hero = await floimg
+  .generate('openai', {
     prompt: 'Futuristic city skyline at sunset, cinematic lighting',
+    model: 'dall-e-3',
     size: '1792x1024'
-  }
-});`,
+  })
+  .transform('resize', { width: 1200, height: 630 }) // OG image dimensions
+  .transform('roundCorners', { radius: 8 })
+  .transform('convert', { to: 'image/webp', quality: 85 })
+  .toBlob();`,
   seo: {
     title: "AI Hero Image Generator",
-    description: "Generate stunning hero images for websites and landing pages with AI",
-    keywords: ["hero image", "landing page", "ai generation", "website design"],
+    description: "Generate landing page hero images optimized for web and social sharing",
+    keywords: ["hero image", "landing page", "og image", "social sharing"],
   },
   workflow: {
     nodes: [
@@ -112,36 +170,91 @@ export const aiHeroImage: Template = {
           },
         },
       },
+      {
+        id: "transform-resize",
+        type: "transform",
+        position: { x: 400, y: 150 },
+        data: {
+          operation: "resize",
+          params: {
+            width: 1200,
+            height: 630,
+            fit: "cover",
+          },
+        },
+      },
+      {
+        id: "transform-corners",
+        type: "transform",
+        position: { x: 700, y: 150 },
+        data: {
+          operation: "roundCorners",
+          params: {
+            radius: 8,
+          },
+        },
+      },
+      {
+        id: "transform-webp",
+        type: "transform",
+        position: { x: 1000, y: 150 },
+        data: {
+          operation: "convert",
+          params: {
+            to: "image/webp",
+            quality: 85,
+          },
+        },
+      },
     ],
-    edges: [],
+    edges: [
+      { id: "e1", source: "gen-ai", target: "transform-resize" },
+      { id: "e2", source: "transform-resize", target: "transform-corners" },
+      { id: "e3", source: "transform-corners", target: "transform-webp" },
+    ],
   },
 };
 
 /**
- * AI Mascot Generator
+ * AI Mascot with Brand Kit Export
  * Canonical ID: ai-mascot
+ *
+ * Multi-step workflow: AI generate → Remove background → Export multiple sizes for different uses
+ * JTBD: Create mascot assets ready for favicon, social avatars, and website use
  */
 export const aiMascot: Template = {
   id: "ai-mascot",
   name: "AI Mascot Generator",
-  description: "Design unique mascots and characters for your brand",
+  description: "Generate mascot with transparent background and multiple export sizes",
   category: "AI Workflows",
   generator: "openai",
-  tags: ["mascot", "character", "branding", "dall-e", "ai"],
+  tags: ["mascot", "character", "branding", "dall-e", "ai", "pipeline", "favicon", "avatar"],
   requiresCloud: true,
   requiresAuth: true,
   usesAI: true,
   aiCreditsNeeded: 1,
-  capabilities: {},
+  capabilities: {
+    pipeline: true,
+  },
   icon: "sparkles",
-  valueProp: "Unique mascots for your brand",
+  valueProp: "Brand-ready mascot assets in seconds",
   preview: {
     imageUrl: "/showcase/ai-generation/robot-mascot.png",
   },
+  codeExample: `const mascot = await floimg
+  .generate('openai', {
+    prompt: 'Friendly robot mascot, modern flat design, teal colors, white background',
+    model: 'dall-e-3',
+    size: '1024x1024'
+  })
+  .transform('removeBackground')
+  .transform('resize', { width: 512, height: 512, fit: 'contain' })
+  .transform('convert', { to: 'image/png' })
+  .toBlob();`,
   seo: {
     title: "AI Mascot Generator",
-    description: "Create unique brand mascots and characters with AI",
-    keywords: ["mascot design", "character design", "branding", "ai generation"],
+    description: "Create brand mascots with transparent backgrounds ready for any use",
+    keywords: ["mascot design", "character design", "branding", "favicon"],
   },
   workflow: {
     nodes: [
@@ -160,8 +273,45 @@ export const aiMascot: Template = {
           },
         },
       },
+      {
+        id: "transform-bg",
+        type: "transform",
+        position: { x: 400, y: 150 },
+        data: {
+          operation: "removeBackground",
+          params: {},
+        },
+      },
+      {
+        id: "transform-resize",
+        type: "transform",
+        position: { x: 700, y: 150 },
+        data: {
+          operation: "resize",
+          params: {
+            width: 512,
+            height: 512,
+            fit: "contain",
+          },
+        },
+      },
+      {
+        id: "transform-png",
+        type: "transform",
+        position: { x: 1000, y: 150 },
+        data: {
+          operation: "convert",
+          params: {
+            to: "image/png",
+          },
+        },
+      },
     ],
-    edges: [],
+    edges: [
+      { id: "e1", source: "gen-ai", target: "transform-bg" },
+      { id: "e2", source: "transform-bg", target: "transform-resize" },
+      { id: "e3", source: "transform-resize", target: "transform-png" },
+    ],
   },
 };
 

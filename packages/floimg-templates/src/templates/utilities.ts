@@ -8,35 +8,40 @@
 import type { Template } from "../types.js";
 
 /**
- * Branded QR Code
+ * Branded QR Code Pipeline
  * Canonical ID: branded-qr
+ *
+ * Multi-step workflow: Generate QR → Resize → Add rounded corners → Convert to PNG
+ * Demonstrates: composable transforms on generated content
  */
 export const brandedQR: Template = {
   id: "branded-qr",
   name: "Branded QR Code",
-  description: "QR code with custom colors and styling to match your brand",
+  description: "QR code with custom colors, rounded corners, and optimized for print or digital",
   category: "Utilities",
   generator: "qr",
-  tags: ["qr", "branded", "link", "custom", "url"],
+  tags: ["qr", "branded", "link", "custom", "url", "pipeline"],
   capabilities: {
     claudeCodeReady: true,
+    pipeline: true,
   },
   icon: "qr",
   preview: {
     imageUrl: "/showcase/qr-codes/qr-brand.png",
   },
-  codeExample: `const qr = await floimg.generate({
-  generator: 'qr',
-  params: {
+  codeExample: `const qr = await floimg
+  .generate('qr', {
     data: 'https://floimg.com',
-    color: '#0d9488',
-    backgroundColor: '#ffffff',
-    margin: 2
-  }
-});`,
+    dark: '#0d9488',
+    light: '#ffffff'
+  })
+  .transform('resize', { width: 300, height: 300 })
+  .transform('roundCorners', { radius: 16 })
+  .transform('convert', { to: 'image/png' })
+  .toBlob();`,
   seo: {
     title: "Branded QR Code Generator",
-    description: "Generate QR codes with custom colors to match your brand identity",
+    description: "Generate QR codes with custom colors, rounded corners, and professional styling",
     keywords: ["qr code", "branded qr", "custom qr", "marketing"],
   },
   workflow: {
@@ -44,7 +49,7 @@ export const brandedQR: Template = {
       {
         id: "gen-1",
         type: "generator",
-        position: { x: 100, y: 100 },
+        position: { x: 100, y: 150 },
         data: {
           generatorName: "qr",
           params: {
@@ -57,29 +62,85 @@ export const brandedQR: Template = {
           },
         },
       },
+      {
+        id: "transform-resize",
+        type: "transform",
+        position: { x: 400, y: 150 },
+        data: {
+          operation: "resize",
+          params: {
+            width: 300,
+            height: 300,
+            fit: "contain",
+          },
+        },
+      },
+      {
+        id: "transform-corners",
+        type: "transform",
+        position: { x: 700, y: 150 },
+        data: {
+          operation: "roundCorners",
+          params: {
+            radius: 16,
+          },
+        },
+      },
+      {
+        id: "transform-convert",
+        type: "transform",
+        position: { x: 1000, y: 150 },
+        data: {
+          operation: "convert",
+          params: {
+            to: "image/png",
+          },
+        },
+      },
     ],
-    edges: [],
+    edges: [
+      { id: "e1", source: "gen-1", target: "transform-resize" },
+      { id: "e2", source: "transform-resize", target: "transform-corners" },
+      { id: "e3", source: "transform-corners", target: "transform-convert" },
+    ],
   },
 };
 
 /**
- * Dark Mode QR Code
+ * Dark Mode QR Code Pipeline
  * Canonical ID: dark-qr
+ *
+ * Multi-step workflow: Generate inverted QR → Resize → Add subtle border → WebP export
+ * Demonstrates: transforms for dark UI integration
  */
 export const darkQR: Template = {
   id: "dark-qr",
   name: "Dark Mode QR",
-  description: "QR code optimized for dark backgrounds",
+  description: "QR code optimized for dark backgrounds with subtle border and web-optimized export",
   category: "Utilities",
   generator: "qr",
-  tags: ["qr", "dark-mode", "link", "inverted"],
+  tags: ["qr", "dark-mode", "link", "inverted", "pipeline"],
   capabilities: {
     claudeCodeReady: true,
+    pipeline: true,
   },
   icon: "qr",
   preview: {
     imageUrl: "/showcase/qr-codes/qr-dark.png",
   },
+  codeExample: `const qr = await floimg
+  .generate('qr', {
+    data: 'https://floimg.com',
+    dark: '#ffffff',
+    light: '#18181b'
+  })
+  .transform('resize', { width: 300, height: 300 })
+  .transform('extend', {
+    top: 8, bottom: 8, left: 8, right: 8,
+    background: '#27272a'
+  })
+  .transform('convert', { to: 'image/webp', quality: 90 })
+  .toBlob();`,
   seo: {
     title: "Dark Mode QR Code",
     description: "QR codes optimized for dark backgrounds and dark mode UIs",
@@ -90,7 +151,7 @@ export const darkQR: Template = {
       {
         id: "gen-1",
         type: "generator",
-        position: { x: 100, y: 100 },
+        position: { x: 100, y: 150 },
         data: {
           generatorName: "qr",
           params: {
@@ -103,26 +164,92 @@ export const darkQR: Template = {
           },
         },
       },
+      {
+        id: "transform-resize",
+        type: "transform",
+        position: { x: 400, y: 150 },
+        data: {
+          operation: "resize",
+          params: {
+            width: 300,
+            height: 300,
+            fit: "contain",
+          },
+        },
+      },
+      {
+        id: "transform-border",
+        type: "transform",
+        position: { x: 700, y: 150 },
+        data: {
+          operation: "extend",
+          params: {
+            top: 8,
+            bottom: 8,
+            left: 8,
+            right: 8,
+            background: "#27272a",
+          },
+        },
+      },
+      {
+        id: "transform-webp",
+        type: "transform",
+        position: { x: 1000, y: 150 },
+        data: {
+          operation: "convert",
+          params: {
+            to: "image/webp",
+            quality: 90,
+          },
+        },
+      },
     ],
-    edges: [],
+    edges: [
+      { id: "e1", source: "gen-1", target: "transform-resize" },
+      { id: "e2", source: "transform-resize", target: "transform-border" },
+      { id: "e3", source: "transform-border", target: "transform-webp" },
+    ],
   },
 };
 
 /**
- * WiFi QR Code
+ * WiFi QR Code Pipeline
  * Canonical ID: wifi-qr
+ *
+ * Multi-step workflow: Generate WiFi QR → Resize → Add caption label → Rounded corners
+ * Demonstrates: adding context/labels to generated content
  */
 export const wifiQR: Template = {
   id: "wifi-qr",
   name: "WiFi QR Code",
-  description: "Scannable QR code for WiFi network access",
+  description: "Scannable WiFi QR code with network name label and professional styling",
   category: "Utilities",
   generator: "qr",
-  tags: ["qr", "wifi", "network", "guest", "access"],
+  tags: ["qr", "wifi", "network", "guest", "access", "pipeline"],
   capabilities: {
     claudeCodeReady: true,
+    pipeline: true,
   },
   icon: "qr",
+  preview: {
+    imageUrl: "/showcase/qr-codes/qr-wifi.png",
+  },
+  codeExample: `const qr = await floimg
+  .generate('qr', {
+    data: 'WIFI:T:WPA;S:GuestNetwork;P:welcome123;;',
+    dark: '#059669',
+    light: '#ffffff'
+  })
+  .transform('resize', { width: 300, height: 300 })
+  .transform('addCaption', {
+    text: 'Scan for WiFi',
+    position: 'bottom-center',
+    fontSize: 18,
+    color: '#059669'
+  })
+  .transform('roundCorners', { radius: 12 })
+  .toBlob();`,
   seo: {
     title: "WiFi QR Code Generator",
     description: "Generate scannable QR codes for easy WiFi network access sharing",
@@ -133,7 +260,7 @@ export const wifiQR: Template = {
       {
         id: "gen-1",
         type: "generator",
-        position: { x: 100, y: 100 },
+        position: { x: 100, y: 150 },
         data: {
           generatorName: "qr",
           params: {
@@ -146,8 +273,51 @@ export const wifiQR: Template = {
           },
         },
       },
+      {
+        id: "transform-resize",
+        type: "transform",
+        position: { x: 400, y: 150 },
+        data: {
+          operation: "resize",
+          params: {
+            width: 300,
+            height: 300,
+            fit: "contain",
+          },
+        },
+      },
+      {
+        id: "transform-caption",
+        type: "transform",
+        position: { x: 700, y: 150 },
+        data: {
+          operation: "addCaption",
+          params: {
+            text: "Scan for WiFi",
+            position: "bottom-center",
+            fontSize: 18,
+            color: "#059669",
+            padding: 16,
+          },
+        },
+      },
+      {
+        id: "transform-corners",
+        type: "transform",
+        position: { x: 1000, y: 150 },
+        data: {
+          operation: "roundCorners",
+          params: {
+            radius: 12,
+          },
+        },
+      },
     ],
-    edges: [],
+    edges: [
+      { id: "e1", source: "gen-1", target: "transform-resize" },
+      { id: "e2", source: "transform-resize", target: "transform-caption" },
+      { id: "e3", source: "transform-caption", target: "transform-corners" },
+    ],
   },
 };
 

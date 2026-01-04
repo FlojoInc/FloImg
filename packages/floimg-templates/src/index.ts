@@ -214,3 +214,43 @@ export function getOSSStudioUrl(templateId: string, port = 5173): string {
 export function resolveTemplate(id: string): Template | undefined {
   return getTemplateById(id);
 }
+
+// ============================================
+// Computed Metadata Helpers
+// ============================================
+
+/**
+ * Get the node count for a template
+ * Uses explicit nodeCount if set, otherwise computes from workflow.nodes.length
+ */
+export function getNodeCount(template: Template): number {
+  if (template.nodeCount !== undefined) {
+    return template.nodeCount;
+  }
+  return template.workflow.nodes.length;
+}
+
+/**
+ * Get all templates with computed nodeCount added
+ * Useful for consumers that want to display node count
+ */
+export function getAllTemplatesWithNodeCount(): (Template & { nodeCount: number })[] {
+  return allTemplates.map((t) => ({
+    ...t,
+    nodeCount: getNodeCount(t),
+  }));
+}
+
+/**
+ * Get templates that are true pipelines (2+ nodes)
+ */
+export function getPipelineTemplates(): Template[] {
+  return allTemplates.filter((t) => getNodeCount(t) >= 2);
+}
+
+/**
+ * Get templates sorted by complexity (node count, descending)
+ */
+export function getTemplatesByComplexity(): Template[] {
+  return [...allTemplates].sort((a, b) => getNodeCount(b) - getNodeCount(a));
+}
