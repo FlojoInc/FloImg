@@ -191,7 +191,6 @@ export const avatarPipeline: Template = {
 /**
  * Branded Watermark
  * Canonical ID: watermark-branding
- * Previous Studio ID: chart-watermark
  */
 export const watermarkBranding: Template = {
   id: "watermark-branding",

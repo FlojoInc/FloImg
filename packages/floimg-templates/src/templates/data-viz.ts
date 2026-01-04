@@ -10,7 +10,6 @@ import type { Template } from "../types.js";
 /**
  * Revenue Dashboard (QuickChart bar chart)
  * Canonical ID: revenue-chart
- * Previous Studio ID: sales-dashboard
  */
 export const revenueChart: Template = {
   id: "revenue-chart",
@@ -92,7 +91,6 @@ export const revenueChart: Template = {
 /**
  * User Growth Line Chart
  * Canonical ID: monthly-users
- * Previous Studio ID: user-growth
  */
 export const monthlyUsers: Template = {
   id: "monthly-users",

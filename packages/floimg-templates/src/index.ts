@@ -55,16 +55,12 @@ export const allTemplates: Template[] = [
  * Core templates that work offline (no cloud required)
  * For FloImg Studio OSS and self-hosted deployments
  */
-export const coreTemplates: Template[] = allTemplates.filter(
-  (t) => !t.requiresCloud
-);
+export const coreTemplates: Template[] = allTemplates.filter((t) => !t.requiresCloud);
 
 /**
  * Cloud-only templates (require API keys like OpenAI, etc.)
  */
-export const cloudTemplates: Template[] = allTemplates.filter(
-  (t) => t.requiresCloud
-);
+export const cloudTemplates: Template[] = allTemplates.filter((t) => t.requiresCloud);
 
 // ============================================
 // Query Functions
@@ -109,9 +105,7 @@ export function getCoreTemplateById(id: string): Template | undefined {
  * Get all unique categories (from all templates)
  */
 export function getCategories(): TemplateCategory[] {
-  const categories = new Set<TemplateCategory>(
-    allTemplates.map((t) => t.category)
-  );
+  const categories = new Set<TemplateCategory>(allTemplates.map((t) => t.category));
   return Array.from(categories);
 }
 
@@ -119,9 +113,7 @@ export function getCategories(): TemplateCategory[] {
  * Get categories available in core templates (OSS-compatible)
  */
 export function getCoreCategories(): TemplateCategory[] {
-  const categories = new Set<TemplateCategory>(
-    coreTemplates.map((t) => t.category)
-  );
+  const categories = new Set<TemplateCategory>(coreTemplates.map((t) => t.category));
   return Array.from(categories);
 }
 
@@ -201,10 +193,7 @@ export function getTemplatesByCapability(
  * @param templateId - The template ID
  * @param baseUrl - Base URL (defaults to studio.floimg.com for cloud, or can be overridden for self-hosted)
  */
-export function getStudioUrl(
-  templateId: string,
-  baseUrl = "https://studio.floimg.com"
-): string {
+export function getStudioUrl(templateId: string, baseUrl = "https://studio.floimg.com"): string {
   return `${baseUrl}/?template=${templateId}`;
 }
 
@@ -217,39 +206,11 @@ export function getOSSStudioUrl(templateId: string, port = 5173): string {
   return `http://localhost:${port}/?template=${templateId}`;
 }
 
-// ============================================
-// ID Mapping (for migration)
-// ============================================
-
 /**
- * Map from old Studio IDs to new canonical IDs
- * Used during migration to update existing references
- */
-export const legacyIdMap: Record<string, string> = {
-  // Chart templates
-  "sales-dashboard": "revenue-chart",
-  "user-growth": "monthly-users",
-  // QR templates
-  "website-qr": "branded-qr",
-  // Pipeline templates
-  "chart-watermark": "watermark-branding",
-};
-
-/**
- * Resolve a template ID, handling legacy IDs
- * @param id - Template ID (may be legacy)
- * @returns The canonical template or undefined
+ * Resolve a template by ID
+ * @param id - Template ID
+ * @returns The template or undefined
  */
 export function resolveTemplate(id: string): Template | undefined {
-  // Try direct lookup first
-  const direct = getTemplateById(id);
-  if (direct) return direct;
-
-  // Check legacy map
-  const canonicalId = legacyIdMap[id];
-  if (canonicalId) {
-    return getTemplateById(canonicalId);
-  }
-
-  return undefined;
+  return getTemplateById(id);
 }

@@ -10,7 +10,6 @@ import type { Template } from "../types.js";
 /**
  * Branded QR Code
  * Canonical ID: branded-qr
- * Previous Studio ID: website-qr
  */
 export const brandedQR: Template = {
   id: "branded-qr",
