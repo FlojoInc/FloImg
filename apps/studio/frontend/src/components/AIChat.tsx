@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import type {
   GenerateWorkflowMessage,
   GeneratedWorkflowData,
+  GenerateStatusReason,
 } from "@teamflojo/floimg-studio-shared";
 import { generateWorkflow, getGenerateStatus } from "../api/client";
 
@@ -18,6 +19,9 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
   const [error, setError] = useState<string | null>(null);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
+  const [statusReason, setStatusReason] = useState<GenerateStatusReason | undefined>();
+  const [isCloudDeployment, setIsCloudDeployment] = useState(false);
+  const [supportUrl, setSupportUrl] = useState<string | undefined>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -28,10 +32,14 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
         .then((status) => {
           setIsAvailable(status.available);
           setStatusMessage(status.message);
+          setStatusReason(status.reason);
+          setIsCloudDeployment(status.isCloudDeployment ?? false);
+          setSupportUrl(status.supportUrl);
         })
         .catch(() => {
           setIsAvailable(false);
           setStatusMessage("Failed to check AI availability");
+          setStatusReason("service_unavailable");
         });
     }
   }, [isOpen, isAvailable]);
@@ -172,27 +180,73 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
           {isAvailable === false && (
             <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <svg
-                  className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
+                {/* Icon varies by reason */}
+                {statusReason === "tier_limit" ? (
+                  <svg
+                    className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                )}
                 <div>
                   <p className="font-medium text-amber-800 dark:text-amber-200">
-                    AI Generation Not Available
+                    {statusReason === "tier_limit"
+                      ? "AI Workflow Generation Not Available"
+                      : "AI Generation Not Available"}
                   </p>
                   <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">{statusMessage}</p>
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                    Set GEMINI_API_KEY in your environment to enable this feature.
-                  </p>
+
+                  {/* Context-aware actions */}
+                  <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                    {statusReason === "tier_limit" && (
+                      <a
+                        href="/pricing"
+                        className="text-sm font-medium text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300"
+                      >
+                        View Plans
+                      </a>
+                    )}
+                    {statusReason === "service_unavailable" && supportUrl && (
+                      <a
+                        href={supportUrl}
+                        className="text-sm font-medium text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300"
+                      >
+                        Contact Support
+                      </a>
+                    )}
+                    {statusReason === "not_configured" && !isCloudDeployment && (
+                      <a
+                        href="https://floimg.com/docs/studio/ai-workflows"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300"
+                      >
+                        View Setup Guide
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

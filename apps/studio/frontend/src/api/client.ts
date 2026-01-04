@@ -5,6 +5,7 @@ import type {
   ImageMetadata,
   GenerateWorkflowRequest,
   GenerateWorkflowResponse,
+  GenerateStatusResponse,
 } from "@teamflojo/floimg-studio-shared";
 
 const API_BASE = "/api";
@@ -204,10 +205,6 @@ export async function generateWorkflow(
   });
 }
 
-export async function getGenerateStatus(): Promise<{
-  available: boolean;
-  model: string;
-  message: string;
-}> {
+export async function getGenerateStatus(): Promise<GenerateStatusResponse> {
   return fetchJson(`${API_BASE}/generate/status`);
 }

@@ -446,3 +446,39 @@ export interface GenerateWorkflowResponse {
   /** Error message if failed */
   error?: string;
 }
+
+/**
+ * Reason why AI workflow generation is unavailable
+ */
+export type GenerateStatusReason =
+  | "not_configured"
+  | "tier_limit"
+  | "rate_limited"
+  | "service_unavailable";
+
+/**
+ * Response from the workflow generation status endpoint
+ */
+export interface GenerateStatusResponse {
+  /** Whether generation is available */
+  available: boolean;
+  /** Model being used */
+  model: string;
+  /** Human-readable status message */
+  message: string;
+  /** Reason for unavailability (if not available) */
+  reason?: GenerateStatusReason;
+  /** Whether this is a cloud deployment (affects UI messaging) */
+  isCloudDeployment?: boolean;
+  // FSC-only fields (populated by cloud proxy)
+  /** User's current tier */
+  tier?: string;
+  /** Remaining generations this period */
+  remaining?: number;
+  /** Total limit for this period */
+  limit?: number;
+  /** When the limit resets (ISO 8601 timestamp) */
+  resetsAt?: string;
+  /** Support URL (only shown for paid users on service errors) */
+  supportUrl?: string;
+}

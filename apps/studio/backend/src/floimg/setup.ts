@@ -54,7 +54,7 @@ export function initializeClient(config: { verbose?: boolean } = {}): FloimgClie
     client.registerGenerator(stability({ apiKey: process.env.STABILITY_API_KEY }));
     client.registerTransformProvider(stabilityTransform({ apiKey: process.env.STABILITY_API_KEY }));
   }
-  const googleApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
+  const googleApiKey = process.env.GOOGLE_AI_API_KEY;
   if (googleApiKey) {
     client.registerGenerator(googleImagen({ apiKey: googleApiKey }));
     client.registerGenerator(geminiGenerate({ apiKey: googleApiKey }));

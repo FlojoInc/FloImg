@@ -1108,7 +1108,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             "No vision providers configured. " +
               "Configure AI providers in floimg.config.ts or environment variables. " +
               "Supported: OpenAI (OPENAI_API_KEY), Anthropic (ANTHROPIC_API_KEY), " +
-              "Ollama (OLLAMA_BASE_URL), Gemini (GEMINI_API_KEY)"
+              "Ollama (OLLAMA_BASE_URL), Gemini (GOOGLE_AI_API_KEY)"
           );
         }
 
@@ -1168,7 +1168,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             "No text providers configured. " +
               "Configure AI providers in floimg.config.ts or environment variables. " +
               "Supported: OpenAI (OPENAI_API_KEY), Anthropic (ANTHROPIC_API_KEY), " +
-              "Ollama (OLLAMA_BASE_URL), Gemini (GEMINI_API_KEY)"
+              "Ollama (OLLAMA_BASE_URL), Gemini (GOOGLE_AI_API_KEY)"
           );
         }
 
