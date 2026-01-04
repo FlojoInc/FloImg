@@ -20,7 +20,6 @@ export const revenueChart: Template = {
   generator: "quickchart",
   tags: ["bar", "revenue", "quarterly", "dashboard", "sales"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
   },
   icon: "chart",
@@ -42,8 +41,7 @@ export const revenueChart: Template = {
 });`,
   seo: {
     title: "Revenue Dashboard Chart Template",
-    description:
-      "Generate professional quarterly revenue bar charts with gradient styling",
+    description: "Generate professional quarterly revenue bar charts with gradient styling",
     keywords: ["revenue chart", "bar chart", "quarterly report", "dashboard"],
   },
   workflow: {
@@ -104,7 +102,6 @@ export const monthlyUsers: Template = {
   generator: "quickchart",
   tags: ["line", "growth", "users", "monthly", "analytics"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
   },
   icon: "chart",
@@ -171,7 +168,6 @@ export const frameworkUsage: Template = {
   generator: "quickchart",
   tags: ["bar", "comparison", "stats", "horizontal", "frameworks"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
   },
   icon: "chart",
@@ -236,7 +232,6 @@ export const trafficBreakdown: Template = {
   generator: "quickchart",
   tags: ["doughnut", "traffic", "analytics", "pie", "devices"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
   },
   icon: "chart",
@@ -298,7 +293,6 @@ export const apiFlow: Template = {
   generator: "mermaid",
   tags: ["sequence", "api", "authentication", "diagram", "flow"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
   },
   icon: "diagram",
@@ -356,7 +350,6 @@ export const systemArchitecture: Template = {
   generator: "mermaid",
   tags: ["architecture", "microservices", "flowchart", "system", "infrastructure"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
   },
   icon: "diagram",
@@ -430,7 +423,6 @@ export const gitWorkflow: Template = {
   generator: "mermaid",
   tags: ["git", "branching", "workflow", "development", "version-control"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
   },
   icon: "diagram",

@@ -14,8 +14,7 @@ import type { Template } from "../types.js";
 export const aiProductShot: Template = {
   id: "ai-product-shot",
   name: "AI Product Photography",
-  description:
-    "Generate professional product images with AI-controlled lighting and backgrounds",
+  description: "Generate professional product images with AI-controlled lighting and backgrounds",
   category: "AI Workflows",
   generator: "openai",
   tags: ["product", "ecommerce", "photography", "dall-e", "ai"],
@@ -23,9 +22,7 @@ export const aiProductShot: Template = {
   requiresAuth: true,
   usesAI: true,
   aiCreditsNeeded: 1,
-  capabilities: {
-    studioCompatible: true,
-  },
+  capabilities: {},
   icon: "sparkles",
   valueProp: "Professional product photos in seconds",
   preview: {
@@ -40,8 +37,7 @@ export const aiProductShot: Template = {
 });`,
   seo: {
     title: "AI Product Photography Template",
-    description:
-      "Generate professional product photos with AI-controlled lighting and backgrounds",
+    description: "Generate professional product photos with AI-controlled lighting and backgrounds",
     keywords: ["product photography", "ai generation", "ecommerce", "dall-e"],
   },
   workflow: {
@@ -81,9 +77,7 @@ export const aiHeroImage: Template = {
   requiresAuth: true,
   usesAI: true,
   aiCreditsNeeded: 1,
-  capabilities: {
-    studioCompatible: true,
-  },
+  capabilities: {},
   icon: "sparkles",
   valueProp: "Stunning hero images for your landing page",
   preview: {
@@ -98,8 +92,7 @@ export const aiHeroImage: Template = {
 });`,
   seo: {
     title: "AI Hero Image Generator",
-    description:
-      "Generate stunning hero images for websites and landing pages with AI",
+    description: "Generate stunning hero images for websites and landing pages with AI",
     keywords: ["hero image", "landing page", "ai generation", "website design"],
   },
   workflow: {
@@ -139,9 +132,7 @@ export const aiMascot: Template = {
   requiresAuth: true,
   usesAI: true,
   aiCreditsNeeded: 1,
-  capabilities: {
-    studioCompatible: true,
-  },
+  capabilities: {},
   icon: "sparkles",
   valueProp: "Unique mascots for your brand",
   preview: {
@@ -181,8 +172,7 @@ export const aiMascot: Template = {
 export const aiLogoBrandKit: Template = {
   id: "cloud-ai-logo-brand",
   name: "AI Logo to Brand Kit",
-  description:
-    "Generate a logo with AI, then create production-ready brand assets",
+  description: "Generate a logo with AI, then create production-ready brand assets",
   category: "AI Workflows",
   generator: "openai",
   tags: ["ai", "logo", "branding", "dall-e", "pipeline"],
@@ -191,7 +181,6 @@ export const aiLogoBrandKit: Template = {
   usesAI: true,
   aiCreditsNeeded: 1,
   capabilities: {
-    studioCompatible: true,
     pipeline: true,
   },
   icon: "sparkles",
@@ -266,7 +255,6 @@ export const productPhotoEnhancement: Template = {
   usesAI: false, // Uses AI transforms but not AI generation
   aiCreditsNeeded: 0,
   capabilities: {
-    studioCompatible: true,
     pipeline: true,
   },
   icon: "image",
@@ -327,7 +315,6 @@ export const aiArtSocialPost: Template = {
   usesAI: true,
   aiCreditsNeeded: 1,
   capabilities: {
-    studioCompatible: true,
     pipeline: true,
   },
   icon: "share",

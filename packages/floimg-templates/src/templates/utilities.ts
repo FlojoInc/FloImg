@@ -20,7 +20,6 @@ export const brandedQR: Template = {
   generator: "qr",
   tags: ["qr", "branded", "link", "custom", "url"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
   },
   icon: "qr",
@@ -38,8 +37,7 @@ export const brandedQR: Template = {
 });`,
   seo: {
     title: "Branded QR Code Generator",
-    description:
-      "Generate QR codes with custom colors to match your brand identity",
+    description: "Generate QR codes with custom colors to match your brand identity",
     keywords: ["qr code", "branded qr", "custom qr", "marketing"],
   },
   workflow: {
@@ -77,7 +75,6 @@ export const darkQR: Template = {
   generator: "qr",
   tags: ["qr", "dark-mode", "link", "inverted"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
   },
   icon: "qr",
@@ -124,14 +121,12 @@ export const wifiQR: Template = {
   generator: "qr",
   tags: ["qr", "wifi", "network", "guest", "access"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
   },
   icon: "qr",
   seo: {
     title: "WiFi QR Code Generator",
-    description:
-      "Generate scannable QR codes for easy WiFi network access sharing",
+    description: "Generate scannable QR codes for easy WiFi network access sharing",
     keywords: ["wifi qr", "network access", "guest wifi", "qr code"],
   },
   workflow: {
@@ -169,7 +164,6 @@ export const thumbnailGenerator: Template = {
   generator: "pipeline",
   tags: ["thumbnail", "resize", "optimize", "batch", "responsive"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
     pipeline: true,
   },
@@ -179,8 +173,7 @@ export const thumbnailGenerator: Template = {
   },
   seo: {
     title: "Thumbnail Generator",
-    description:
-      "Generate multiple thumbnail sizes with automatic optimization",
+    description: "Generate multiple thumbnail sizes with automatic optimization",
     keywords: ["thumbnail", "image resize", "responsive images", "optimization"],
   },
   workflow: {
@@ -248,7 +241,6 @@ export const diagramWebp: Template = {
   generator: "mermaid",
   tags: ["mermaid", "webp", "optimize", "pipeline", "conversion"],
   capabilities: {
-    studioCompatible: true,
     claudeCodeReady: true,
     pipeline: true,
   },
