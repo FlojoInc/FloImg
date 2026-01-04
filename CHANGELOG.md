@@ -7,7 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Breaking Changes
+
+- **GEMINI_API_KEY no longer supported** - Use `GOOGLE_AI_API_KEY` instead for all Google AI features including AI Workflow Generator
+
+### @teamflojo/floimg-studio-ui
+
+- feat: context-aware AI generation error UI
+- feat: show "View Setup Guide" link for OSS self-hosted deployments
+- feat: show "View Plans" link for FSC tier limit errors
+- feat: show "Contact Support" link for FSC service errors (paid users only)
+
+### @teamflojo/floimg-studio-shared
+
+- feat: add `GenerateStatusResponse` and `GenerateStatusReason` types
+- feat: add `reason`, `isCloudDeployment`, and `supportUrl` fields to status response
+
+### @teamflojo/floimg-studio-backend
+
+- feat: add `reason` and `isCloudDeployment` fields to `/api/generate/status`
+- feat: server-side logging when GOOGLE_AI_API_KEY is not configured
+- breaking: use `GOOGLE_AI_API_KEY` instead of `GEMINI_API_KEY` for workflow generation
+
+### @teamflojo/floimg-google
+
+- breaking: remove `GEMINI_API_KEY` fallback, use `GOOGLE_AI_API_KEY` only
+
+### @teamflojo/floimg
+
+- fix: update MCP server error messages to reference `GOOGLE_AI_API_KEY`
 
 ## [v0.8.3] - 2026-01-01
 

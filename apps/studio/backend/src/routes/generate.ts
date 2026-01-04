@@ -52,11 +52,20 @@ export async function generateRoutes(fastify: FastifyInstance) {
    * GET /api/generate/status
    */
   fastify.get("/status", async () => {
-    const hasApiKey = !!process.env.GEMINI_API_KEY;
+    const hasApiKey = !!process.env.GOOGLE_AI_API_KEY;
+
+    if (!hasApiKey) {
+      fastify.log.warn("AI workflow generation unavailable: GOOGLE_AI_API_KEY not configured");
+    }
+
     return {
       available: hasApiKey,
       model: "gemini-3-pro-preview",
-      message: hasApiKey ? "Workflow generation is available" : "GEMINI_API_KEY not configured",
+      message: hasApiKey
+        ? "Workflow generation is available"
+        : "Set GOOGLE_AI_API_KEY environment variable to enable AI workflow generation",
+      reason: hasApiKey ? undefined : ("not_configured" as const),
+      isCloudDeployment: false,
     };
   });
 }

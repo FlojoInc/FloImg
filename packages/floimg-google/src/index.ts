@@ -134,7 +134,7 @@ function getApproximateDimensions(aspectRatio: AspectRatio): { width: number; he
  */
 export default function googleImagen(config: GoogleImagenConfig = {}): ImageGenerator {
   const {
-    apiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY,
+    apiKey = process.env.GOOGLE_AI_API_KEY,
     model: defaultModel = "imagen-4.0-generate-001",
     aspectRatio: defaultAspectRatio = "1:1",
   } = config;

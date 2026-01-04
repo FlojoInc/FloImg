@@ -281,12 +281,12 @@ export async function generateWorkflow(
   prompt: string,
   history: GenerateWorkflowMessage[] = []
 ): Promise<GenerateWorkflowResult> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) {
     return {
       success: false,
-      message: "Gemini API key not configured",
-      error: "GEMINI_API_KEY environment variable is not set",
+      message: "Google AI API key not configured",
+      error: "GOOGLE_AI_API_KEY environment variable is not set",
     };
   }
 
