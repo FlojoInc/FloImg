@@ -1,16 +1,15 @@
 # Roadmap
 
-Current version: **v0.9.0**
+Current version: **v0.9.4**
 
-## Now (v0.9.0)
+## Now (v0.9.4)
 
 Latest release highlights:
 
-- **AI Workflow Generator** - Build image workflows with natural language using Gemini 3 Pro
-- **Multi-provider AI** - OpenAI, Stability AI, Google (Gemini/Imagen), Replicate, xAI (Grok), and Ollama
-- **CLI AI commands** - `floimg ai text` and `floimg ai vision` for command-line AI operations
-- **Context-aware error UI** - Deployment-aware messaging for AI generation errors
-- **Standardized env vars** - `GOOGLE_AI_API_KEY` for all Google AI features (breaking change)
+- **26+ workflow templates** - All templates now showcase composability with 2+ nodes
+- **Template helper functions** - `getNodeCount()`, `getPipelineTemplates()`, `getTemplatesByComplexity()`
+- **New multi-node templates** - responsiveImages, teamHeadshots, screenshotDocs, blogOgImage, emailBanner, appIcons
+- **Enhanced existing templates** - QR, chart, diagram, and AI templates upgraded to 4-node workflows
 
 See [CHANGELOG](../CHANGELOG.md) for full details.
 
@@ -20,7 +19,6 @@ Work in progress or committed for upcoming releases:
 
 - **Workflow Type System** - Connection validation for node compatibility in visual editor
 - **Additional AI transforms** - More Replicate models, improved stability transforms
-- **Ops workflow templates** - 30+ templates for startup use cases (headshots, social media, etc.)
 
 ## Later
 
