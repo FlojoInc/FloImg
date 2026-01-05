@@ -1,6 +1,6 @@
 {
   "name": "@teamflojo/floimg-templates",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Official workflow templates for FloImg Studio",
   "type": "module",
   "main": "./dist/index.js",

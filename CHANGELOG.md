@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes._
 
+## [v0.9.4] - 2026-01-04
+
+### @teamflojo/floimg-templates (0.2.0)
+
+- feat: enhance all 12 single-node templates to multi-node workflows (4 nodes each)
+  - QR templates: add resize, roundCorners/extend, format conversion
+  - Chart templates: add resize for platform, captions, WebP export
+  - Diagram templates: add padding, captions, PNG export
+  - AI templates: add removeBackground, resize, format conversion
+- feat: add 6 new multi-node workflow templates
+  - `responsiveImages`: srcset generation (6 nodes, parallel branching)
+  - `teamHeadshots`: standardized profile photos (5 nodes)
+  - `screenshotDocs`: documentation screenshots (5 nodes)
+  - `blogOgImage`: blog header optimization (4 nodes)
+  - `emailBanner`: email-safe banners (4 nodes)
+  - `appIcons`: multi-platform icon generation (6 nodes, parallel)
+- feat: add `nodeCount` field to Template type
+- feat: add `getNodeCount()`, `getPipelineTemplates()`, `getTemplatesByComplexity()` helpers
+- chore: update template descriptions with clear JTBDs
+
 ## [v0.9.3] - 2026-01-04
 
 ### Repository
