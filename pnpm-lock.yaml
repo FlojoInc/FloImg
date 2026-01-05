@@ -241,8 +241,8 @@ importers:
   packages/floimg-claude:
     dependencies:
       '@teamflojo/floimg':
-        specifier: ^0.4.0
-        version: 0.4.0(ws@8.18.3)(zod@4.2.1)
+        specifier: ^0.8.0
+        version: link:../floimg
 
   packages/floimg-d3:
     dependencies:
@@ -2041,11 +2041,6 @@ packages:
 
   '@tanstack/virtual-core@3.13.13':
     resolution: {integrity: sha512-uQFoSdKKf5S8k51W5t7b2qpfkyIbdHMzAn+AMQvHPxKUPeo1SsGaA4JRISQT87jm28b7z8OEqPcg1IOZagQHcA==}
-
-  '@teamflojo/floimg@0.4.0':
-    resolution: {integrity: sha512-iTLu5iHiMPoC35IbR5Otr8ltDsV5dZoz0VkCLYOAI++9Lkd5T4CwvBk3aqRgCf8RStf5Es1pvabAHaKjT6THGg==}
-    engines: {node: '>=18.0.0'}
-    hasBin: true
 
   '@tootallnate/quickjs-emscripten@0.23.0':
     resolution: {integrity: sha512-C5Mc6rdnsaJDjO3UpGW/CQTHtCKaYlScZTly4JIu97Jxo/odCiH0ITnDXSJPTOrEKk/ycSZ0AOgTmkDtkOsvIA==}
@@ -7506,25 +7501,6 @@ snapshots:
       react-dom: 19.2.3(react@19.2.3)
 
   '@tanstack/virtual-core@3.13.13': {}
-
-  '@teamflojo/floimg@0.4.0(ws@8.18.3)(zod@4.2.1)':
-    dependencies:
-      '@aws-sdk/client-s3': 3.957.0
-      '@modelcontextprotocol/sdk': 1.25.1(hono@4.11.1)(zod@4.2.1)
-      '@napi-rs/canvas': 0.1.86
-      '@resvg/resvg-js': 2.6.2
-      commander: 12.1.0
-      dotenv: 16.6.1
-      openai: 6.15.0(ws@8.18.3)(zod@4.2.1)
-      sharp: 0.33.5
-      yaml: 2.8.2
-    transitivePeerDependencies:
-      - '@cfworker/json-schema'
-      - aws-crt
-      - hono
-      - supports-color
-      - ws
-      - zod
 
   '@tootallnate/quickjs-emscripten@0.23.0': {}
 
