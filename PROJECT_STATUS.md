@@ -1,6 +1,6 @@
 # PROJECT STATUS
 
-**Last Updated**: 2026-01-01
+**Last Updated**: 2026-01-04
 
 ## Current Focus
 
@@ -141,6 +141,7 @@ Visual workflow builder in `apps/studio/`:
 
 ## Backlog
 
+- **BUG-2026-003**: Plugin packages have stale peer dependencies (p1)
 - Publish updated packages to npm (floimg-openai, floimg-replicate)
 - Additional AI provider packages (Anthropic, Gemini)
 - More generator plugins
