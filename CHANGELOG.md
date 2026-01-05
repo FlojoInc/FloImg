@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes._
 
+## [v0.9.5] - 2026-01-04
+
+### @teamflojo/floimg-studio-ui (0.3.3)
+
+- fix: update floimg-templates dependency to 0.2.0 (multi-node templates)
+
 ## [v0.9.4] - 2026-01-04
 
 ### @teamflojo/floimg-templates (0.2.0)
