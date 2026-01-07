@@ -7,7 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No unreleased changes._
+### @teamflojo/floimg (0.9.0)
+
+**BREAKING CHANGE**: Shape generator schema completely restructured
+
+The shapes generator now separates geometry (shape type) from appearance (fill type), matching the mental model from design tools like Figma/Sketch.
+
+#### What Changed
+
+| Old Parameter       | New Parameter(s)                                 |
+| ------------------- | ------------------------------------------------ |
+| `type: 'gradient'`  | `shapeType: 'rectangle'`, `fillType: 'gradient'` |
+| `type: 'pattern'`   | `shapeType: 'rectangle'`, `fillType: 'pattern'`  |
+| `type: 'circle'`    | `shapeType: 'circle'`, `fillType: 'solid'`       |
+| `type: 'rectangle'` | `shapeType: 'rectangle'`, `fillType: 'solid'`    |
+| `color1`, `color2`  | `gradientColor1`, `gradientColor2`               |
+| `fill`              | `fillColor`                                      |
+| `rx`                | `cornerRadius`                                   |
+
+#### Migration
+
+**No automatic migration.** Old parameters are removed entirely. Update your workflows manually:
+
+```yaml
+# OLD (no longer works)
+- generator: shapes
+  params:
+    type: gradient
+    color1: "#FF0000"
+    color2: "#0000FF"
+
+# NEW
+- generator: shapes
+  params:
+    shapeType: rectangle
+    fillType: gradient
+    gradientColor1: "#FF0000"
+    gradientColor2: "#0000FF"
+```
+
+**For Studio users**: Saved workflows using the shapes generator will need to be recreated. Delete the old workflow and create a new one with the updated node.
+
+#### New Features
+
+- feat: add 4 new shapes - `ellipse`, `triangle`, `polygon` (with `sides`), `star` (with `points`, `innerRadius`)
+- feat: add stroke support - `strokeColor`, `strokeWidth`
+- feat: add rotation parameter (0-360 degrees)
+- feat: add radial gradient type (`gradientType: 'radial'`)
+- feat: add checkerboard pattern (`patternType: 'checkerboard'`)
+
+#### Why No Backwards Compatibility?
+
+FloImg is pre-1.0. We follow the "No Backwards Compatibility" principle: delete, don't deprecate. This keeps the codebase clean and avoids technical debt. See `vault/architecture/No-Backwards-Compatibility.md`.
+
+### @teamflojo/floimg-studio-ui (0.3.4)
+
+- feat: add conditional field visibility for shapes generator (only show relevant params)
 
 ## [v0.9.6] - 2026-01-04
 
