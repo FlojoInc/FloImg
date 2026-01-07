@@ -13,6 +13,9 @@ import { uploadImage, getUploadBlobUrl } from "../api/client";
 
 // Helper to get execution status class for node border
 function getExecutionClass(nodeStatus: string | undefined): string {
+  if (nodeStatus === "pending") {
+    return "border-gray-400 dark:border-zinc-500";
+  }
   if (nodeStatus === "running") {
     return "border-yellow-400 animate-pulse";
   }
@@ -379,6 +382,7 @@ export const VisionNode = memo(function VisionNode({
 }: NodeProps<VisionNodeData>) {
   const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[id]);
   const dataOutput = useWorkflowStore((s) => s.execution.dataOutputs?.[id]);
+  const openOutputInspector = useWorkflowStore((s) => s.openOutputInspector);
 
   const executionClass = getExecutionClass(nodeStatus);
   const borderClass = executionClass || (selected ? "border-cyan-500" : "border-cyan-200");
@@ -400,6 +404,17 @@ export const VisionNode = memo(function VisionNode({
             {dataOutput.content?.slice(0, 200)}
             {(dataOutput.content?.length || 0) > 200 && "..."}
           </pre>
+          {dataOutput.content && dataOutput.content.length > 100 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openOutputInspector(id);
+              }}
+              className="mt-1 text-xs text-cyan-600 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-cyan-300 hover:underline"
+            >
+              View Full Output
+            </button>
+          )}
         </div>
       )}
       <div className="px-4 py-3">
@@ -478,6 +493,7 @@ export const VisionNode = memo(function VisionNode({
 export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps<TextNodeData>) {
   const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[id]);
   const dataOutput = useWorkflowStore((s) => s.execution.dataOutputs?.[id]);
+  const openOutputInspector = useWorkflowStore((s) => s.openOutputInspector);
 
   const executionClass = getExecutionClass(nodeStatus);
   const borderClass = executionClass || (selected ? "border-pink-500" : "border-pink-200");
@@ -499,6 +515,17 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
             {dataOutput.content?.slice(0, 200)}
             {(dataOutput.content?.length || 0) > 200 && "..."}
           </pre>
+          {dataOutput.content && dataOutput.content.length > 100 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openOutputInspector(id);
+              }}
+              className="mt-1 text-xs text-pink-600 dark:text-pink-400 hover:text-pink-800 dark:hover:text-pink-300 hover:underline"
+            >
+              View Full Output
+            </button>
+          )}
         </div>
       )}
       <div className="px-4 py-3">

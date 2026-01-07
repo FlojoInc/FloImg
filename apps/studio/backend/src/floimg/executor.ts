@@ -265,13 +265,58 @@ export async function executeWorkflow(
       );
 
       if (textSteps.length > 0) {
-        const textPipeline: Pipeline = {
-          name: "Text Resolution",
-          steps: textSteps as Pipeline["steps"],
-          initialVariables,
-        };
+        // Execute each text step individually for real-time progress
+        const textResults: Array<{ out: string; value: unknown }> = [];
 
-        const textResults = await client.run(textPipeline);
+        for (const textStep of textSteps) {
+          // Find the node for this step
+          const textStepOut = (textStep as { out: string }).out;
+          const textNodeId = [...nodeToVar.entries()].find(([, v]) => v === textStepOut)?.[0];
+
+          if (textNodeId) {
+            callbacks?.onStep?.({
+              stepIndex: 0,
+              nodeId: textNodeId,
+              status: "running",
+            });
+          }
+
+          const singleTextPipeline: Pipeline = {
+            name: "Text Resolution",
+            steps: [textStep] as Pipeline["steps"],
+            initialVariables,
+          };
+
+          const singleResults = await client.run(singleTextPipeline);
+
+          // Fire callback with completed status and data
+          if (textNodeId && singleResults.length > 0) {
+            const result = singleResults[0];
+            if (isDataBlob(result.value)) {
+              // Store for dataOutputs
+              const textNode = nodes.find((n) => n.id === textNodeId);
+              if (textNode) {
+                dataOutputs.set(textNodeId, {
+                  kind: "data",
+                  dataType: result.value.type,
+                  content: result.value.content,
+                  parsed: result.value.parsed,
+                });
+              }
+
+              callbacks?.onStep?.({
+                stepIndex: 0,
+                nodeId: textNodeId,
+                status: "completed",
+                dataType: result.value.type,
+                content: result.value.content,
+                parsed: result.value.parsed,
+              });
+            }
+          }
+
+          textResults.push(...singleResults);
+        }
 
         // Store resolved text values and parsed objects for property extraction
         const resolvedText = new Map<string, string>();
@@ -426,141 +471,199 @@ export async function executeWorkflow(
       }
     }
 
-    // Notify all steps as running
-    for (const [stepIdx, nodeId] of stepsToNodes) {
-      callbacks?.onStep?.({
-        stepIndex: stepIdx,
-        nodeId,
-        status: "running",
-      });
+    // Step 6: Execute steps sequentially for real-time progress
+    // Filter out text/vision steps that were already executed for prompt resolution
+    const alreadyExecuted = new Set(
+      [...dataOutputs.keys()].map((nodeId) => nodeToVar.get(nodeId)).filter(Boolean)
+    );
+
+    const remainingSteps = pipeline.steps.filter((step) => {
+      const stepOut = "out" in step ? (step as { out: string }).out : null;
+      return !stepOut || !alreadyExecuted.has(stepOut);
+    });
+
+    // Build intermediate variable storage for sequential execution
+    const stepVariables: Record<string, ImageBlob> = { ...initialVariables };
+
+    // Copy any resolved reference images to stepVariables
+    for (const [varName, blob] of resolvedRefImages) {
+      stepVariables[varName] = blob;
     }
 
-    // Step 6: Execute the pipeline using core
-    const results = await client.run(pipeline);
+    // Track all results for processing
+    type StepResult = {
+      step: Pipeline["steps"][number];
+      value: unknown;
+      out: string;
+      nodeId?: string;
+    };
+    const results: StepResult[] = [];
 
-    // Step 7: Process results - moderate, save images, and call callbacks
-    for (let i = 0; i < results.length; i++) {
-      const result = results[i];
-      const nodeId = stepsToNodes.get(i);
+    for (let i = 0; i < remainingSteps.length; i++) {
+      const step = remainingSteps[i];
+      const stepOut = "out" in step ? (step as { out: string }).out : undefined;
+      const stepNodeId = stepOut
+        ? [...nodeToVar.entries()].find(([, v]) => v === stepOut)?.[0]
+        : undefined;
 
-      if (!nodeId) continue;
+      // Notify step is running
+      if (stepNodeId) {
+        callbacks?.onStep?.({
+          stepIndex: i,
+          nodeId: stepNodeId,
+          status: "running",
+        });
+      }
 
-      const node = nodes.find((n) => n.id === nodeId);
-      if (!node) continue;
+      // Execute single step
+      const singlePipeline: Pipeline = {
+        name: "Single Step",
+        steps: [step] as Pipeline["steps"],
+        initialVariables: stepVariables,
+      };
 
-      // Handle image outputs (generate, transform nodes)
-      if (result.value && isImageBlob(result.value)) {
-        const blob = result.value;
+      const singleResults = await client.run(singlePipeline);
 
-        // Moderate image before saving
-        if (isModerationEnabled()) {
-          try {
-            const moderationResult = await moderateImage(blob.bytes, blob.mime);
-            if (moderationResult.flagged) {
-              await logModerationIncident("generated", moderationResult, {
-                nodeId: node.id,
-                nodeType: node.type,
-              });
-              throw new Error(
-                `Content policy violation: Image flagged for ${moderationResult.flaggedCategories.join(", ")}. ` +
-                  `This content cannot be saved.`
-              );
-            }
-          } catch (moderationError) {
-            if (
-              moderationError instanceof Error &&
-              moderationError.message.includes("Content policy violation")
-            ) {
-              throw moderationError;
-            }
-            console.error("Moderation check failed:", moderationError);
-            if (isStrictModeEnabled()) {
-              await logModerationIncident(
-                "error",
-                {
-                  safe: false,
-                  flagged: true,
-                  categories: {} as never,
-                  categoryScores: {},
-                  flaggedCategories: ["moderation_service_error"],
-                },
-                {
-                  nodeId: node.id,
-                  nodeType: node.type,
-                  error: String(moderationError),
+      // Store result for variable passing to next steps
+      if (singleResults.length > 0) {
+        const singleResult = singleResults[0];
+        const node = stepNodeId ? nodes.find((n) => n.id === stepNodeId) : undefined;
+
+        if (stepOut && isImageBlob(singleResult.value)) {
+          stepVariables[stepOut] = singleResult.value;
+          const blob = singleResult.value;
+
+          // Process image immediately: moderate, save, callback
+          if (stepNodeId && node) {
+            // Moderate image before saving
+            if (isModerationEnabled()) {
+              try {
+                const moderationResult = await moderateImage(blob.bytes, blob.mime);
+                if (moderationResult.flagged) {
+                  await logModerationIncident("generated", moderationResult, {
+                    nodeId: node.id,
+                    nodeType: node.type,
+                  });
+                  callbacks?.onStep?.({
+                    stepIndex: i,
+                    nodeId: stepNodeId,
+                    status: "error",
+                    error: `Content policy violation: Image flagged for ${moderationResult.flaggedCategories.join(", ")}`,
+                  });
+                  continue; // Skip saving this image
                 }
-              );
-              throw new Error(
-                "Content moderation service unavailable. Generation blocked for safety."
-              );
+              } catch (moderationError) {
+                if (
+                  moderationError instanceof Error &&
+                  moderationError.message.includes("Content policy violation")
+                ) {
+                  throw moderationError;
+                }
+                console.error("Moderation check failed:", moderationError);
+                if (isStrictModeEnabled()) {
+                  await logModerationIncident(
+                    "error",
+                    {
+                      safe: false,
+                      flagged: true,
+                      categories: {} as never,
+                      categoryScores: {},
+                      flaggedCategories: ["moderation_service_error"],
+                    },
+                    {
+                      nodeId: node.id,
+                      nodeType: node.type,
+                      error: String(moderationError),
+                    }
+                  );
+                  throw new Error(
+                    "Content moderation service unavailable. Generation blocked for safety."
+                  );
+                }
+                console.warn("Moderation failed but strict mode is OFF - allowing generation");
+              }
             }
-            console.warn("Moderation failed but strict mode is OFF - allowing generation");
+
+            // Save image to disk
+            const imageId = `img_${Date.now()}_${nanoid(6)}`;
+            const ext = MIME_TO_EXT[blob.mime] || "png";
+            const filename = `${imageId}.${ext}`;
+            const imagePath = join(OUTPUT_DIR, filename);
+
+            await mkdir(dirname(imagePath), { recursive: true });
+            await writeFile(imagePath, blob.bytes);
+
+            // Write metadata sidecar file
+            const metadata: ImageMetadata = {
+              id: imageId,
+              filename,
+              mime: blob.mime,
+              size: blob.bytes.length,
+              createdAt: Date.now(),
+              workflow: {
+                nodes,
+                edges,
+                executedAt: Date.now(),
+                templateId,
+              },
+            };
+            const metadataPath = join(OUTPUT_DIR, `${imageId}.meta.json`);
+            await writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+
+            imageIds.push(imageId);
+            images.set(imageId, blob.bytes);
+            nodeIdByImageId.set(imageId, node.id);
+
+            // Build preview and fire completed callback immediately
+            const previewMime = blob.mime || "image/png";
+            const preview = `data:${previewMime};base64,${blob.bytes.toString("base64")}`;
+
+            callbacks?.onStep?.({
+              stepIndex: i,
+              nodeId: stepNodeId,
+              status: "completed",
+              imageId,
+              preview,
+            });
           }
         }
 
-        // Save image to disk
-        const imageId = `img_${Date.now()}_${nanoid(6)}`;
-        const ext = MIME_TO_EXT[blob.mime] || "png";
-        const filename = `${imageId}.${ext}`;
-        const imagePath = join(OUTPUT_DIR, filename);
+        // Handle text/vision outputs - these don't need moderation, so complete immediately
+        if (stepNodeId && isDataBlob(singleResult.value) && !dataOutputs.has(stepNodeId)) {
+          const dataBlob = singleResult.value;
+          dataOutputs.set(stepNodeId, {
+            kind: "data",
+            dataType: dataBlob.type,
+            content: dataBlob.content,
+            parsed: dataBlob.parsed,
+          });
 
-        await mkdir(dirname(imagePath), { recursive: true });
-        await writeFile(imagePath, blob.bytes);
+          callbacks?.onStep?.({
+            stepIndex: i,
+            nodeId: stepNodeId,
+            status: "completed",
+            dataType: dataBlob.type,
+            content: dataBlob.content,
+            parsed: dataBlob.parsed,
+          });
+        }
 
-        // Write metadata sidecar file
-        const metadata: ImageMetadata = {
-          id: imageId,
-          filename,
-          mime: blob.mime,
-          size: blob.bytes.length,
-          createdAt: Date.now(),
-          workflow: {
-            nodes,
-            edges,
-            executedAt: Date.now(),
-            templateId,
-          },
-        };
-        const metadataPath = join(OUTPUT_DIR, `${imageId}.meta.json`);
-        await writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-
-        imageIds.push(imageId);
-        images.set(imageId, blob.bytes);
-        nodeIdByImageId.set(imageId, node.id);
-
-        callbacks?.onStep?.({
-          stepIndex: i,
-          nodeId: node.id,
-          status: "completed",
-          imageId,
-        });
+        results.push({ step, value: singleResult.value, out: stepOut || "", nodeId: stepNodeId });
       }
+    }
 
-      // Handle data outputs (vision, text nodes)
-      if (result.value && isDataBlob(result.value)) {
-        const dataBlob = result.value;
-        dataOutputs.set(node.id, {
-          kind: "data",
-          dataType: dataBlob.type,
-          content: dataBlob.content,
-          parsed: dataBlob.parsed,
-        });
+    // Step 7: Handle save steps (images and data outputs were already processed in the loop above)
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      const nodeId = result.nodeId;
 
-        callbacks?.onStep?.({
-          stepIndex: i,
-          nodeId: node.id,
-          status: "completed",
-          dataType: dataBlob.type,
-          content: dataBlob.content,
-          parsed: dataBlob.parsed,
-        });
-      }
+      if (!nodeId) continue;
 
-      // Handle save steps (no output to track)
+      // Handle save steps (no output to track, just fire callback)
       if (result.step.kind === "save") {
         callbacks?.onStep?.({
           stepIndex: i,
-          nodeId: node.id,
+          nodeId,
           status: "completed",
         });
       }

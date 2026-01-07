@@ -11,9 +11,11 @@ import type {
   NodeDefinition,
   GeneratedWorkflowData,
   StudioNodeType,
+  ExecutionSSEEvent,
 } from "@teamflojo/floimg-studio-shared";
 import type { Template } from "@teamflojo/floimg-templates";
-import { executeWorkflow, exportYaml } from "../api/client";
+import { exportYaml } from "../api/client";
+import { createSSEConnection } from "../api/sse";
 import type { StudioNode, StudioEdge } from "@teamflojo/floimg-studio-shared";
 import { useSettingsStore } from "./settingsStore";
 
@@ -25,7 +27,7 @@ type NodeData =
   | VisionNodeData
   | TextNodeData;
 
-type NodeExecutionStatus = "idle" | "running" | "completed" | "error";
+type NodeExecutionStatus = "idle" | "pending" | "running" | "completed" | "error";
 
 interface DataOutput {
   dataType: "text" | "json";
@@ -124,6 +126,11 @@ interface WorkflowStore {
 
   // AI-generated workflow
   loadGeneratedWorkflow: (workflow: GeneratedWorkflowData) => void;
+
+  // Output inspector
+  inspectedNodeId: string | null;
+  openOutputInspector: (nodeId: string) => void;
+  closeOutputInspector: () => void;
 }
 
 let nodeIdCounter = 0;
@@ -167,6 +174,11 @@ export const useWorkflowStore = create<WorkflowStore>()(
         dataOutputs: {},
         nodeStatus: {},
       },
+
+      // Output inspector state
+      inspectedNodeId: null,
+      openOutputInspector: (nodeId) => set({ inspectedNodeId: nodeId }),
+      closeOutputInspector: () => set({ inspectedNodeId: null }),
 
       loadTemplate: (template) => {
         // Convert StudioNodes to React Flow nodes with new IDs
@@ -404,10 +416,10 @@ export const useWorkflowStore = create<WorkflowStore>()(
         // Get AI provider settings
         const aiProviders = useSettingsStore.getState().getConfiguredProviders();
 
-        // Set all nodes to "running" status
+        // Set all nodes to "pending" status (not running yet)
         const initialNodeStatus: Record<string, NodeExecutionStatus> = {};
         for (const node of nodes) {
-          initialNodeStatus[node.id] = "running";
+          initialNodeStatus[node.id] = "pending";
         }
 
         set({
@@ -421,58 +433,135 @@ export const useWorkflowStore = create<WorkflowStore>()(
           },
         });
 
-        try {
-          const result = await executeWorkflow(studioNodes, studioEdges, aiProviders);
+        // Use SSE streaming for real-time progress updates
+        return new Promise<void>((resolve, reject) => {
+          createSSEConnection<ExecutionSSEEvent>(
+            "/api/execute/stream",
+            { nodes: studioNodes, edges: studioEdges, aiProviders },
+            {
+              onMessage: (event) => {
+                const state = get();
 
-          // Set all nodes to completed or error based on result
-          const finalNodeStatus: Record<string, NodeExecutionStatus> = {};
-          for (const node of nodes) {
-            finalNodeStatus[node.id] = result.status === "completed" ? "completed" : "error";
-          }
+                if (event.type === "execution.started") {
+                  // All nodes start as pending, they'll transition to running as they execute
+                }
 
-          if (result.status === "completed") {
-            set({
-              execution: {
-                status: "completed",
-                imageIds: result.imageIds,
-                imageUrls: result.imageUrls || [],
-                previews: result.previews || {},
-                dataOutputs: result.dataOutputs || {},
-                nodeStatus: finalNodeStatus,
+                if (event.type === "execution.step") {
+                  const step = event.data;
+
+                  // Update the specific node's status
+                  const newNodeStatus = {
+                    ...state.execution.nodeStatus,
+                    [step.nodeId]: step.status as NodeExecutionStatus,
+                  };
+
+                  // Update previews if this step has one
+                  const newPreviews = step.preview
+                    ? { ...state.execution.previews, [step.nodeId]: step.preview }
+                    : state.execution.previews;
+
+                  // Update dataOutputs if this is a text/vision node
+                  const newDataOutputs =
+                    step.dataType && step.content
+                      ? {
+                          ...state.execution.dataOutputs,
+                          [step.nodeId]: {
+                            dataType: step.dataType,
+                            content: step.content,
+                            parsed: step.parsed,
+                          },
+                        }
+                      : state.execution.dataOutputs;
+
+                  set({
+                    execution: {
+                      ...state.execution,
+                      nodeStatus: newNodeStatus,
+                      previews: newPreviews,
+                      dataOutputs: newDataOutputs,
+                    },
+                  });
+                }
+
+                if (event.type === "execution.completed") {
+                  // Mark any remaining pending nodes as completed
+                  const finalNodeStatus = { ...state.execution.nodeStatus };
+                  for (const nodeId of Object.keys(finalNodeStatus)) {
+                    if (
+                      finalNodeStatus[nodeId] === "pending" ||
+                      finalNodeStatus[nodeId] === "running"
+                    ) {
+                      finalNodeStatus[nodeId] = "completed";
+                    }
+                  }
+
+                  set({
+                    execution: {
+                      ...state.execution,
+                      status: "completed",
+                      imageIds: event.data.imageIds,
+                      imageUrls: event.data.imageUrls,
+                      nodeStatus: finalNodeStatus,
+                    },
+                  });
+                  resolve();
+                }
+
+                if (event.type === "execution.error") {
+                  // Mark nodes as error
+                  const errorNodeStatus = { ...state.execution.nodeStatus };
+                  if (event.data.nodeId) {
+                    errorNodeStatus[event.data.nodeId] = "error";
+                  }
+
+                  set({
+                    execution: {
+                      ...state.execution,
+                      status: "error",
+                      nodeStatus: errorNodeStatus,
+                      error: event.data.error,
+                    },
+                  });
+                  reject(new Error(event.data.error));
+                }
               },
-            });
-          } else {
-            set({
-              execution: {
-                status: "error",
-                imageIds: [],
-                imageUrls: [],
-                previews: {},
-                dataOutputs: {},
-                nodeStatus: finalNodeStatus,
-                error: result.error,
-              },
-            });
-          }
-        } catch (error) {
-          // Set all nodes to error status
-          const errorNodeStatus: Record<string, NodeExecutionStatus> = {};
-          for (const node of nodes) {
-            errorNodeStatus[node.id] = "error";
-          }
+              onError: (error) => {
+                const state = get();
+                const errorNodeStatus: Record<string, NodeExecutionStatus> = {};
+                for (const nodeId of Object.keys(state.execution.nodeStatus)) {
+                  errorNodeStatus[nodeId] = "error";
+                }
 
-          set({
-            execution: {
-              status: "error",
-              imageIds: [],
-              imageUrls: [],
-              previews: {},
-              dataOutputs: {},
-              nodeStatus: errorNodeStatus,
-              error: error instanceof Error ? error.message : "Unknown error",
-            },
-          });
-        }
+                set({
+                  execution: {
+                    ...state.execution,
+                    status: "error",
+                    nodeStatus: errorNodeStatus,
+                    error: error.message,
+                  },
+                });
+                reject(error);
+              },
+              onClose: () => {
+                // Stream closed - if we didn't get a completed/error event, treat as error
+                const state = get();
+                if (state.execution.status === "running") {
+                  set({
+                    execution: {
+                      ...state.execution,
+                      status: "error",
+                      error: "Connection closed unexpectedly",
+                    },
+                  });
+                  reject(new Error("Connection closed unexpectedly"));
+                }
+              },
+            }
+          );
+
+          // Store abort controller for potential cancellation (future feature)
+          // Could expose this via store if needed
+        });
       },
 
       exportToYaml: async () => {

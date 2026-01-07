@@ -3,8 +3,11 @@ import type {
   GenerateWorkflowMessage,
   GeneratedWorkflowData,
   GenerateStatusReason,
+  GenerationPhase,
+  GenerationSSEEvent,
 } from "@teamflojo/floimg-studio-shared";
-import { generateWorkflow, getGenerateStatus } from "../api/client";
+import { getGenerateStatus } from "../api/client";
+import { createSSEConnection } from "../api/sse";
 
 interface AIChatProps {
   isOpen: boolean;
@@ -16,6 +19,8 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
   const [messages, setMessages] = useState<GenerateWorkflowMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [generationPhase, setGenerationPhase] = useState<GenerationPhase | null>(null);
+  const [generationMessage, setGenerationMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
@@ -56,7 +61,7 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(() => {
     if (!input.trim() || isLoading) return;
 
     const userMessage: GenerateWorkflowMessage = {
@@ -69,30 +74,56 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
     setInput("");
     setIsLoading(true);
     setError(null);
+    setGenerationPhase(null);
+    setGenerationMessage("");
 
-    try {
-      const response = await generateWorkflow({
-        prompt: userMessage.content,
-        history: messages,
-      });
+    let receivedWorkflow: GeneratedWorkflowData | undefined;
 
-      const assistantMessage: GenerateWorkflowMessage = {
-        role: "assistant",
-        content: response.message,
-        workflow: response.workflow,
-        timestamp: Date.now(),
-      };
+    createSSEConnection<GenerationSSEEvent>(
+      "/api/generate/workflow/stream",
+      { prompt: userMessage.content, history: messages },
+      {
+        onMessage: (event) => {
+          if (event.type === "generation.started") {
+            // Started - no visible change needed
+          }
 
-      setMessages((prev) => [...prev, assistantMessage]);
+          if (event.type === "generation.progress") {
+            setGenerationPhase(event.data.phase);
+            setGenerationMessage(event.data.message);
+          }
 
-      if (!response.success && response.error) {
-        setError(response.error);
+          if (event.type === "generation.completed") {
+            receivedWorkflow = event.data;
+          }
+
+          if (event.type === "generation.error") {
+            setError(event.data.error);
+          }
+        },
+        onError: (err) => {
+          setError(err.message || "Failed to generate workflow");
+          setIsLoading(false);
+          setGenerationPhase(null);
+        },
+        onClose: () => {
+          // Stream completed - add the assistant message
+          const assistantMessage: GenerateWorkflowMessage = {
+            role: "assistant",
+            content: receivedWorkflow
+              ? "I've created a workflow based on your description. Click 'Apply to Canvas' to use it."
+              : "I couldn't generate a workflow. Please try a different description.",
+            workflow: receivedWorkflow,
+            timestamp: Date.now(),
+          };
+
+          setMessages((prev) => [...prev, assistantMessage]);
+          setIsLoading(false);
+          setGenerationPhase(null);
+          setGenerationMessage("");
+        },
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate workflow");
-    } finally {
-      setIsLoading(false);
-    }
+    );
   }, [input, isLoading, messages]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -354,22 +385,104 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-gray-100 dark:bg-zinc-700 rounded-lg px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 dark:bg-zinc-500 rounded-full animate-bounce" />
-                    <div
-                      className="w-2 h-2 bg-gray-400 dark:bg-zinc-500 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.1s" }}
-                    />
-                    <div
-                      className="w-2 h-2 bg-gray-400 dark:bg-zinc-500 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
-                    />
+                <div className="flex items-center gap-3">
+                  {/* Phase indicator */}
+                  <div className="flex items-center gap-2">
+                    {generationPhase === "analyzing" && (
+                      <svg
+                        className="h-4 w-4 text-teal-500 animate-pulse"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    )}
+                    {generationPhase === "selecting_nodes" && (
+                      <svg
+                        className="h-4 w-4 text-teal-500 animate-pulse"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                        />
+                      </svg>
+                    )}
+                    {generationPhase === "generating" && (
+                      <svg
+                        className="h-4 w-4 text-teal-500 animate-spin"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                    )}
+                    {generationPhase === "validating" && (
+                      <svg
+                        className="h-4 w-4 text-teal-500 animate-pulse"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    )}
+                    {!generationPhase && (
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" />
+                        <div
+                          className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.1s" }}
+                        />
+                        <div
+                          className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.2s" }}
+                        />
+                      </div>
+                    )}
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-zinc-400">
-                    Generating workflow...
+                  <span className="text-sm text-gray-600 dark:text-zinc-300">
+                    {generationMessage || "Connecting..."}
                   </span>
                 </div>
+                {/* Progress steps */}
+                {generationPhase && (
+                  <div className="flex items-center gap-1 mt-2">
+                    <div
+                      className={`h-1 w-8 rounded-full ${generationPhase === "analyzing" || generationPhase === "selecting_nodes" || generationPhase === "generating" || generationPhase === "validating" ? "bg-teal-500" : "bg-gray-300 dark:bg-zinc-600"}`}
+                    />
+                    <div
+                      className={`h-1 w-8 rounded-full ${generationPhase === "selecting_nodes" || generationPhase === "generating" || generationPhase === "validating" ? "bg-teal-500" : "bg-gray-300 dark:bg-zinc-600"}`}
+                    />
+                    <div
+                      className={`h-1 w-8 rounded-full ${generationPhase === "generating" || generationPhase === "validating" ? "bg-teal-500" : "bg-gray-300 dark:bg-zinc-600"}`}
+                    />
+                    <div
+                      className={`h-1 w-8 rounded-full ${generationPhase === "validating" ? "bg-teal-500" : "bg-gray-300 dark:bg-zinc-600"}`}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}

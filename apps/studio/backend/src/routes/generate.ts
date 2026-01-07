@@ -6,8 +6,14 @@ import type { FastifyInstance } from "fastify";
 import type {
   GenerateWorkflowRequest,
   GenerateWorkflowResponse,
+  GenerationSSEEvent,
 } from "@teamflojo/floimg-studio-shared";
 import { generateWorkflow } from "../ai/workflow-generator.js";
+
+// Helper to send SSE event
+function sendSSE(raw: { write: (data: string) => boolean }, event: GenerationSSEEvent): void {
+  raw.write(`data: ${JSON.stringify(event)}\n\n`);
+}
 
 export async function generateRoutes(fastify: FastifyInstance) {
   /**
@@ -46,6 +52,105 @@ export async function generateRoutes(fastify: FastifyInstance) {
       };
     }
   );
+
+  /**
+   * Generate a workflow with SSE streaming for progress updates
+   * POST /api/generate/workflow/stream
+   */
+  fastify.post<{ Body: GenerateWorkflowRequest }>("/workflow/stream", async (request, reply) => {
+    const { prompt, history } = request.body;
+
+    if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
+      reply.code(400);
+      return { error: "Prompt is required" };
+    }
+
+    // Set SSE headers
+    reply.raw.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    });
+
+    // Send started event
+    sendSSE(reply.raw, {
+      type: "generation.started",
+      data: {
+        model: "gemini-3-pro-preview",
+      },
+    });
+
+    // Phase 1: Analyzing
+    sendSSE(reply.raw, {
+      type: "generation.progress",
+      data: {
+        phase: "analyzing",
+        message: "Analyzing your request...",
+      },
+    });
+
+    // Small delay to show the phase
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    // Phase 2: Selecting nodes
+    sendSSE(reply.raw, {
+      type: "generation.progress",
+      data: {
+        phase: "selecting_nodes",
+        message: "Selecting appropriate nodes...",
+      },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    // Phase 3: Generating (the actual Gemini call happens here)
+    sendSSE(reply.raw, {
+      type: "generation.progress",
+      data: {
+        phase: "generating",
+        message: "Generating workflow...",
+      },
+    });
+
+    try {
+      const result = await generateWorkflow(prompt.trim(), history);
+
+      if (!result.success || !result.workflow) {
+        sendSSE(reply.raw, {
+          type: "generation.error",
+          data: {
+            error: result.error || result.message || "Failed to generate workflow",
+          },
+        });
+      } else {
+        // Phase 4: Validating
+        sendSSE(reply.raw, {
+          type: "generation.progress",
+          data: {
+            phase: "validating",
+            message: "Validating workflow...",
+          },
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 150));
+
+        // Send completed event with the workflow
+        sendSSE(reply.raw, {
+          type: "generation.completed",
+          data: result.workflow,
+        });
+      }
+    } catch (error) {
+      sendSSE(reply.raw, {
+        type: "generation.error",
+        data: {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+    } finally {
+      reply.raw.end();
+    }
+  });
 
   /**
    * Check if workflow generation is available

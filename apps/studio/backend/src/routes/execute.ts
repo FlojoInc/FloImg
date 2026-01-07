@@ -1,8 +1,18 @@
 import type { FastifyInstance } from "fastify";
-import type { StudioNode, StudioEdge, ExecutionStepResult } from "@teamflojo/floimg-studio-shared";
+import type {
+  StudioNode,
+  StudioEdge,
+  ExecutionStepResult,
+  ExecutionSSEEvent,
+} from "@teamflojo/floimg-studio-shared";
 import { executeWorkflow, toPipeline } from "../floimg/executor.js";
 import { stringify as yamlStringify } from "yaml";
 import { nanoid } from "nanoid";
+
+// Helper to send SSE event
+function sendSSE(raw: { write: (data: string) => boolean }, event: ExecutionSSEEvent): void {
+  raw.write(`data: ${JSON.stringify(event)}\n\n`);
+}
 
 // AI provider configuration from frontend
 interface AIProviderConfig {
@@ -142,6 +152,75 @@ export async function executeRoutes(fastify: FastifyInstance) {
         status: "error",
         error: error instanceof Error ? error.message : String(error),
       };
+    }
+  });
+
+  // Execute workflow with SSE streaming for real-time progress
+  fastify.post<{ Body: ExecuteBody }>("/execute/stream", async (request, reply) => {
+    const { nodes, edges, aiProviders, cloudConfig } = request.body;
+
+    if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
+      reply.code(400);
+      return { error: "Workflow must have at least one node" };
+    }
+
+    // Set SSE headers
+    reply.raw.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    });
+
+    const nodeIds = nodes.map((n) => n.id);
+
+    // Send started event
+    sendSSE(reply.raw, {
+      type: "execution.started",
+      data: {
+        totalSteps: nodes.length,
+        nodeIds,
+      },
+    });
+
+    try {
+      await executeWorkflow(nodes, edges, {
+        aiProviders,
+        cloudConfig,
+        callbacks: {
+          onStep: (stepResult: ExecutionStepResult) => {
+            // Step events include preview for images, content for text/vision
+            sendSSE(reply.raw, {
+              type: "execution.step",
+              data: stepResult,
+            });
+          },
+          onComplete: (imageIds: string[]) => {
+            // Build image URLs
+            const imageUrls = imageIds.map((id) => `/api/images/${id}/blob`);
+
+            sendSSE(reply.raw, {
+              type: "execution.completed",
+              data: { imageIds, imageUrls },
+            });
+          },
+          onError: (error: string) => {
+            sendSSE(reply.raw, {
+              type: "execution.error",
+              data: { error },
+            });
+          },
+        },
+      });
+
+      // All step events were sent via callbacks during execution
+      // Completion event was sent via onComplete callback
+    } catch (error) {
+      sendSSE(reply.raw, {
+        type: "execution.error",
+        data: { error: error instanceof Error ? error.message : String(error) },
+      });
+    } finally {
+      reply.raw.end();
     }
   });
 

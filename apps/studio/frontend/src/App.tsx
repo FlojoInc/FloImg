@@ -9,6 +9,7 @@ import { TemplateGallery } from "./components/TemplateGallery";
 import { WorkflowLibrary } from "./components/WorkflowLibrary";
 import { AISettings } from "./components/AISettings";
 import { AIChat } from "./components/AIChat";
+import { OutputInspector } from "./components/OutputInspector";
 import { useWorkflowStore } from "./stores/workflowStore";
 import { resolveTemplate } from "@teamflojo/floimg-templates";
 import type { NodeDefinition, GeneratedWorkflowData } from "@teamflojo/floimg-studio-shared";
@@ -63,6 +64,16 @@ function App() {
   const [showAIChat, setShowAIChat] = useState(false);
   const loadTemplate = useWorkflowStore((s) => s.loadTemplate);
   const loadGeneratedWorkflow = useWorkflowStore((s) => s.loadGeneratedWorkflow);
+
+  // Output inspector state
+  const inspectedNodeId = useWorkflowStore((s) => s.inspectedNodeId);
+  const executionDataOutputs = useWorkflowStore((s) => s.execution.dataOutputs);
+  const closeOutputInspector = useWorkflowStore((s) => s.closeOutputInspector);
+  const nodes = useWorkflowStore((s) => s.nodes);
+
+  // Get inspected node info
+  const inspectedNode = inspectedNodeId ? nodes.find((n) => n.id === inspectedNodeId) : null;
+  const inspectedOutput = inspectedNodeId ? executionDataOutputs[inspectedNodeId] : null;
 
   // Handle ?template=<id> URL parameter
   useEffect(() => {
@@ -123,6 +134,21 @@ function App() {
         onClose={() => setShowAIChat(false)}
         onApplyWorkflow={handleApplyWorkflow}
       />
+
+      {/* Output Inspector Modal */}
+      {inspectedNode && inspectedOutput && (
+        <OutputInspector
+          isOpen={true}
+          onClose={closeOutputInspector}
+          nodeId={inspectedNodeId!}
+          nodeLabel={
+            (inspectedNode.data as { providerLabel?: string }).providerLabel ||
+            inspectedNode.type ||
+            "Node"
+          }
+          output={inspectedOutput}
+        />
+      )}
 
       {/* Workflow Library slide-out panel */}
       <WorkflowLibrary />

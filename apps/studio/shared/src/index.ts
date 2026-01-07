@@ -482,3 +482,89 @@ export interface GenerateStatusResponse {
   /** Support URL (only shown for paid users on service errors) */
   supportUrl?: string;
 }
+
+// ============================================
+// Server-Sent Events (SSE) Types
+// ============================================
+
+/**
+ * SSE event types for workflow execution streaming
+ */
+export type ExecutionSSEEventType =
+  | "execution.started"
+  | "execution.step"
+  | "execution.completed"
+  | "execution.error";
+
+export interface ExecutionSSEStarted {
+  type: "execution.started";
+  data: {
+    totalSteps: number;
+    nodeIds: string[];
+  };
+}
+
+export interface ExecutionSSEStep {
+  type: "execution.step";
+  data: ExecutionStepResult;
+}
+
+export interface ExecutionSSECompleted {
+  type: "execution.completed";
+  data: {
+    imageIds: string[];
+    imageUrls: string[];
+  };
+}
+
+export interface ExecutionSSEError {
+  type: "execution.error";
+  data: {
+    error: string;
+    nodeId?: string;
+  };
+}
+
+export type ExecutionSSEEvent =
+  | ExecutionSSEStarted
+  | ExecutionSSEStep
+  | ExecutionSSECompleted
+  | ExecutionSSEError;
+
+/**
+ * SSE event types for AI workflow generation streaming
+ */
+export type GenerationPhase = "analyzing" | "selecting_nodes" | "generating" | "validating";
+
+export interface GenerationSSEStarted {
+  type: "generation.started";
+  data: {
+    model: string;
+  };
+}
+
+export interface GenerationSSEProgress {
+  type: "generation.progress";
+  data: {
+    phase: GenerationPhase;
+    message: string;
+  };
+}
+
+export interface GenerationSSECompleted {
+  type: "generation.completed";
+  data: GeneratedWorkflowData;
+}
+
+export interface GenerationSSEError {
+  type: "generation.error";
+  data: {
+    error: string;
+  };
+}
+
+export type GenerationSSEEvent =
+  | GenerationSSEStarted
+  | GenerationSSEProgress
+  | GenerationSSECompleted
+  | GenerationSSEError;
