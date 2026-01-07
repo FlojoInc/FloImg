@@ -1,9 +1,10 @@
 ---
 tags: [type/task]
-status: in-progress
+status: complete
 priority: p2
 created: 2025-01-07
 updated: 2026-01-07
+completed: 2026-01-07
 parent:
 children: []
 epic:
@@ -14,10 +15,10 @@ epic:
 ## Task Details
 
 - **Task ID**: T-2025-008
-- **Status**: in-progress
+- **Status**: complete
 - **Priority**: p2
 - **Created**: 2025-01-07
-- **Completed**:
+- **Completed**: 2026-01-07
 
 ## Description
 
@@ -109,6 +110,7 @@ Fill Type:  [Solid | Gradient | Pattern | None]
 - **2025-01-07**: Task created from product triad review. PM, UI/UX, and dev perspectives synthesized.
 - **2026-01-07**: Started implementation. Branch: feat/T-2025-008-shape-ux-overhaul
 - **2026-01-07**: Implementation complete. Decided to remove backwards compatibility entirely per new "No Backwards Compatibility (Pre-1.0)" principle. Added vault/architecture/No-Backwards-Compatibility.md. PR #93 created and reviewed.
+- **2026-01-07**: PR #93 merged, v0.10.0 released (npm publish successful). floimg-cloud updated to 0.9.0/0.3.4. floimg-web docs updated (PR #69). Task complete.
 
 ## Review Checklist
 
@@ -116,4 +118,4 @@ Fill Type:  [Solid | Gradient | Pattern | None]
 - [x] Tests written and passing (113 tests, 19 new)
 - [x] TypeScript types correct
 - [x] Documentation updated (No-Backwards-Compatibility.md, CLAUDE.md, agent configs)
-- [ ] CHANGELOG updated (before release)
+- [x] CHANGELOG updated (v0.10.0 released)
