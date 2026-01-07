@@ -1,9 +1,9 @@
 ---
 tags: [type/task]
-status: backlog
+status: in-progress
 priority: p2
 created: 2025-01-07
-updated: 2025-01-07
+updated: 2026-01-07
 parent:
 children: []
 epic:
@@ -14,7 +14,7 @@ epic:
 ## Task Details
 
 - **Task ID**: T-2025-008
-- **Status**: backlog
+- **Status**: in-progress
 - **Priority**: p2
 - **Created**: 2025-01-07
 - **Completed**:
@@ -107,6 +107,7 @@ Fill Type:  [Solid | Gradient | Pattern | None]
 ### Work Log
 
 - **2025-01-07**: Task created from product triad review. PM, UI/UX, and dev perspectives synthesized.
+- **2026-01-07**: Started implementation. Branch: feat/T-2025-008-shape-ux-overhaul
 
 ## Review Checklist
 

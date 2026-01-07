@@ -1,17 +1,17 @@
 # PROJECT STATUS
 
-**Last Updated**: 2026-01-04
+**Last Updated**: 2026-01-07
 
 ## Current Focus
 
-**T-2025-007: Gemini 3 Pro Workflow Generation** (PR #64 ready for merge)
+**T-2025-008: Shape Generator UX Overhaul** (IN PROGRESS)
 
-Natural language to workflow JSON using Gemini 3 Pro structured outputs.
+Separate shape type from fill type to fix conceptual confusion. Branch: `feat/T-2025-008-shape-ux-overhaul`
 
-- AI chat interface with example prompts
-- Structured output support (jsonSchema → multiple output handles)
-- Reference image chaining for composite workflows
-- prePrompt for dynamic prompt context
+- Replace `type` enum with `shapeType` and `fillType` parameters
+- Add new shapes: ellipse, triangle, polygon (with sides), star (with points)
+- Add stroke support (strokeColor, strokeWidth)
+- Backward compatibility migration for existing workflows
 
 ## Next Up
 
@@ -19,6 +19,15 @@ Natural language to workflow JSON using Gemini 3 Pro structured outputs.
 - Additional FloImg Studio UX improvements
 
 ## Just Completed
+
+**T-2025-007: Gemini 3 Pro Workflow Generation** (2026-01-07)
+
+Natural language to workflow JSON using Gemini 3 Pro structured outputs.
+
+- AI chat interface with example prompts
+- Structured output support (jsonSchema → multiple output handles)
+- Reference image chaining for composite workflows
+- prePrompt for dynamic prompt context
 
 **BUG-2026-003: Fix stale peer dependencies** (2026-01-04)
 
