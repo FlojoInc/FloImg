@@ -137,8 +137,8 @@ function ImageCard({ image, onLoadWorkflow, isLoading }: ImageCardProps) {
             loading="lazy"
           />
         </a>
-        {/* Hover overlay with Load Workflow button */}
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        {/* Hover overlay with action buttons */}
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -149,6 +149,22 @@ function ImageCard({ image, onLoadWorkflow, isLoading }: ImageCardProps) {
           >
             {isLoading ? "Loading..." : "Load Workflow"}
           </button>
+          <a
+            href={getImageUrl(image.id)}
+            download={image.filename}
+            onClick={(e) => e.stopPropagation()}
+            className="p-1.5 bg-zinc-700 text-white rounded-lg hover:bg-zinc-600"
+            title="Download image"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
+            </svg>
+          </a>
         </div>
       </div>
       <div className="p-3">

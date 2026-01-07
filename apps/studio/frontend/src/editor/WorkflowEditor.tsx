@@ -13,6 +13,7 @@ import ReactFlow, {
   applyEdgeChanges,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import type { GeneratorNodeData } from "@teamflojo/floimg-studio-shared";
 import { useWorkflowStore } from "../stores/workflowStore";
 import { nodeTypes } from "./nodeTypes";
 
@@ -30,6 +31,8 @@ const defaultEdgeOptions: DefaultEdgeOptions = {
     stroke: "#64748b",
     strokeWidth: 2,
   },
+  // Make edges easier to select
+  interactionWidth: 20,
 };
 
 export function WorkflowEditor() {
@@ -43,7 +46,7 @@ export function WorkflowEditor() {
   // Validate connections based on node types
   const isValidConnection = useCallback(
     (connection: Connection) => {
-      const { source, target } = connection;
+      const { source, target, targetHandle } = connection;
       if (!source || !target) return false;
 
       const sourceNode = nodes.find((n) => n.id === source);
@@ -54,22 +57,28 @@ export function WorkflowEditor() {
       // Rule 1: Cannot connect FROM a save node (no output)
       if (sourceNode.type === "save") return false;
 
-      // Rule 2: Cannot connect TO a generator or input (no input port)
-      if (targetNode.type === "generator" || targetNode.type === "input") return false;
+      // Rule 2: Cannot connect TO a generator UNLESS it has specific input handles
+      // AI generators have "text" (for prompts) and "references" (for reference images) handles
+      if (targetNode.type === "generator") {
+        const data = targetNode.data as GeneratorNodeData;
+        // Allow connections to text handle if it's an AI generator
+        if (targetHandle === "text" && data.isAI) return true;
+        // Allow connections to references handle if it accepts reference images
+        if (targetHandle === "references" && data.acceptsReferenceImages) return true;
+        // Block all other connections to generators
+        return false;
+      }
 
-      // Rule 3: Each input handle only accepts one connection
-      // (allow multiple connections to same node if targeting different handles)
-      const existingInputConnection = edges.find(
-        (e) => e.target === target && e.targetHandle === connection.targetHandle
-      );
-      if (existingInputConnection) return false;
+      // Rule 3: Cannot connect TO an input node (no input port)
+      if (targetNode.type === "input") return false;
 
       // Rule 4: No self-connections
       if (source === target) return false;
 
+      // Note: We allow replacing existing connections - handled in onConnect
       return true;
     },
-    [nodes, edges]
+    [nodes]
   );
 
   const onNodesChange: OnNodesChange = useCallback(
@@ -88,9 +97,47 @@ export function WorkflowEditor() {
 
   const onConnect = useCallback(
     (connection: Connection) => {
+      // "references" handles accept multiple connections (for reference images)
+      // All other handles (text, image, default) are single-connection and auto-replace
+      const isMultiConnectionHandle = connection.targetHandle === "references";
+
+      if (!isMultiConnectionHandle) {
+        // Remove any existing connection to the same target handle before adding new one
+        // Handle edge creation inconsistencies from AI generation or YAML import
+        const edgesToRemove = edges.filter((e) => {
+          if (e.target !== connection.target) return false;
+
+          // Exact handle match (including both being null/undefined)
+          const existingHandle = e.targetHandle || null;
+          const newHandle = connection.targetHandle || null;
+          if (existingHandle === newHandle) return true;
+
+          // For "text" or "image" handle connections, also remove edges with no targetHandle
+          // These are the primary single-input handles that should auto-replace
+          if (
+            (connection.targetHandle === "text" || connection.targetHandle === "image") &&
+            !e.targetHandle
+          ) {
+            return true;
+          }
+
+          // If connecting to default handle (no targetHandle), remove edges to "image" handle
+          // since that's the main input for transforms
+          if (!connection.targetHandle && e.targetHandle === "image") {
+            return true;
+          }
+
+          return false;
+        });
+
+        if (edgesToRemove.length > 0) {
+          const removeIds = new Set(edgesToRemove.map((e) => e.id));
+          setEdges(edges.filter((e) => !removeIds.has(e.id)));
+        }
+      }
       addEdge(connection);
     },
-    [addEdge]
+    [addEdge, edges, setEdges]
   );
 
   const onNodeClick: NodeMouseHandler = useCallback(
@@ -120,6 +167,8 @@ export function WorkflowEditor() {
         nodesDraggable={true}
         nodesConnectable={true}
         elementsSelectable={true}
+        edgesFocusable={true}
+        deleteKeyCode={["Backspace", "Delete"]}
         proOptions={{ hideAttribution: true }}
         fitView
         snapToGrid
