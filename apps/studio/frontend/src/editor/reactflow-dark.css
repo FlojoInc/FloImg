@@ -1,0 +1,37 @@
+/* React Flow dark mode overrides - imported after reactflow/dist/style.css */
+@media (prefers-color-scheme: dark) {
+  .react-flow__background {
+    background-color: #18181b;
+  }
+
+  .react-flow__background pattern line {
+    stroke: #3f3f46;
+  }
+
+  .react-flow__controls {
+    background-color: #27272a;
+    border-color: #3f3f46;
+  }
+
+  .react-flow__controls-button {
+    background-color: #27272a;
+    border-color: #3f3f46;
+    fill: #a1a1aa;
+  }
+
+  .react-flow__controls-button:hover {
+    background-color: #3f3f46;
+  }
+
+  .react-flow__minimap {
+    background-color: #27272a;
+  }
+
+  .react-flow__minimap-mask {
+    fill: rgba(39, 39, 42, 0.7);
+  }
+
+  .react-flow__minimap-node {
+    fill: #52525b;
+  }
+}

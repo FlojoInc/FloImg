@@ -13,6 +13,7 @@ import ReactFlow, {
   applyEdgeChanges,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import "./reactflow-dark.css";
 import type { GeneratorNodeData } from "@teamflojo/floimg-studio-shared";
 import { useWorkflowStore } from "../stores/workflowStore";
 import { nodeTypes } from "./nodeTypes";
