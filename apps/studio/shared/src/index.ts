@@ -135,7 +135,8 @@ export type ExecutionStatus = "pending" | "running" | "completed" | "error" | "c
 export interface ExecutionStepResult {
   stepIndex: number;
   nodeId: string;
-  status: "running" | "completed" | "error";
+  /** Step status: "skipped" indicates step was not executed due to upstream dependency failure */
+  status: "running" | "completed" | "error" | "skipped";
   // Image output (for generator, transform, input nodes)
   imageId?: string;
   preview?: string; // base64 thumbnail
@@ -143,8 +144,10 @@ export interface ExecutionStepResult {
   dataType?: "text" | "json";
   content?: string;
   parsed?: Record<string, unknown>;
-  // Error info
+  // Error/skip info
   error?: string;
+  /** Reason for skip (when status is "skipped") */
+  skipReason?: string;
 }
 
 // Full execution result

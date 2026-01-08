@@ -112,8 +112,12 @@ function processSSEMessage<T>(message: string, handlers: SSEConnectionHandlers<T
     try {
       const parsed = JSON.parse(data) as T;
       handlers.onMessage(parsed);
-    } catch {
-      console.warn("Failed to parse SSE data:", data);
+    } catch (error) {
+      console.warn("SSE: Failed to parse message data:", {
+        error: error instanceof Error ? error.message : String(error),
+        dataPreview: data.slice(0, 200),
+        dataLength: data.length,
+      });
     }
   }
 }
@@ -135,8 +139,13 @@ function processBuffer<T>(buffer: string, handlers: SSEConnectionHandlers<T>): v
     try {
       const parsed = JSON.parse(data) as T;
       handlers.onMessage(parsed);
-    } catch {
-      // Ignore incomplete data at end of stream
+    } catch (error) {
+      // Log incomplete/malformed data at end of stream for debugging
+      console.warn("SSE: Incomplete data at end of stream:", {
+        error: error instanceof Error ? error.message : String(error),
+        dataPreview: data.slice(0, 200),
+        dataLength: data.length,
+      });
     }
   }
 }

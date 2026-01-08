@@ -1,5 +1,10 @@
 import { useState, useCallback } from "react";
 
+// Size/depth limits to prevent browser freeze on large outputs
+const MAX_JSON_DEPTH = 20;
+const MAX_ARRAY_ITEMS = 500;
+const LARGE_OUTPUT_THRESHOLD = 100_000; // 100KB
+
 interface DataOutput {
   dataType: "text" | "json";
   content: string;
@@ -105,6 +110,28 @@ export function OutputInspector({ isOpen, onClose, nodeLabel, output }: OutputIn
           </div>
         </div>
 
+        {/* Large output warning */}
+        {output.content.length > LARGE_OUTPUT_THRESHOLD && (
+          <div className="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 flex items-center gap-2">
+            <svg
+              className="h-4 w-4 text-amber-600 dark:text-amber-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <span className="text-sm text-amber-700 dark:text-amber-300">
+              Large output ({Math.round(output.content.length / 1024)}KB) - rendering may be slow
+            </span>
+          </div>
+        )}
+
         {/* Content */}
         <div className="flex-1 overflow-auto p-4">
           {viewMode === "formatted" && hasFormattedView ? (
@@ -157,17 +184,35 @@ export function OutputInspector({ isOpen, onClose, nodeLabel, output }: OutputIn
   );
 }
 
-// Simple JSON tree viewer component
+// Simple JSON tree viewer component with depth/size limits
 function JsonTree({ data }: { data: Record<string, unknown> }) {
   return (
     <div className="font-mono text-sm">
-      <JsonNode value={data} depth={0} />
+      <JsonNode value={data} depth={0} maxDepth={MAX_JSON_DEPTH} />
     </div>
   );
 }
 
-function JsonNode({ value, depth, keyName }: { value: unknown; depth: number; keyName?: string }) {
+interface JsonNodeProps {
+  value: unknown;
+  depth: number;
+  keyName?: string;
+  maxDepth: number;
+}
+
+function JsonNode({ value, depth, keyName, maxDepth }: JsonNodeProps) {
   const indent = depth * 16;
+
+  // Check depth limit
+  if (depth >= maxDepth) {
+    return (
+      <div style={{ marginLeft: indent }} className="py-0.5">
+        {keyName && <span className="text-pink-600 dark:text-pink-400">&quot;{keyName}&quot;</span>}
+        {keyName && <span className="text-gray-600 dark:text-zinc-400">: </span>}
+        <span className="text-zinc-500 italic">[max depth reached]</span>
+      </div>
+    );
+  }
 
   if (value === null) {
     return (
@@ -212,6 +257,9 @@ function JsonNode({ value, depth, keyName }: { value: unknown; depth: number; ke
   }
 
   if (Array.isArray(value)) {
+    const itemsToRender = value.slice(0, MAX_ARRAY_ITEMS);
+    const hiddenCount = value.length - itemsToRender.length;
+
     return (
       <div style={{ marginLeft: indent }}>
         {keyName && (
@@ -222,9 +270,14 @@ function JsonNode({ value, depth, keyName }: { value: unknown; depth: number; ke
           </div>
         )}
         {!keyName && <span className="text-gray-500 dark:text-zinc-500 py-0.5 block">[</span>}
-        {value.map((item, index) => (
-          <JsonNode key={index} value={item} depth={depth + 1} />
+        {itemsToRender.map((item, index) => (
+          <JsonNode key={index} value={item} depth={depth + 1} maxDepth={maxDepth} />
         ))}
+        {hiddenCount > 0 && (
+          <div style={{ marginLeft: (depth + 1) * 16 }} className="py-0.5 text-zinc-500 italic">
+            ...and {hiddenCount} more items
+          </div>
+        )}
         {!keyName && <span className="text-gray-500 dark:text-zinc-500 py-0.5 block">]</span>}
       </div>
     );
@@ -243,7 +296,7 @@ function JsonNode({ value, depth, keyName }: { value: unknown; depth: number; ke
         )}
         {!keyName && <span className="text-gray-500 dark:text-zinc-500 py-0.5 block">{"{"}</span>}
         {entries.map(([key, val]) => (
-          <JsonNode key={key} value={val} depth={depth + 1} keyName={key} />
+          <JsonNode key={key} value={val} depth={depth + 1} keyName={key} maxDepth={maxDepth} />
         ))}
         <div style={{ marginLeft: keyName ? 0 : indent }} className="py-0.5">
           <span className="text-gray-500 dark:text-zinc-500">{"}"}</span>
