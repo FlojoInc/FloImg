@@ -2,13 +2,30 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import S3SaveProvider from "../src/providers/save/S3SaveProvider.js";
 import type { ImageBlob } from "../src/core/types.js";
 
-// Mock the AWS SDK
+// Mock functions for reconfiguration per test
+const mockSend = vi.fn().mockResolvedValue({ ETag: '"mock-etag"' });
+
+// Track command constructor calls
+const putObjectCalls: Record<string, unknown>[] = [];
+const getObjectCalls: Record<string, unknown>[] = [];
+
+// Mock the AWS SDK with actual classes (Vitest 4 requirement for constructors)
 vi.mock("@aws-sdk/client-s3", () => ({
-  S3Client: vi.fn().mockImplementation(() => ({
-    send: vi.fn().mockResolvedValue({ ETag: '"mock-etag"' }),
-  })),
-  PutObjectCommand: vi.fn().mockImplementation((params) => params),
-  GetObjectCommand: vi.fn().mockImplementation((params) => params),
+  S3Client: class MockS3Client {
+    send = mockSend;
+  },
+  PutObjectCommand: class MockPutObjectCommand {
+    constructor(params: Record<string, unknown>) {
+      putObjectCalls.push(params);
+      Object.assign(this, params);
+    }
+  },
+  GetObjectCommand: class MockGetObjectCommand {
+    constructor(params: Record<string, unknown>) {
+      getObjectCalls.push(params);
+      Object.assign(this, params);
+    }
+  },
 }));
 
 vi.mock("@aws-sdk/s3-request-presigner", () => ({
@@ -24,6 +41,8 @@ describe("S3SaveProvider", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    putObjectCalls.length = 0;
+    getObjectCalls.length = 0;
     provider = new S3SaveProvider({
       bucket: "test-bucket",
       region: "us-east-1",
@@ -150,8 +169,6 @@ describe("S3SaveProvider", () => {
     });
 
     it("includes metadata in upload when provided", async () => {
-      const { PutObjectCommand } = await import("@aws-sdk/client-s3");
-
       const blob: ImageBlob = {
         bytes: Buffer.from("test-image-data"),
         mime: "image/jpeg",
@@ -165,7 +182,8 @@ describe("S3SaveProvider", () => {
         },
       });
 
-      expect(PutObjectCommand).toHaveBeenCalledWith(
+      expect(putObjectCalls).toHaveLength(1);
+      expect(putObjectCalls[0]).toEqual(
         expect.objectContaining({
           Bucket: "test-bucket",
           Key: "images/photo.jpg",

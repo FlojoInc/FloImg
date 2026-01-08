@@ -2,15 +2,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { openaiTransform, editSchema, variationsSchema } from "../src/index.js";
 import type { ImageBlob } from "@teamflojo/floimg";
 
-// Mock the openai module
+// Mock functions that we can reconfigure per test
+const mockEdit = vi.fn();
+const mockCreateVariation = vi.fn();
+
+// Mock the openai module with a class (Vitest 4 requirement for constructors)
 vi.mock("openai", () => {
   return {
-    default: vi.fn().mockImplementation(() => ({
-      images: {
-        edit: vi.fn(),
-        createVariation: vi.fn(),
-      },
-    })),
+    default: class MockOpenAI {
+      images = {
+        edit: mockEdit,
+        createVariation: mockCreateVariation,
+      };
+    },
     toFile: vi.fn().mockImplementation(async (data: Buffer, name: string) => ({
       name,
       data,
@@ -94,18 +98,9 @@ describe("floimg-openai transforms", () => {
 
     it("should call OpenAI edit API with correct parameters", async () => {
       // Setup mock to return a URL
-      const mockEditFn = vi.fn().mockResolvedValue({
+      mockEdit.mockResolvedValue({
         data: [{ url: "https://example.com/edited-image.png" }],
       });
-
-      // Mock the openai module properly
-      const OpenAI = await import("openai");
-      (OpenAI.default as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-        images: {
-          edit: mockEditFn,
-          createVariation: vi.fn(),
-        },
-      }));
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -126,17 +121,9 @@ describe("floimg-openai transforms", () => {
 
   describe("variations operation", () => {
     it("should call OpenAI variations API", async () => {
-      const mockVariationsFn = vi.fn().mockResolvedValue({
+      mockCreateVariation.mockResolvedValue({
         data: [{ url: "https://example.com/variation.png" }],
       });
-
-      const OpenAI = await import("openai");
-      (OpenAI.default as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-        images: {
-          edit: vi.fn(),
-          createVariation: mockVariationsFn,
-        },
-      }));
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
