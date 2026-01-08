@@ -1,6 +1,6 @@
 ---
 tags: [type/bug]
-status: in-progress
+status: done
 priority: p1
 created: 2026-01-07
 updated: 2026-01-07
@@ -12,10 +12,10 @@ github_issue:
 ## Bug Details
 
 **Bug ID**: BUG-2025-003
-**Status**: in-progress
+**Status**: done
 **Priority**: p1
 **Created**: 2026-01-07
-**Fixed**:
+**Fixed**: 2026-01-08
 **GitHub Issue**:
 
 ## Description
@@ -75,10 +75,10 @@ Add `import "./index.css";` to `apps/studio/frontend/src/index.ts` so the dark m
 ## Review Checklist
 
 - [x] Root cause identified
-- [ ] Fix implemented
+- [x] Fix implemented
 - [ ] Tests added to prevent regression
 - [x] No breaking changes introduced
-- [ ] CHANGELOG updated
+- [x] CHANGELOG updated
 
 ## Notes
 
