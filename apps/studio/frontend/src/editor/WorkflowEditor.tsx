@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -42,6 +42,10 @@ export function WorkflowEditor() {
   const setEdges = useWorkflowStore((s) => s.setEdges);
   const addEdge = useWorkflowStore((s) => s.addEdge);
   const setSelectedNode = useWorkflowStore((s) => s.setSelectedNode);
+
+  // Memoize nodeTypes to prevent React Flow warning during HMR
+  // The nodeTypes object is defined outside, but HMR can cause module re-evaluation
+  const memoizedNodeTypes = useMemo(() => nodeTypes, []);
 
   // Validate connections based on node types
   const isValidConnection = useCallback(
@@ -161,7 +165,7 @@ export function WorkflowEditor() {
         onConnect={onConnect}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
-        nodeTypes={nodeTypes}
+        nodeTypes={memoizedNodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         isValidConnection={isValidConnection}
         nodesDraggable={true}
