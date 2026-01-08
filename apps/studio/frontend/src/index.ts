@@ -7,6 +7,9 @@
  * For self-hosting, use the Docker image instead.
  */
 
+// Styles (includes Tailwind utilities and dark mode overrides for React Flow)
+import "./index.css";
+
 // Main App component
 export { default as App } from "./App";
 
