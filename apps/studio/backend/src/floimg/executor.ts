@@ -490,6 +490,9 @@ export async function executeWorkflow(
       stepVariables[varName] = blob;
     }
 
+    // Track failed output variables to skip dependent steps
+    const failedOutputVars = new Set<string>();
+
     // Track all results for processing
     type StepResult = {
       step: Pipeline["steps"][number];
@@ -505,6 +508,25 @@ export async function executeWorkflow(
       const stepNodeId = stepOut
         ? [...nodeToVar.entries()].find(([, v]) => v === stepOut)?.[0]
         : undefined;
+
+      // Check if any input dependencies have failed
+      const stepIn = "in" in step ? (step as { in?: string }).in : undefined;
+      if (stepIn && failedOutputVars.has(stepIn)) {
+        // Mark this step's output as failed too (propagate failure)
+        if (stepOut) {
+          failedOutputVars.add(stepOut);
+        }
+        // Fire skipped callback
+        if (stepNodeId) {
+          callbacks?.onStep?.({
+            stepIndex: i,
+            nodeId: stepNodeId,
+            status: "skipped",
+            skipReason: "Upstream step failed or was blocked by content moderation",
+          });
+        }
+        continue; // Skip this step
+      }
 
       // Notify step is running
       if (stepNodeId) {
@@ -544,6 +566,10 @@ export async function executeWorkflow(
                     nodeId: node.id,
                     nodeType: node.type,
                   });
+                  // Track this output var as failed so dependent steps can be skipped
+                  if (stepOut) {
+                    failedOutputVars.add(stepOut);
+                  }
                   callbacks?.onStep?.({
                     stepIndex: i,
                     nodeId: stepNodeId,

@@ -7,7 +7,11 @@ import type {
   GenerationSSEEvent,
 } from "@teamflojo/floimg-studio-shared";
 import { getGenerateStatus } from "../api/client";
-import { createSSEConnection } from "../api/sse";
+import { createSSEConnection, type SSEConnection } from "../api/sse";
+
+// Module-level connection reference for cancellation
+// (Not in component state because SSEConnection is not serializable)
+let activeGenerationConnection: SSEConnection | null = null;
 
 interface AIChatProps {
   isOpen: boolean;
@@ -79,7 +83,7 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
 
     let receivedWorkflow: GeneratedWorkflowData | undefined;
 
-    createSSEConnection<GenerationSSEEvent>(
+    activeGenerationConnection = createSSEConnection<GenerationSSEEvent>(
       "/api/generate/workflow/stream",
       { prompt: userMessage.content, history: messages },
       {
@@ -102,11 +106,13 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
           }
         },
         onError: (err) => {
+          activeGenerationConnection = null;
           setError(err.message || "Failed to generate workflow");
           setIsLoading(false);
           setGenerationPhase(null);
         },
         onClose: () => {
+          activeGenerationConnection = null;
           // Stream completed - add the assistant message
           const assistantMessage: GenerateWorkflowMessage = {
             role: "assistant",
@@ -125,6 +131,16 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
       }
     );
   }, [input, isLoading, messages]);
+
+  const handleCancelGeneration = useCallback(() => {
+    if (activeGenerationConnection) {
+      activeGenerationConnection.abort();
+      activeGenerationConnection = null;
+    }
+    setIsLoading(false);
+    setGenerationPhase(null);
+    setGenerationMessage("");
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -465,6 +481,14 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
                   <span className="text-sm text-gray-600 dark:text-zinc-300">
                     {generationMessage || "Connecting..."}
                   </span>
+                  {/* Cancel button */}
+                  <button
+                    onClick={handleCancelGeneration}
+                    className="ml-2 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
+                    title="Cancel generation"
+                  >
+                    Cancel
+                  </button>
                 </div>
                 {/* Progress steps */}
                 {generationPhase && (
