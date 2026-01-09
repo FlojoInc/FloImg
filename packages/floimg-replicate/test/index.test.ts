@@ -8,12 +8,15 @@ import {
 } from "../src/index.js";
 import type { ImageBlob } from "@teamflojo/floimg";
 
-// Mock the replicate module
+// Module-level mock function for Replicate.run
+const mockRun = vi.fn();
+
+// Vitest 4 requires actual class definitions for constructor mocking
 vi.mock("replicate", () => {
   return {
-    default: vi.fn().mockImplementation(() => ({
-      run: vi.fn(),
-    })),
+    default: class MockReplicate {
+      run = mockRun;
+    },
   };
 });
 
@@ -120,12 +123,7 @@ describe("floimg-replicate", () => {
 
   describe("faceRestore operation", () => {
     it("should restore faces using GFPGAN", async () => {
-      const mockRun = vi.fn().mockResolvedValue("https://example.com/restored.png");
-
-      const Replicate = await import("replicate");
-      (Replicate.default as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-        run: mockRun,
-      }));
+      mockRun.mockResolvedValue("https://example.com/restored.png");
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -145,12 +143,7 @@ describe("floimg-replicate", () => {
 
   describe("colorize operation", () => {
     it("should colorize B&W images", async () => {
-      const mockRun = vi.fn().mockResolvedValue("https://example.com/colorized.png");
-
-      const Replicate = await import("replicate");
-      (Replicate.default as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-        run: mockRun,
-      }));
+      mockRun.mockResolvedValue("https://example.com/colorized.png");
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -167,12 +160,7 @@ describe("floimg-replicate", () => {
     });
 
     it("should support artistic mode", async () => {
-      const mockRun = vi.fn().mockResolvedValue("https://example.com/artistic.png");
-
-      const Replicate = await import("replicate");
-      (Replicate.default as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-        run: mockRun,
-      }));
+      mockRun.mockResolvedValue("https://example.com/artistic.png");
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -190,12 +178,7 @@ describe("floimg-replicate", () => {
 
   describe("realEsrgan operation", () => {
     it("should upscale images", async () => {
-      const mockRun = vi.fn().mockResolvedValue("https://example.com/upscaled.png");
-
-      const Replicate = await import("replicate");
-      (Replicate.default as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-        run: mockRun,
-      }));
+      mockRun.mockResolvedValue("https://example.com/upscaled.png");
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -223,12 +206,7 @@ describe("floimg-replicate", () => {
     });
 
     it("should edit images with text prompt", async () => {
-      const mockRun = vi.fn().mockResolvedValue("https://example.com/edited.webp");
-
-      const Replicate = await import("replicate");
-      (Replicate.default as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-        run: mockRun,
-      }));
+      mockRun.mockResolvedValue("https://example.com/edited.webp");
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
