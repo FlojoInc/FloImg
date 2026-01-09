@@ -5,6 +5,18 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### @teamflojo/floimg (0.10.0)
+
+- feat: add fan-out, collect, and router pipeline primitives for iterative workflows
+  - `fan-out`: distribute input to parallel branches (count mode: N copies, array mode: iterate items)
+  - `collect`: gather outputs from branches (waitMode: all or available, with minRequired option)
+  - `router`: select from candidates based on AI decision (index-based or property-based selection)
+- feat: add YAML example for iterative workflow pattern (`examples/pipeline-iterative.yaml`)
+- fix: improve error messages for router selection property validation
+- fix: add warnings when fan-out count/array length doesn't match output array length
+
 ## [v0.11.5] - 2026-01-09
 
 ### @teamflojo/floimg-studio-ui (0.4.4)

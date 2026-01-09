@@ -366,10 +366,18 @@ export class FloImg {
       if (step.mode === "count") {
         // Count mode: copy input to all branches
         const count = step.count ?? step.out.length;
+        if (count !== step.out.length) {
+          this.logger.warn(
+            `Fan-out count (${count}) doesn't match output array length (${step.out.length}). ` +
+              `Using minimum: ${Math.min(count, step.out.length)}`
+          );
+        }
         for (let i = 0; i < count && i < step.out.length; i++) {
           variables.set(step.out[i], input);
         }
-        this.logger.debug(`Fan-out (count): distributed input to ${count} branches`);
+        this.logger.debug(
+          `Fan-out (count): distributed input to ${Math.min(count, step.out.length)} branches`
+        );
       } else if (step.mode === "array") {
         // Array mode: distribute array items to branches
         let items: unknown[];
@@ -391,6 +399,14 @@ export class FloImg {
           );
         }
 
+        // Warn if array length doesn't match output array length
+        if (items.length !== step.out.length) {
+          this.logger.warn(
+            `Fan-out array length (${items.length}) doesn't match output array length (${step.out.length}). ` +
+              `Distributing ${Math.min(items.length, step.out.length)} items.`
+          );
+        }
+
         // Distribute items to output variables
         for (let i = 0; i < items.length && i < step.out.length; i++) {
           // Wrap non-blob items in DataBlob for consistency
@@ -408,7 +424,9 @@ export class FloImg {
             } as DataBlob);
           }
         }
-        this.logger.debug(`Fan-out (array): distributed ${items.length} items to branches`);
+        this.logger.debug(
+          `Fan-out (array): distributed ${Math.min(items.length, step.out.length)} items to branches`
+        );
       }
 
       // Return a synthetic result (fan-out doesn't produce a single value)
@@ -475,6 +493,13 @@ export class FloImg {
       let selectionValue: unknown;
       if (isDataBlob(selectionVar) && selectionVar.parsed) {
         selectionValue = selectionVar.parsed[step.selectionProperty];
+        if (selectionValue === undefined) {
+          const availableKeys = Object.keys(selectionVar.parsed).join(", ");
+          throw new ConfigurationError(
+            `Router selection property "${step.selectionProperty}" not found in selection data. ` +
+              `Available properties: ${availableKeys || "(none)"}`
+          );
+        }
       } else {
         throw new ConfigurationError(
           `Router selection must be a DataBlob with parsed JSON containing "${step.selectionProperty}"`

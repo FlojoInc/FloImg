@@ -74,16 +74,13 @@ export function buildDependencyGraph(steps: PipelineStep[]): StepNode[] {
       dependencies.add(step.in);
       outputs.push(...step.out);
     } else if (step.kind === "collect") {
-      // Collect steps: dependency handling depends on waitMode
-      // For waitMode="all": require all inputs
-      // For waitMode="available": no hard dependencies (we'll collect what's available)
-      if (step.waitMode === "all") {
-        for (const input of step.in) {
-          dependencies.add(input);
-        }
+      // Collect steps depend on their inputs regardless of waitMode.
+      // The waitMode difference is handled in execution:
+      // - waitMode="all": fails if any input is undefined
+      // - waitMode="available": accepts partial results
+      for (const input of step.in) {
+        dependencies.add(input);
       }
-      // For "available" mode, we don't add dependencies - collect will run
-      // in the first wave and gather whatever inputs are ready
       outputs.push(step.out);
     } else if (step.kind === "router") {
       // Router steps depend on BOTH candidates array and selection data
