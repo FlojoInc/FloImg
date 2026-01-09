@@ -1,0 +1,94 @@
+# Iterative Workflow Example: Logo Variations
+#
+# This workflow demonstrates the fan-out, collect, and router primitives
+# for generating multiple variations, evaluating them with AI, and selecting the best.
+#
+# Pattern: Generate → Fan-Out → [Parallel Processing] → Collect → Evaluate → Route
+#
+# Usage:
+#   floimg run pipeline-iterative.yaml
+#
+# Note: Requires OPENAI_API_KEY environment variable for AI generation and evaluation.
+
+name: Logo Variations Workflow
+
+steps:
+  # Step 1: Generate 3 different logo concept prompts
+  - kind: text
+    provider: openai-text
+    params:
+      prompt: |
+        Generate 3 different logo concepts for a tech startup called "FlowSync".
+        Each concept should have a unique visual approach:
+        1. Abstract/geometric
+        2. Lettermark
+        3. Icon-based
+
+        Return as JSON: {"concepts": ["prompt1", "prompt2", "prompt3"]}
+      outputFormat: json
+    out: concepts
+
+  # Step 2: Fan-out the prompts to parallel branches
+  - kind: fan-out
+    in: concepts
+    mode: array
+    arrayProperty: concepts
+    out: [prompt_0, prompt_1, prompt_2]
+
+  # Step 3-5: Generate logos in parallel (one per branch)
+  - kind: generate
+    generator: dall-e-3
+    params:
+      prompt: "{{prompt_0.value}}"
+      size: 1024x1024
+      quality: standard
+    out: logo_0
+
+  - kind: generate
+    generator: dall-e-3
+    params:
+      prompt: "{{prompt_1.value}}"
+      size: 1024x1024
+      quality: standard
+    out: logo_1
+
+  - kind: generate
+    generator: dall-e-3
+    params:
+      prompt: "{{prompt_2.value}}"
+      size: 1024x1024
+      quality: standard
+    out: logo_2
+
+  # Step 6: Collect all generated logos
+  - kind: collect
+    in: [logo_0, logo_1, logo_2]
+    waitMode: all
+    out: all_logos
+
+  # Step 7: Evaluate logos with vision AI
+  - kind: vision
+    provider: openai-vision
+    in: all_logos
+    params:
+      prompt: |
+        Evaluate these 3 logo designs for a tech startup.
+        Score each on: clarity, memorability, professionalism, versatility.
+
+        Return JSON with the index (0, 1, or 2) of the best logo:
+        {"winner": <index>, "reasoning": "<why this logo is best>"}
+      outputFormat: json
+    out: evaluation
+
+  # Step 8: Route to the winning logo
+  - kind: router
+    in: all_logos
+    selectionIn: evaluation
+    selectionType: index
+    selectionProperty: winner
+    out: best_logo
+
+  # Step 9: Save the winning logo
+  - kind: save
+    in: best_logo
+    destination: ./output/best-logo.png

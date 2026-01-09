@@ -356,6 +356,179 @@ export class FloImg {
         params: { ...step.params, context },
       });
       return { step, out: step.out, value: result };
+    } else if (step.kind === "fan-out") {
+      // Fan-out step: distribute input to multiple branches
+      const input = variables.get(step.in);
+      if (!input) {
+        throw new ConfigurationError(`Fan-out step references undefined variable: ${step.in}`);
+      }
+
+      if (step.mode === "count") {
+        // Count mode: copy input to all branches
+        const count = step.count ?? step.out.length;
+        for (let i = 0; i < count && i < step.out.length; i++) {
+          variables.set(step.out[i], input);
+        }
+        this.logger.debug(`Fan-out (count): distributed input to ${count} branches`);
+      } else if (step.mode === "array") {
+        // Array mode: distribute array items to branches
+        let items: unknown[];
+
+        if (isDataBlob(input) && input.parsed && step.arrayProperty) {
+          // Extract array from parsed JSON
+          const arrayValue = input.parsed[step.arrayProperty];
+          if (!Array.isArray(arrayValue)) {
+            throw new ConfigurationError(
+              `Fan-out array property "${step.arrayProperty}" is not an array`
+            );
+          }
+          items = arrayValue;
+        } else if (Array.isArray(input)) {
+          items = input;
+        } else {
+          throw new ConfigurationError(
+            `Fan-out in array mode requires array input or DataBlob with arrayProperty`
+          );
+        }
+
+        // Distribute items to output variables
+        for (let i = 0; i < items.length && i < step.out.length; i++) {
+          // Wrap non-blob items in DataBlob for consistency
+          const item = items[i];
+          if (isImageBlob(item) || isDataBlob(item)) {
+            variables.set(step.out[i], item);
+          } else {
+            // Wrap primitive/object in DataBlob
+            variables.set(step.out[i], {
+              type: "json",
+              content: JSON.stringify(item),
+              parsed:
+                typeof item === "object" ? (item as Record<string, unknown>) : { value: item },
+              source: "fan-out",
+            } as DataBlob);
+          }
+        }
+        this.logger.debug(`Fan-out (array): distributed ${items.length} items to branches`);
+      }
+
+      // Return a synthetic result (fan-out doesn't produce a single value)
+      // We return the first output as representative
+      const firstOut = step.out[0];
+      const firstValue = variables.get(firstOut);
+      return { step, out: firstOut, value: firstValue as ImageBlob | DataBlob | SaveResult };
+    } else if (step.kind === "collect") {
+      // Collect step: gather inputs into an array
+      const collected: (ImageBlob | DataBlob | SaveResult | null)[] = [];
+
+      for (const inputName of step.in) {
+        const value = variables.get(inputName);
+        if (value === undefined) {
+          if (step.waitMode === "all") {
+            throw new ConfigurationError(
+              `Collect step with waitMode="all" requires all inputs. Missing: ${inputName}`
+            );
+          }
+          collected.push(null); // Mark missing inputs as null
+        } else {
+          collected.push(value);
+        }
+      }
+
+      // Check minRequired for "available" mode
+      const validCount = collected.filter((v) => v !== null).length;
+      if (step.waitMode === "available" && step.minRequired && validCount < step.minRequired) {
+        throw new ConfigurationError(
+          `Collect step requires at least ${step.minRequired} inputs, but only ${validCount} available`
+        );
+      }
+
+      // Store collected array as a special variable
+      // We wrap it in a synthetic structure that can be accessed by router
+      const collectedBlob: DataBlob = {
+        type: "json",
+        content: JSON.stringify({ items: collected.filter((v) => v !== null) }),
+        parsed: { items: collected.filter((v) => v !== null), _raw: collected },
+        source: "collect",
+        metadata: { inputCount: step.in.length, validCount },
+      };
+
+      // Also store the raw array for direct access by router
+      (variables as Map<string, unknown>).set(
+        `${step.out}_array`,
+        collected.filter((v) => v !== null)
+      );
+
+      this.logger.debug(`Collect: gathered ${validCount}/${step.in.length} inputs`);
+      return { step, out: step.out, value: collectedBlob };
+    } else if (step.kind === "router") {
+      // Router step: select one item from candidates based on selection data
+      const candidatesVar = variables.get(step.in);
+      const selectionVar = variables.get(step.selectionIn);
+
+      if (!selectionVar) {
+        throw new ConfigurationError(
+          `Router step references undefined selection variable: ${step.selectionIn}`
+        );
+      }
+
+      // Get selection value from DataBlob
+      let selectionValue: unknown;
+      if (isDataBlob(selectionVar) && selectionVar.parsed) {
+        selectionValue = selectionVar.parsed[step.selectionProperty];
+      } else {
+        throw new ConfigurationError(
+          `Router selection must be a DataBlob with parsed JSON containing "${step.selectionProperty}"`
+        );
+      }
+
+      // Get candidates array
+      let candidates: unknown[];
+      const rawArray = (variables as Map<string, unknown>).get(`${step.in}_array`);
+      if (Array.isArray(rawArray)) {
+        candidates = rawArray;
+      } else if (isDataBlob(candidatesVar) && candidatesVar.parsed?.items) {
+        candidates = candidatesVar.parsed.items as unknown[];
+      } else {
+        throw new ConfigurationError(`Router input "${step.in}" must be a collected array`);
+      }
+
+      // Select based on type
+      let selected: unknown;
+      if (step.selectionType === "index") {
+        const index = Number(selectionValue);
+        if (isNaN(index) || index < 0 || index >= candidates.length) {
+          throw new ConfigurationError(
+            `Router index ${selectionValue} out of bounds (0-${candidates.length - 1})`
+          );
+        }
+        selected = candidates[index];
+        this.logger.debug(`Router: selected index ${index} from ${candidates.length} candidates`);
+      } else if (step.selectionType === "property") {
+        // Find candidate matching the property value
+        selected = candidates.find((c) => {
+          if (isDataBlob(c) && c.parsed) {
+            return c.parsed[step.selectionProperty] === selectionValue;
+          }
+          if (typeof c === "object" && c !== null) {
+            return (c as Record<string, unknown>)[step.selectionProperty] === selectionValue;
+          }
+          return false;
+        });
+        if (selected === undefined) {
+          throw new ConfigurationError(
+            `Router could not find candidate with ${step.selectionProperty}=${selectionValue}`
+          );
+        }
+        this.logger.debug(
+          `Router: selected by property ${step.selectionProperty}=${selectionValue}`
+        );
+      }
+
+      if (!selected) {
+        throw new ConfigurationError(`Router failed to select a candidate`);
+      }
+
+      return { step, out: step.out, value: selected as ImageBlob | DataBlob | SaveResult };
     }
 
     throw new ConfigurationError(

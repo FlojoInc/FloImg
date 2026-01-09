@@ -693,6 +693,88 @@ export type PipelineStep =
       params?: Record<string, unknown>;
       /** Output variable name (will be a DataBlob) */
       out: string;
+    }
+  | {
+      /**
+       * Fan-out step - distributes execution across parallel branches
+       *
+       * @example Count mode: spawn 3 parallel branches
+       * ```yaml
+       * - kind: fan-out
+       *   in: source_image
+       *   mode: count
+       *   count: 3
+       *   out: [branch_0, branch_1, branch_2]
+       * ```
+       *
+       * @example Array mode: iterate over parsed JSON array
+       * ```yaml
+       * - kind: fan-out
+       *   in: concepts_data
+       *   mode: array
+       *   arrayProperty: concepts
+       *   out: [concept_0, concept_1, concept_2]
+       * ```
+       */
+      kind: "fan-out";
+      /** Input variable name - the value to distribute or array to iterate */
+      in: string;
+      /** Fan-out mode: "count" spawns N copies, "array" iterates over array items */
+      mode: "count" | "array";
+      /** Number of branches to spawn (required for count mode) */
+      count?: number;
+      /** Property name to extract array from (for array mode with DataBlob input) */
+      arrayProperty?: string;
+      /** Output variable names - one per branch */
+      out: string[];
+    }
+  | {
+      /**
+       * Collect step - gathers outputs from parallel branches into an array
+       *
+       * @example Gather 3 branch outputs
+       * ```yaml
+       * - kind: collect
+       *   in: [logo_0, logo_1, logo_2]
+       *   waitMode: all
+       *   out: all_logos
+       * ```
+       */
+      kind: "collect";
+      /** Input variable names - one per branch to collect */
+      in: string[];
+      /** Wait mode: "all" waits for all inputs, "available" proceeds with ready inputs */
+      waitMode: "all" | "available";
+      /** Minimum required inputs (for "available" mode, fails if fewer succeed) */
+      minRequired?: number;
+      /** Output variable name - will be an array of collected values */
+      out: string;
+    }
+  | {
+      /**
+       * Router step - selects one item from an array based on selection data
+       *
+       * @example Select by index from vision output
+       * ```yaml
+       * - kind: router
+       *   in: all_logos
+       *   selectionIn: evaluation_result
+       *   selectionType: index
+       *   selectionProperty: winner
+       *   out: best_logo
+       * ```
+       */
+      kind: "router";
+      /** Input variable name - array of candidates to select from */
+      in: string;
+      /** Selection data variable name - DataBlob containing selection info */
+      selectionIn: string;
+      /** Selection type: "index" uses numeric index, "property" matches property value */
+      selectionType: "index" | "property";
+      /** Property name to read from selection data (e.g., "winner" for {winner: 2}) */
+      selectionProperty: string;
+      /** Output variable name - the selected item */
+      out: string;
     };
 
 /**

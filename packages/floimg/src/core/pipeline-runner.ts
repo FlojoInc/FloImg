@@ -69,6 +69,27 @@ export function buildDependencyGraph(steps: PipelineStep[]): StepNode[] {
         dependencies.add(step.in);
       }
       outputs.push(step.out);
+    } else if (step.kind === "fan-out") {
+      // Fan-out steps depend on their input, produce multiple outputs
+      dependencies.add(step.in);
+      outputs.push(...step.out);
+    } else if (step.kind === "collect") {
+      // Collect steps: dependency handling depends on waitMode
+      // For waitMode="all": require all inputs
+      // For waitMode="available": no hard dependencies (we'll collect what's available)
+      if (step.waitMode === "all") {
+        for (const input of step.in) {
+          dependencies.add(input);
+        }
+      }
+      // For "available" mode, we don't add dependencies - collect will run
+      // in the first wave and gather whatever inputs are ready
+      outputs.push(step.out);
+    } else if (step.kind === "router") {
+      // Router steps depend on BOTH candidates array and selection data
+      dependencies.add(step.in);
+      dependencies.add(step.selectionIn);
+      outputs.push(step.out);
     }
 
     return { index, step, dependencies, outputs };
