@@ -84,6 +84,9 @@ function isRouterStep(step: unknown): step is RouterStep {
   return typeof step === "object" && step !== null && (step as RouterStep).kind === "router";
 }
 
+// Branch info (_branchInfo) is attached to steps inside fan-out/collect regions
+// Structure: { fanoutVar: string, branchIndex: number }
+
 // Mime type to file extension mapping
 const MIME_TO_EXT: Record<string, string> = {
   "image/svg+xml": "svg",
@@ -841,6 +844,11 @@ export async function executeWorkflow(
             parsed: dataBlob.parsed,
           });
 
+          // Store parsed data in stepVariables for fan-out array mode access
+          if (stepOut && dataBlob.parsed) {
+            stepVariables[`${stepOut}_parsed`] = dataBlob.parsed as unknown as ImageBlob;
+          }
+
           callbacks?.onStep?.({
             stepIndex: i,
             nodeId: stepNodeId,
@@ -896,6 +904,18 @@ export function toPipeline(
   edges: StudioEdge[],
   aiProviders?: AIProviderConfig
 ): { pipeline: { name: string; steps: unknown[] }; nodeToVar: Map<string, string> } {
+  // Build a map of fan-out node IDs to their output counts
+  const fanoutNodes = new Map<string, { count: number; mode: "array" | "count" }>();
+  for (const node of nodes) {
+    if (node.type === "fanout") {
+      const data = node.data as FanOutNodeData;
+      fanoutNodes.set(node.id, {
+        count: data.count || 3,
+        mode: data.mode || "count",
+      });
+    }
+  }
+
   // Topological sort for ordering
   const dependencies = buildDependencyGraph(nodes, edges);
   const completed = new Set<string>();
@@ -948,35 +968,60 @@ export function toPipeline(
       // Capture source handle for property extraction (e.g., "output.prompt" extracts just the prompt property)
       const textSourceHandle = textEdge?.sourceHandle;
 
-      // If there's a text input, mark it for resolution
-      // The actual text will be injected during execution after text nodes complete
-      if (textSourceVar) {
-        params = { ...params, _promptFromVar: textSourceVar };
-        // If sourceHandle specifies a property (e.g., "output.prompt"), mark it for extraction
-        if (textSourceHandle?.startsWith("output.")) {
-          params = { ...params, _promptFromProperty: textSourceHandle.slice(7) }; // Extract "prompt" from "output.prompt"
-        }
-      }
+      // Check if text input comes from a fan-out branch (sourceHandle like "out[0]", "out[1]", etc.)
+      const fanoutBranchMatch = textSourceHandle?.match(/^out\[(\d+)\]$/);
+      const isFanoutBranch = fanoutBranchMatch && textEdge && fanoutNodes.has(textEdge.source);
 
-      // Find reference image edges (for AI generators that accept reference images)
-      const referenceEdges = edges.filter(
-        (e) => e.target === node.id && e.targetHandle === "references"
-      );
-      if (referenceEdges.length > 0) {
-        const refVars = referenceEdges
-          .map((e) => nodeToVar.get(e.source))
-          .filter((v): v is string => v !== undefined);
-        if (refVars.length > 0) {
-          params = { ...params, _referenceImageVars: refVars };
-        }
-      }
+      if (isFanoutBranch && textEdge) {
+        // This generator is connected to a specific fan-out branch
+        // Create a single step that references the branch variable
+        const branchIndex = parseInt(fanoutBranchMatch[1], 10);
+        const fanoutVar = nodeToVar.get(textEdge.source);
 
-      steps.push({
-        kind: "generate",
-        generator: data.generatorName,
-        params,
-        out: varName,
-      });
+        params = {
+          ...params,
+          _promptFromVar: `${fanoutVar}_branch_${branchIndex}`,
+          _branchInfo: { fanoutVar, branchIndex },
+        };
+
+        steps.push({
+          kind: "generate",
+          generator: data.generatorName,
+          params,
+          out: varName,
+          _branchInfo: { fanoutVar, branchIndex },
+        });
+      } else {
+        // Regular non-branch generator
+        // If there's a text input, mark it for resolution
+        if (textSourceVar) {
+          params = { ...params, _promptFromVar: textSourceVar };
+          // If sourceHandle specifies a property (e.g., "output.prompt"), mark it for extraction
+          if (textSourceHandle?.startsWith("output.")) {
+            params = { ...params, _promptFromProperty: textSourceHandle.slice(7) };
+          }
+        }
+
+        // Find reference image edges (for AI generators that accept reference images)
+        const referenceEdges = edges.filter(
+          (e) => e.target === node.id && e.targetHandle === "references"
+        );
+        if (referenceEdges.length > 0) {
+          const refVars = referenceEdges
+            .map((e) => nodeToVar.get(e.source))
+            .filter((v): v is string => v !== undefined);
+          if (refVars.length > 0) {
+            params = { ...params, _referenceImageVars: refVars };
+          }
+        }
+
+        steps.push({
+          kind: "generate",
+          generator: data.generatorName,
+          params,
+          out: varName,
+        });
+      }
     } else if (node.type === "transform") {
       const data = node.data as TransformNodeData;
 
