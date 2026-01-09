@@ -23,7 +23,8 @@
     "prepare": "husky",
     "audit": "pnpm audit",
     "audit:deprecated": "pnpm install --dry-run 2>&1 | grep -i 'deprecated' && exit 1 || echo '✅ No deprecated dependencies'",
-    "prerelease": "pnpm audit:deprecated && pnpm typecheck && pnpm test"
+    "prerelease": "pnpm audit:deprecated && pnpm typecheck && pnpm test",
+    "verify-setup": "bash scripts/verify-setup.sh"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
