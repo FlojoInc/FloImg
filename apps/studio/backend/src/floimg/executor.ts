@@ -302,7 +302,26 @@ export async function executeWorkflow(
     const textVarToResolve = new Set<string>();
     for (const step of pipeline.steps) {
       if ((step.kind === "generate" || step.kind === "transform") && step.params?._promptFromVar) {
-        textVarToResolve.add(step.params._promptFromVar as string);
+        const varName = step.params._promptFromVar as string;
+
+        // Check if this is a branch variable (e.g., "v1_branch_0")
+        // If so, we need to trace back through the fanout to find the source text node
+        const branchMatch = varName.match(/^(.+)_branch_(\d+)$/);
+        if (branchMatch) {
+          const fanoutVar = branchMatch[1];
+          // Find the fanout step to get its input variable (the actual text source)
+          const allSteps = pipeline.steps as unknown[];
+          const fanoutStep = allSteps.find((s) => isFanOutStep(s) && s.out === fanoutVar) as
+            | FanOutStep
+            | undefined;
+
+          if (fanoutStep?.in) {
+            // Add the fanout's input (the text node's output) to resolution set
+            textVarToResolve.add(fanoutStep.in);
+          }
+        } else {
+          textVarToResolve.add(varName);
+        }
       }
     }
 
@@ -393,6 +412,7 @@ export async function executeWorkflow(
 
             // Check if this is a branch variable (e.g., "v1_branch_0")
             const branchMatch = varName.match(/^(.+)_branch_(\d+)$/);
+
             if (branchMatch) {
               // This is a branch variable - extract from fan-out's source text node
               const fanoutVar = branchMatch[1]; // e.g., "v1"
@@ -400,21 +420,21 @@ export async function executeWorkflow(
 
               // Find the fan-out step to get its input variable
               // Cast to unknown first since Pipeline.steps doesn't include FanOutStep type
-              const fanoutStep = (pipeline.steps as unknown[]).find(
-                (s) => isFanOutStep(s) && s.out === fanoutVar
-              ) as FanOutStep | undefined;
+              const allSteps = pipeline.steps as unknown[];
+              const fanoutStep = allSteps.find((s) => isFanOutStep(s) && s.out === fanoutVar) as
+                | FanOutStep
+                | undefined;
 
               if (fanoutStep?.in && fanoutStep.arrayProperty) {
                 // Get the parsed output from the fan-out's input (text node)
                 const sourceParsed = resolvedParsed.get(fanoutStep.in);
+
                 if (sourceParsed && fanoutStep.arrayProperty in sourceParsed) {
                   const arrayValue = sourceParsed[fanoutStep.arrayProperty];
+
                   if (Array.isArray(arrayValue) && branchIndex < arrayValue.length) {
                     const item = arrayValue[branchIndex];
                     text = typeof item === "string" ? item : JSON.stringify(item);
-                    console.log(
-                      `Extracted branch ${branchIndex} from ${fanoutStep.arrayProperty}: "${text.slice(0, 50)}..."`
-                    );
                   }
                 }
               }
@@ -425,9 +445,6 @@ export async function executeWorkflow(
                 const value = parsed[propertyName];
                 // Convert to string (could be string, number, boolean, etc.)
                 text = typeof value === "string" ? value : JSON.stringify(value);
-                console.log(
-                  `Extracted property "${propertyName}" from text output: "${text.slice(0, 50)}..."`
-                );
               } else {
                 console.warn(
                   `Property "${propertyName}" not found in parsed output, using full content`
@@ -442,7 +459,8 @@ export async function executeWorkflow(
             if (text) {
               // Use resolved text as prompt (override any existing prompt)
               step.params.prompt = text;
-              console.log(`Injected dynamic prompt for ${step.kind}: "${text.slice(0, 50)}..."`);
+            } else {
+              console.warn(`No text resolved for prompt variable ${varName}`);
             }
             // Clean up the markers
             delete step.params._promptFromVar;
