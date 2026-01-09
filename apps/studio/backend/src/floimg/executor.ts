@@ -18,6 +18,9 @@ import type {
   InputNodeData,
   VisionNodeData,
   TextNodeData,
+  FanOutNodeData,
+  CollectNodeData,
+  RouterNodeData,
   ExecutionStepResult,
   ImageMetadata,
 } from "@teamflojo/floimg-studio-shared";
@@ -36,6 +39,50 @@ import {
 
 // Output directory for generated images
 const OUTPUT_DIR = "./data/images";
+
+// Type definitions for iterative workflow steps
+interface FanOutStep {
+  kind: "fanout";
+  in?: string;
+  mode: "array" | "count";
+  count: number;
+  arrayProperty?: string;
+  out: string;
+}
+
+interface CollectStep {
+  kind: "collect";
+  inputs: string[];
+  expectedInputs: number;
+  waitMode: "all" | "available";
+  out: string;
+}
+
+interface RouterStep {
+  kind: "router";
+  candidatesIn?: string;
+  selectionIn?: string;
+  selectionProperty: string;
+  selectionType: "index" | "value";
+  outputCount: number;
+  contextProperty?: string;
+  out: string;
+}
+
+// Type guard for fanout step
+function isFanOutStep(step: unknown): step is FanOutStep {
+  return typeof step === "object" && step !== null && (step as FanOutStep).kind === "fanout";
+}
+
+// Type guard for collect step
+function isCollectStep(step: unknown): step is CollectStep {
+  return typeof step === "object" && step !== null && (step as CollectStep).kind === "collect";
+}
+
+// Type guard for router step
+function isRouterStep(step: unknown): step is RouterStep {
+  return typeof step === "object" && step !== null && (step as RouterStep).kind === "router";
+}
 
 // Mime type to file extension mapping
 const MIME_TO_EXT: Record<string, string> = {
@@ -537,7 +584,137 @@ export async function executeWorkflow(
         });
       }
 
-      // Execute single step
+      // Handle iterative workflow steps (fanout, collect, router)
+      // Cast step to unknown first, then check with type guards
+      const unknownStep = step as unknown;
+
+      if (isFanOutStep(unknownStep)) {
+        const fanoutStep = unknownStep;
+        // Fan-out: distribute input to multiple branches
+        const inputValue = fanoutStep.in ? stepVariables[fanoutStep.in] : undefined;
+        const branchCount = fanoutStep.mode === "count" ? fanoutStep.count : 3;
+
+        // Create branch outputs (for now, pass through input to each branch)
+        // Full parallel execution will be implemented when subgraphs are identified
+        const branchOutputs: (ImageBlob | unknown)[] = [];
+        for (let branchIdx = 0; branchIdx < branchCount; branchIdx++) {
+          const branchId = `${fanoutStep.out}_branch_${branchIdx}`;
+
+          if (fanoutStep.mode === "array" && fanoutStep.arrayProperty && inputValue) {
+            // Array mode: extract item from array property
+            const parsedData = stepVariables[`${fanoutStep.in}_parsed`] as unknown as
+              | Record<string, unknown>
+              | undefined;
+            if (parsedData && fanoutStep.arrayProperty in parsedData) {
+              const arrayValue = parsedData[fanoutStep.arrayProperty];
+              if (Array.isArray(arrayValue) && branchIdx < arrayValue.length) {
+                branchOutputs.push(arrayValue[branchIdx]);
+              }
+            }
+          } else {
+            // Count mode: duplicate input to each branch
+            branchOutputs.push(inputValue);
+          }
+
+          // Store branch output in variables
+          stepVariables[branchId] = branchOutputs[branchIdx] as ImageBlob;
+
+          callbacks?.onStep?.({
+            stepIndex: i,
+            nodeId: stepNodeId!,
+            status: "completed",
+            branchId,
+            branchIndex: branchIdx,
+            totalBranches: branchCount,
+          });
+        }
+
+        // Store fan-out metadata for collect to use
+        stepVariables[`${fanoutStep.out}_branchCount`] = branchCount as unknown as ImageBlob;
+        results.push({ step, value: branchOutputs, out: fanoutStep.out, nodeId: stepNodeId });
+        continue;
+      }
+
+      if (isCollectStep(unknownStep)) {
+        const collectStep = unknownStep;
+        // Collect: gather all inputs into an array
+        const collectedValues: unknown[] = [];
+
+        for (const inputVar of collectStep.inputs) {
+          const value = stepVariables[inputVar];
+          collectedValues.push(value ?? null); // null for failed branches
+        }
+
+        // Store as array in variables
+        stepVariables[collectStep.out] = collectedValues as unknown as ImageBlob;
+
+        callbacks?.onStep?.({
+          stepIndex: i,
+          nodeId: stepNodeId!,
+          status: "completed",
+        });
+
+        results.push({ step, value: collectedValues, out: collectStep.out, nodeId: stepNodeId });
+        continue;
+      }
+
+      if (isRouterStep(unknownStep)) {
+        const routerStep = unknownStep;
+        // Router: select based on selection data
+        const candidates = routerStep.candidatesIn
+          ? stepVariables[routerStep.candidatesIn]
+          : undefined;
+        const selectionData = routerStep.selectionIn
+          ? stepVariables[routerStep.selectionIn]
+          : undefined;
+
+        let winnerValue: unknown = null;
+        let contextValue: unknown = null;
+
+        if (candidates && selectionData) {
+          const candidatesArray = Array.isArray(candidates) ? candidates : [candidates];
+
+          // Extract selection from data
+          let selectionValue: number | string | undefined;
+          if (typeof selectionData === "object" && selectionData !== null) {
+            const dataRecord = selectionData as unknown as Record<string, unknown>;
+            selectionValue = dataRecord[routerStep.selectionProperty] as number | string;
+
+            // Extract context if specified
+            if (routerStep.contextProperty && routerStep.contextProperty in dataRecord) {
+              contextValue = dataRecord[routerStep.contextProperty];
+            }
+          }
+
+          // Route based on selection type
+          if (selectionValue !== undefined) {
+            if (routerStep.selectionType === "index" && typeof selectionValue === "number") {
+              winnerValue = candidatesArray[selectionValue];
+            } else if (routerStep.selectionType === "value") {
+              winnerValue = candidatesArray.find((c) => c === selectionValue);
+            }
+          }
+        }
+
+        // Store winner and context in variables
+        if (winnerValue) {
+          stepVariables[routerStep.out] = winnerValue as ImageBlob;
+        }
+        if (contextValue) {
+          stepVariables[`${routerStep.out}_context`] = contextValue as unknown as ImageBlob;
+        }
+
+        callbacks?.onStep?.({
+          stepIndex: i,
+          nodeId: stepNodeId!,
+          status: "completed",
+        });
+
+        results.push({ step, value: winnerValue, out: routerStep.out, nodeId: stepNodeId });
+        continue;
+      }
+
+      // Execute single step (existing logic for generator, transform, etc.)
       const singlePipeline: Pipeline = {
         name: "Single Step",
         steps: [step] as Pipeline["steps"],
@@ -904,6 +1081,57 @@ export function toPipeline(
         provider: data.providerName,
         in: inputVar,
         params,
+        out: varName,
+      });
+    } else if (node.type === "fanout") {
+      const data = node.data as FanOutNodeData;
+      const inputEdge = edges.find((e) => e.target === node.id);
+      const inputVar = inputEdge ? nodeToVar.get(inputEdge.source) : undefined;
+
+      steps.push({
+        kind: "fanout",
+        in: inputVar,
+        mode: data.mode,
+        count: data.count || 3,
+        arrayProperty: data.arrayProperty,
+        out: varName,
+      });
+    } else if (node.type === "collect") {
+      const data = node.data as CollectNodeData;
+      // Collect gathers from multiple inputs - find all incoming edges
+      const inputEdges = edges.filter((e) => e.target === node.id);
+      const inputVars = inputEdges
+        .map((e) => nodeToVar.get(e.source))
+        .filter((v): v is string => v !== undefined);
+
+      steps.push({
+        kind: "collect",
+        inputs: inputVars,
+        expectedInputs: data.expectedInputs || inputVars.length,
+        waitMode: data.waitMode,
+        out: varName,
+      });
+    } else if (node.type === "router") {
+      const data = node.data as RouterNodeData;
+      // Router takes candidates array and selection data
+      const candidatesEdge = edges.find(
+        (e) => e.target === node.id && e.targetHandle === "candidates"
+      );
+      const selectionEdge = edges.find(
+        (e) => e.target === node.id && e.targetHandle === "selection"
+      );
+
+      const candidatesVar = candidatesEdge ? nodeToVar.get(candidatesEdge.source) : undefined;
+      const selectionVar = selectionEdge ? nodeToVar.get(selectionEdge.source) : undefined;
+
+      steps.push({
+        kind: "router",
+        candidatesIn: candidatesVar,
+        selectionIn: selectionVar,
+        selectionProperty: data.selectionProperty,
+        selectionType: data.selectionType,
+        outputCount: data.outputCount,
+        contextProperty: data.contextProperty,
         out: varName,
       });
     }

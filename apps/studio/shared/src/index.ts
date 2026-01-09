@@ -221,6 +221,13 @@ export interface ExecutionStepResult {
   error?: string;
   /** Reason for skip (when status is "skipped") */
   skipReason?: string;
+  // Branch info for parallel execution (fan-out/collect)
+  /** Branch identifier (e.g., "fanout_1_branch_0") */
+  branchId?: string;
+  /** Branch index within a fan-out (0, 1, 2...) */
+  branchIndex?: number;
+  /** Total number of branches in this fan-out */
+  totalBranches?: number;
 }
 
 // Full execution result
