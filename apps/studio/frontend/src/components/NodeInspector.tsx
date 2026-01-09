@@ -5,6 +5,9 @@ import type {
   SaveNodeData,
   TextNodeData,
   VisionNodeData,
+  FanOutNodeData,
+  CollectNodeData,
+  RouterNodeData,
   ParamField,
   OutputSchema,
   OutputProperty,
@@ -69,6 +72,72 @@ export function NodeInspector() {
     const def = visionProviders.find((v) => v.name === data.providerName);
     schema = def?.params?.properties;
     nodeLabel = def?.label || data.providerName;
+  } else if (selectedNode.type === "fanout") {
+    nodeLabel = "Fan-Out";
+    schema = {
+      mode: {
+        type: "string",
+        title: "Mode",
+        description: "How to distribute inputs",
+        enum: ["count", "array"],
+      },
+      count: {
+        type: "number",
+        title: "Branch Count",
+        description: "Number of parallel branches (count mode)",
+        minimum: 2,
+        maximum: 10,
+      },
+      arrayProperty: {
+        type: "string",
+        title: "Array Property",
+        description: "Property name to iterate over (array mode)",
+      },
+    };
+  } else if (selectedNode.type === "collect") {
+    nodeLabel = "Collect";
+    schema = {
+      expectedInputs: {
+        type: "number",
+        title: "Expected Inputs",
+        description: "Number of inputs to collect",
+        minimum: 2,
+        maximum: 10,
+      },
+      waitMode: {
+        type: "string",
+        title: "Wait Mode",
+        description: "When to output results",
+        enum: ["all", "available"],
+      },
+    };
+  } else if (selectedNode.type === "router") {
+    nodeLabel = "Router";
+    schema = {
+      selectionProperty: {
+        type: "string",
+        title: "Selection Property",
+        description: "JSON property containing selection (e.g., 'winner')",
+      },
+      selectionType: {
+        type: "string",
+        title: "Selection Type",
+        description: "How to interpret selection value",
+        enum: ["index", "value"],
+      },
+      outputCount: {
+        type: "number",
+        title: "Output Count",
+        description: "How many items to route (1 = single winner)",
+        minimum: 1,
+        maximum: 5,
+      },
+      contextProperty: {
+        type: "string",
+        title: "Context Property",
+        description: "Optional property to pass through (e.g., 'refinement')",
+      },
+    };
   }
 
   const handleParamChange = (key: string, value: unknown) => {
@@ -94,6 +163,13 @@ export function NodeInspector() {
       updateNodeData(selectedNode.id, {
         params: { ...data.params, [key]: value },
       });
+    } else if (
+      selectedNode.type === "fanout" ||
+      selectedNode.type === "collect" ||
+      selectedNode.type === "router"
+    ) {
+      // Flow control nodes store data directly (not in params)
+      updateNodeData(selectedNode.id, { [key]: value });
     }
   };
 
@@ -108,6 +184,12 @@ export function NodeInspector() {
       return (selectedNode.data as TextNodeData).params[key];
     } else if (selectedNode.type === "vision") {
       return (selectedNode.data as VisionNodeData).params[key];
+    } else if (selectedNode.type === "fanout") {
+      return (selectedNode.data as FanOutNodeData)[key as keyof FanOutNodeData];
+    } else if (selectedNode.type === "collect") {
+      return (selectedNode.data as CollectNodeData)[key as keyof CollectNodeData];
+    } else if (selectedNode.type === "router") {
+      return (selectedNode.data as RouterNodeData)[key as keyof RouterNodeData];
     }
     return undefined;
   };
@@ -145,6 +227,13 @@ export function NodeInspector() {
       ) {
         return fillType === "pattern";
       }
+    }
+
+    // For fan-out, show count in count mode, arrayProperty in array mode
+    if (selectedNode.type === "fanout") {
+      const mode = (selectedNode.data as FanOutNodeData).mode || "count";
+      if (key === "count") return mode === "count";
+      if (key === "arrayProperty") return mode === "array";
     }
 
     return true;
