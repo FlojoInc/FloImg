@@ -8,6 +8,9 @@ import type {
   InputNodeData,
   VisionNodeData,
   TextNodeData,
+  FanOutNodeData,
+  CollectNodeData,
+  RouterNodeData,
   NodeDefinition,
   GeneratedWorkflowData,
   StudioNodeType,
@@ -28,7 +31,10 @@ type NodeData =
   | SaveNodeData
   | InputNodeData
   | VisionNodeData
-  | TextNodeData;
+  | TextNodeData
+  | FanOutNodeData
+  | CollectNodeData
+  | RouterNodeData;
 
 type NodeExecutionStatus = "idle" | "pending" | "running" | "completed" | "error";
 
@@ -872,9 +878,8 @@ export const useWorkflowStore = create<WorkflowStore>()(
             idMap.set(genNode.id, newId);
 
             // Parse nodeType to extract type and name
-            // Format: "generator:dalle-3", "transform:sharp:resize", "input:upload", etc.
+            // Format: "generator:dalle-3", "transform:sharp:resize", "input:upload", "flow:fanout", etc.
             const parts = genNode.nodeType.split(":");
-            const nodeType = parts[0] as StudioNodeType;
 
             // Calculate grid position
             const row = Math.floor(index / NODES_PER_ROW);
@@ -883,6 +888,45 @@ export const useWorkflowStore = create<WorkflowStore>()(
               x: 100 + col * GRID_SPACING_X,
               y: 100 + row * GRID_SPACING_Y,
             };
+
+            // Handle flow control nodes specially (flow:fanout, flow:collect, flow:router)
+            // The actual node type is the second part, not "flow"
+            if (parts[0] === "flow") {
+              const flowNodeType = parts[1] as "fanout" | "collect" | "router";
+              let data: NodeData;
+
+              if (flowNodeType === "fanout") {
+                data = {
+                  mode: (genNode.parameters.mode as "array" | "count") || "count",
+                  count: (genNode.parameters.count as number) || 3,
+                  arrayProperty: genNode.parameters.arrayProperty as string | undefined,
+                } as FanOutNodeData;
+              } else if (flowNodeType === "collect") {
+                data = {
+                  expectedInputs: (genNode.parameters.expectedCount as number) || 3,
+                  waitMode: "all",
+                } as CollectNodeData;
+              } else {
+                // router
+                data = {
+                  selectionProperty:
+                    (genNode.parameters.selectionProperty as string) || "best_index",
+                  selectionType: "index",
+                  outputCount: 1,
+                  contextProperty: genNode.parameters.contextProperty as string | undefined,
+                } as RouterNodeData;
+              }
+
+              return {
+                id: newId,
+                type: flowNodeType as StudioNodeType,
+                position,
+                data,
+              };
+            }
+
+            // Standard node types
+            const nodeType = parts[0] as StudioNodeType;
 
             // Build node data based on type
             let data: NodeData;

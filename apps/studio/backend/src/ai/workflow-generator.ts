@@ -17,6 +17,7 @@ import {
   getInputNodes,
   getTextProviders,
   getVisionProviders,
+  getFlowControlNodes,
 } from "../floimg/registry.js";
 
 // Model to use for workflow generation
@@ -148,6 +149,39 @@ Example jsonSchema for multiple prompts:
 
 Then connect edges with sourceHandle "output.landscape", "output.character", etc.
 
+## Flow Control Nodes (Iterative Workflows)
+
+Use flow control nodes for AI-driven iterative workflows that generate variations and select the best:
+
+### flow:fanout - Split into Parallel Branches
+- **input** handle (left): Receives data/array from upstream node
+- **count mode**: Creates N copies of input (e.g., generate 3 variations)
+- **array mode**: Iterates over array property from text node's parsed JSON output
+- **out[0], out[1], out[2]** handles (right): One output per branch
+- Connect each output to a separate generator for parallel image generation
+
+### flow:collect - Gather Branch Results
+- **in[0], in[1], in[2]** handles (left): One input per branch
+- Waits for all parallel branches to complete
+- **output** handle (right): Array of collected results
+- Connect to vision node for evaluation
+
+### flow:router - AI-Powered Selection
+- **candidates** handle (left): Array of images from collect node
+- **selection** handle (left): JSON from vision node with selection (e.g., {"best_index": 0, "reasoning": "..."})
+- **selectionProperty**: Which property contains the winner index
+- **winner** handle (right): The selected image
+- **context** handle (right): Optional extracted context (reasoning, feedback)
+
+### Vision Node Context Input
+Vision nodes have a "context" input handle (top) that receives workflow context.
+Connect a text node's output to provide the vision model with:
+- Original objectives/requirements
+- Prompts used to generate images
+- Evaluation criteria
+
+This helps the vision model make informed selections.
+
 ## Output Format
 
 For each node, provide:
@@ -231,6 +265,34 @@ Response edges:
 - source: "node_1", target: "node_2"
 - source: "node_2", target: "node_3"
 
+### Iterative: Generate variations and AI-select the best
+**User**: "Generate 3 variations of a mountain landscape and have AI pick the best one"
+
+Response nodes:
+- id: "text_1", nodeType: "text:gemini-text", label: "Context & Prompts", parametersJson: '{"prompt": "Generate 3 different prompts for mountain landscape images. Each should have a unique style: realistic, impressionist, and dramatic. Output JSON with prompts array and objectives.", "outputFormat": "json", "jsonSchema": {"type": "object", "properties": {"prompts": {"type": "array", "items": {"type": "string"}, "description": "Array of 3 image prompts"}, "objectives": {"type": "string", "description": "What makes a good mountain landscape"}}, "required": ["prompts", "objectives"]}}'
+- id: "fanout_1", nodeType: "flow:fanout", label: "Split to 3 branches", parametersJson: '{"mode": "array", "arrayProperty": "prompts"}'
+- id: "gen_1", nodeType: "generator:gemini-generate", label: "Variation 1", parametersJson: '{"prompt": ""}'
+- id: "gen_2", nodeType: "generator:gemini-generate", label: "Variation 2", parametersJson: '{"prompt": ""}'
+- id: "gen_3", nodeType: "generator:gemini-generate", label: "Variation 3", parametersJson: '{"prompt": ""}'
+- id: "collect_1", nodeType: "flow:collect", label: "Gather results", parametersJson: '{}'
+- id: "vision_1", nodeType: "vision:gemini-vision", label: "Evaluate & Select", parametersJson: '{"prompt": "Analyze these 3 mountain landscape images. Consider composition, lighting, detail, and artistic quality. Select the best one.", "outputFormat": "json", "jsonSchema": {"type": "object", "properties": {"best_index": {"type": "number", "description": "Index of best image (0, 1, or 2)"}, "reasoning": {"type": "string", "description": "Why this image is the best"}}, "required": ["best_index", "reasoning"]}}'
+- id: "router_1", nodeType: "flow:router", label: "Select winner", parametersJson: '{"selectionProperty": "best_index", "contextProperty": "reasoning"}'
+
+Response edges:
+- source: "text_1", target: "fanout_1", sourceHandle: "text", targetHandle: "input"
+- source: "fanout_1", target: "gen_1", sourceHandle: "out[0]", targetHandle: "text"
+- source: "fanout_1", target: "gen_2", sourceHandle: "out[1]", targetHandle: "text"
+- source: "fanout_1", target: "gen_3", sourceHandle: "out[2]", targetHandle: "text"
+- source: "gen_1", target: "collect_1", sourceHandle: "image", targetHandle: "in[0]"
+- source: "gen_2", target: "collect_1", sourceHandle: "image", targetHandle: "in[1]"
+- source: "gen_3", target: "collect_1", sourceHandle: "image", targetHandle: "in[2]"
+- source: "collect_1", target: "vision_1", sourceHandle: "output", targetHandle: "image"
+- source: "text_1", target: "vision_1", sourceHandle: "text", targetHandle: "context"
+- source: "collect_1", target: "router_1", sourceHandle: "output", targetHandle: "candidates"
+- source: "vision_1", target: "router_1", sourceHandle: "output", targetHandle: "selection"
+
+Note: This iterative workflow generates multiple variations, uses AI vision to evaluate them with full context of the original objectives, and routes the winner to the output.
+
 Now generate a workflow for the user's request.`;
 }
 
@@ -244,6 +306,7 @@ function getAllAvailableNodes(): NodeDefinition[] {
     ...getTransforms(),
     ...getTextProviders(),
     ...getVisionProviders(),
+    ...getFlowControlNodes(),
   ];
 }
 
@@ -406,10 +469,13 @@ function validateWorkflow(
 
   // Check for at least one source node
   const hasSource = workflow.nodes.some(
-    (n) => n.nodeType.startsWith("generator:") || n.nodeType === "input:upload"
+    (n) =>
+      n.nodeType.startsWith("generator:") ||
+      n.nodeType === "input:upload" ||
+      n.nodeType.startsWith("text:")
   );
   if (!hasSource) {
-    errors.push("Workflow has no source node (generator or input)");
+    errors.push("Workflow has no source node (generator, input, or text)");
   }
 
   return {

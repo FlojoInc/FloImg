@@ -400,7 +400,22 @@ export const VisionNode = memo(function VisionNode({
     <div
       className={`rounded-lg border-2 bg-white dark:bg-zinc-800 shadow-md min-w-[180px] overflow-hidden ${borderClass}`}
     >
-      <Handle type="target" position={Position.Left} className="w-3 h-3 !bg-cyan-500" />
+      {/* Text/context input handle (top) - for workflow context */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="context"
+        className="w-3 h-3 !bg-pink-500"
+        title="Context input (optional - from text/vision node for evaluation context)"
+      />
+      {/* Image input handle (left) - for images to analyze */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="image"
+        className="w-3 h-3 !bg-cyan-500"
+        title="Image input"
+      />
       {dataOutput && (
         <div className="bg-cyan-50 dark:bg-cyan-900/30 border-b border-cyan-100 dark:border-cyan-800 p-2 max-h-24 overflow-auto">
           <pre className="text-xs text-cyan-800 dark:text-cyan-200 whitespace-pre-wrap">
@@ -617,7 +632,7 @@ export const FanOutNode = memo(function FanOutNode({
   const borderClass = executionClass || (selected ? "border-orange-500" : "border-orange-200");
 
   // Determine output count based on mode
-  const outputCount = data.mode === "count" ? (data.count || 3) : 3;
+  const outputCount = data.mode === "count" ? data.count || 3 : 3;
 
   return (
     <div
@@ -635,8 +650,18 @@ export const FanOutNode = memo(function FanOutNode({
       <div className="px-4 py-3">
         <div className="flex items-center gap-2 mb-2">
           {/* Fork/branch icon */}
-          <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          <svg
+            className="w-4 h-4 text-orange-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+            />
           </svg>
           <span className="font-semibold text-sm text-orange-700 dark:text-orange-400">
             Fan-Out
@@ -707,8 +732,18 @@ export const CollectNode = memo(function CollectNode({
       <div className="px-4 py-3">
         <div className="flex items-center gap-2 mb-2">
           {/* Merge/collect icon */}
-          <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h12m0 0l-4-4m4 4l-4 4m8 6H8m0 0l4 4m-4-4l4-4" />
+          <svg
+            className="w-4 h-4 text-orange-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 7h12m0 0l-4-4m4 4l-4 4m8 6H8m0 0l4 4m-4-4l4-4"
+            />
           </svg>
           <span className="font-semibold text-sm text-orange-700 dark:text-orange-400">
             Collect
@@ -773,12 +808,20 @@ export const RouterNode = memo(function RouterNode({
       <div className="px-4 py-3">
         <div className="flex items-center gap-2 mb-2">
           {/* Router/switch icon */}
-          <svg className="w-4 h-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          <svg
+            className="w-4 h-4 text-violet-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 5l7 7-7 7M5 5l7 7-7 7"
+            />
           </svg>
-          <span className="font-semibold text-sm text-violet-700 dark:text-violet-400">
-            Router
-          </span>
+          <span className="font-semibold text-sm text-violet-700 dark:text-violet-400">Router</span>
         </div>
         <div className="text-xs text-gray-500 dark:text-zinc-400 space-y-0.5">
           <div className="flex items-center gap-1">

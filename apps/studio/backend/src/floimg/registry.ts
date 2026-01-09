@@ -266,3 +266,93 @@ export function getVisionProviders(): NodeDefinition[] {
   const caps = getCachedCapabilities();
   return caps.visionProviders.map(visionProviderToNode);
 }
+
+/**
+ * Get flow control node definitions (studio-specific, not from floimg)
+ * These enable iterative workflows with parallel branching
+ */
+export function getFlowControlNodes(): NodeDefinition[] {
+  return [
+    {
+      id: "flow:fanout",
+      type: "fanout",
+      name: "fanout",
+      label: "Fan-Out",
+      description:
+        "Split execution into parallel branches. Use 'count' mode for N copies or 'array' mode to iterate over array items.",
+      category: "Flow Control",
+      params: {
+        type: "object",
+        properties: {
+          mode: {
+            type: "string",
+            title: "Mode",
+            description:
+              "How to create branches: 'count' creates N copies, 'array' iterates over parsed array",
+            enum: ["count", "array"],
+            default: "count",
+          },
+          count: {
+            type: "number",
+            title: "Branch Count",
+            description: "Number of parallel branches (only used in count mode)",
+            minimum: 2,
+            maximum: 10,
+            default: 3,
+          },
+          arrayProperty: {
+            type: "string",
+            title: "Array Property",
+            description: "Property name containing array to iterate (only used in array mode)",
+          },
+        },
+      },
+    },
+    {
+      id: "flow:collect",
+      type: "collect",
+      name: "collect",
+      label: "Collect",
+      description:
+        "Gather results from parallel branches into an array. Waits for all branches to complete.",
+      category: "Flow Control",
+      params: {
+        type: "object",
+        properties: {
+          expectedCount: {
+            type: "number",
+            title: "Expected Count",
+            description: "Number of branches to wait for (auto-detected from fan-out if connected)",
+          },
+        },
+      },
+    },
+    {
+      id: "flow:router",
+      type: "router",
+      name: "router",
+      label: "Router",
+      description:
+        "Select item(s) from candidates based on AI selection. Connect candidates array and selection/ranking output.",
+      category: "Flow Control",
+      params: {
+        type: "object",
+        properties: {
+          selectionProperty: {
+            type: "string",
+            title: "Selection Property",
+            description:
+              "Property in selection output containing winner index (e.g., 'best_index', 'winner')",
+            default: "best_index",
+          },
+          contextProperty: {
+            type: "string",
+            title: "Context Property",
+            description:
+              "Optional property to extract as context output (e.g., 'reasoning', 'feedback')",
+          },
+        },
+      },
+    },
+  ];
+}

@@ -391,8 +391,35 @@ export async function executeWorkflow(
 
             let text: string | undefined;
 
-            // If a specific property was requested (from sourceHandle like "output.prompt")
-            if (propertyName) {
+            // Check if this is a branch variable (e.g., "v1_branch_0")
+            const branchMatch = varName.match(/^(.+)_branch_(\d+)$/);
+            if (branchMatch) {
+              // This is a branch variable - extract from fan-out's source text node
+              const fanoutVar = branchMatch[1]; // e.g., "v1"
+              const branchIndex = parseInt(branchMatch[2], 10); // e.g., 0
+
+              // Find the fan-out step to get its input variable
+              // Cast to unknown first since Pipeline.steps doesn't include FanOutStep type
+              const fanoutStep = (pipeline.steps as unknown[]).find(
+                (s) => isFanOutStep(s) && s.out === fanoutVar
+              ) as FanOutStep | undefined;
+
+              if (fanoutStep?.in && fanoutStep.arrayProperty) {
+                // Get the parsed output from the fan-out's input (text node)
+                const sourceParsed = resolvedParsed.get(fanoutStep.in);
+                if (sourceParsed && fanoutStep.arrayProperty in sourceParsed) {
+                  const arrayValue = sourceParsed[fanoutStep.arrayProperty];
+                  if (Array.isArray(arrayValue) && branchIndex < arrayValue.length) {
+                    const item = arrayValue[branchIndex];
+                    text = typeof item === "string" ? item : JSON.stringify(item);
+                    console.log(
+                      `Extracted branch ${branchIndex} from ${fanoutStep.arrayProperty}: "${text.slice(0, 50)}..."`
+                    );
+                  }
+                }
+              }
+            } else if (propertyName) {
+              // If a specific property was requested (from sourceHandle like "output.prompt")
               const parsed = resolvedParsed.get(varName);
               if (parsed && propertyName in parsed) {
                 const value = parsed[propertyName];
@@ -420,6 +447,33 @@ export async function executeWorkflow(
             // Clean up the markers
             delete step.params._promptFromVar;
             delete step.params._promptFromProperty;
+          }
+        }
+
+        // Handle vision context injection (separate loop)
+        for (const step of pipeline.steps) {
+          if (step.kind === "vision" && step.params?._contextFromVar) {
+            const contextVarName = step.params._contextFromVar as string;
+            const contextText = resolvedText.get(contextVarName);
+            const contextParsed = resolvedParsed.get(contextVarName);
+
+            if (contextText || contextParsed) {
+              // Create context string from resolved text/parsed data
+              let contextStr = "";
+              if (contextParsed) {
+                // Pretty-print the parsed JSON for context
+                contextStr = `Context from workflow:\n${JSON.stringify(contextParsed, null, 2)}\n\n`;
+              } else if (contextText) {
+                contextStr = `Context from workflow:\n${contextText}\n\n`;
+              }
+
+              // Prepend context to the existing prompt
+              const existingPrompt = (step.params.prompt as string) || "";
+              step.params.prompt = contextStr + existingPrompt;
+              console.log(`Injected context into vision prompt: "${contextStr.slice(0, 100)}..."`);
+            }
+            // Clean up the marker
+            delete step.params._contextFromVar;
           }
         }
       }
@@ -1092,11 +1146,24 @@ export function toPipeline(
       });
     } else if (node.type === "vision") {
       const data = node.data as VisionNodeData;
-      const inputEdge = edges.find((e) => e.target === node.id);
+      // Find image input edge (targetHandle is "image" or undefined for backward compat)
+      const inputEdge = edges.find(
+        (e) => e.target === node.id && (e.targetHandle === "image" || !e.targetHandle)
+      );
       const inputVar = inputEdge ? nodeToVar.get(inputEdge.source) : undefined;
+
+      // Find context input edge (for workflow context - prompts, objectives, etc.)
+      const contextEdge = edges.find((e) => e.target === node.id && e.targetHandle === "context");
+      const contextSourceVar = contextEdge ? nodeToVar.get(contextEdge.source) : undefined;
 
       // Inject API key for vision providers
       let params = { ...data.params };
+
+      // If there's a context input, mark it for resolution
+      // The context will be prepended to the prompt during execution
+      if (contextSourceVar) {
+        params = { ...params, _contextFromVar: contextSourceVar };
+      }
       const apiKey = getApiKeyForProvider(data.providerName, aiProviders);
       if (apiKey && !params.apiKey) {
         params = { ...params, apiKey };

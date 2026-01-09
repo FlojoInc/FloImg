@@ -6,6 +6,9 @@ import type {
   InputNodeData,
   VisionNodeData,
   TextNodeData,
+  FanOutNodeData,
+  CollectNodeData,
+  RouterNodeData,
 } from "@teamflojo/floimg-studio-shared";
 
 type NodeData =
@@ -14,7 +17,10 @@ type NodeData =
   | SaveNodeData
   | InputNodeData
   | VisionNodeData
-  | TextNodeData;
+  | TextNodeData
+  | FanOutNodeData
+  | CollectNodeData
+  | RouterNodeData;
 
 /**
  * Topologically sort nodes based on edges (dependencies)
