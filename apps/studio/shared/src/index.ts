@@ -9,7 +9,11 @@ export type StudioNodeType =
   | "save"
   | "input"
   | "vision" // AI image analysis
-  | "text"; // AI text generation
+  | "text" // AI text generation
+  // Iterative workflow nodes (EPIC-2026-001)
+  | "fanout" // Distribute execution across parallel branches
+  | "collect" // Gather outputs from parallel branches
+  | "router"; // Route based on AI selection
 
 // Position on the canvas
 export interface Position {
@@ -75,6 +79,71 @@ export interface TextNodeData {
   outputSchema?: OutputSchema;
 }
 
+// ============================================
+// Iterative Workflow Node Data (EPIC-2026-001)
+// ============================================
+
+/**
+ * Fan-out node distributes execution across parallel branches.
+ *
+ * In "array" mode, it takes an array input and spawns one downstream
+ * execution per item. In "count" mode, it spawns N copies of its input.
+ *
+ * @example
+ * // Array mode: text node outputs { prompts: ["A", "B", "C"] }
+ * // Fan-out with arrayProperty="prompts" spawns 3 branches
+ *
+ * @example
+ * // Count mode: input image gets duplicated to 3 parallel generators
+ */
+export interface FanOutNodeData {
+  /** How to fan out: "array" (one per item) or "count" (N copies) */
+  mode: "array" | "count";
+  /** For count mode: number of parallel executions (default: 3) */
+  count?: number;
+  /** For array mode: which property of the input object to iterate over */
+  arrayProperty?: string;
+}
+
+/**
+ * Collect node gathers outputs from parallel branches into a single array.
+ *
+ * Waits for all expected inputs before producing output. Handles failures
+ * gracefully by including null entries for failed branches.
+ *
+ * @example
+ * // 3 generators feed into collect with expectedInputs=3
+ * // Collect outputs [img1, img2, img3] to vision node
+ */
+export interface CollectNodeData {
+  /** How many inputs to expect (helps with canvas layout, default: 3) */
+  expectedInputs?: number;
+  /** Whether to wait for all inputs or proceed with available (default: "all") */
+  waitMode: "all" | "available";
+}
+
+/**
+ * Router node routes inputs based on selection criteria from AI analysis.
+ *
+ * Takes an array of candidates and selection data (typically from a vision node),
+ * then routes the selected item(s) to downstream nodes. Can also pass through
+ * context like refinement suggestions.
+ *
+ * @example
+ * // Vision outputs { winner: 1, refinement: "add more contrast" }
+ * // Router selects candidates[1] and passes refinement to edit node
+ */
+export interface RouterNodeData {
+  /** Property name containing the selection (e.g., "winner") */
+  selectionProperty: string;
+  /** Selection type: "index" (0-based number) or "value" (exact match) */
+  selectionType: "index" | "value";
+  /** How many outputs to route (1 = single winner, N = top N, default: 1) */
+  outputCount: number;
+  /** Optional: property containing context to pass through (e.g., "refinement") */
+  contextProperty?: string;
+}
+
 /**
  * Output schema for text/vision nodes that produce structured JSON
  * Defines the shape of the output and enables multi-output handles
@@ -98,7 +167,11 @@ export type StudioNodeData =
   | SaveNodeData
   | InputNodeData
   | VisionNodeData
-  | TextNodeData;
+  | TextNodeData
+  // Iterative workflow nodes
+  | FanOutNodeData
+  | CollectNodeData
+  | RouterNodeData;
 
 // A node in the visual editor
 export interface StudioNode {
