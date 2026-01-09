@@ -46,8 +46,8 @@
     "url": "https://github.com/TeamFlojo/floimg.git"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
+    "node": ">=22",
+    "pnpm": ">=9"
   },
   "pnpm": {
     "overrides": {
