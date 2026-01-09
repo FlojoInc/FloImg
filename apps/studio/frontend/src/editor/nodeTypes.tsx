@@ -7,6 +7,9 @@ import type {
   InputNodeData,
   VisionNodeData,
   TextNodeData,
+  FanOutNodeData,
+  CollectNodeData,
+  RouterNodeData,
 } from "@teamflojo/floimg-studio-shared";
 import { useWorkflowStore } from "../stores/workflowStore";
 import { uploadImage, getUploadBlobUrl } from "../api/client";
@@ -598,6 +601,228 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
   );
 });
 
+// ============================================
+// Iterative Workflow Nodes (EPIC-2026-001)
+// ============================================
+
+// Fan-Out Node - distributes execution across parallel branches
+export const FanOutNode = memo(function FanOutNode({
+  id,
+  data,
+  selected,
+}: NodeProps<FanOutNodeData>) {
+  const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[id]);
+
+  const executionClass = getExecutionClass(nodeStatus);
+  const borderClass = executionClass || (selected ? "border-orange-500" : "border-orange-200");
+
+  // Determine output count based on mode
+  const outputCount = data.mode === "count" ? (data.count || 3) : 3;
+
+  return (
+    <div
+      className={`rounded-lg border-2 bg-white dark:bg-zinc-800 shadow-md min-w-[160px] overflow-hidden ${borderClass}`}
+    >
+      {/* Input handle - accepts data/array from upstream */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="input"
+        className="w-3 h-3 !bg-orange-500"
+        style={{ top: "50%" }}
+      />
+
+      <div className="px-4 py-3">
+        <div className="flex items-center gap-2 mb-2">
+          {/* Fork/branch icon */}
+          <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
+          <span className="font-semibold text-sm text-orange-700 dark:text-orange-400">
+            Fan-Out
+          </span>
+          <span className="ml-auto text-xs bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">
+            ×{outputCount}
+          </span>
+        </div>
+        <div className="text-xs text-gray-500 dark:text-zinc-400">
+          {data.mode === "array" ? (
+            <span>Iterate: {data.arrayProperty || "items"}</span>
+          ) : (
+            <span>Duplicate: {outputCount} copies</span>
+          )}
+        </div>
+      </div>
+
+      {/* Dynamic output handles */}
+      {Array.from({ length: outputCount }).map((_, i) => (
+        <Handle
+          key={i}
+          type="source"
+          position={Position.Right}
+          id={`out[${i}]`}
+          className="w-2.5 h-2.5 !bg-orange-400"
+          style={{
+            top: `${((i + 1) / (outputCount + 1)) * 100}%`,
+          }}
+          title={`Output ${i}`}
+        />
+      ))}
+    </div>
+  );
+});
+
+// Collect Node - gathers outputs from parallel branches
+export const CollectNode = memo(function CollectNode({
+  id,
+  data,
+  selected,
+}: NodeProps<CollectNodeData>) {
+  const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[id]);
+
+  const executionClass = getExecutionClass(nodeStatus);
+  const borderClass = executionClass || (selected ? "border-orange-500" : "border-orange-200");
+
+  const inputCount = data.expectedInputs || 3;
+
+  return (
+    <div
+      className={`rounded-lg border-2 bg-white dark:bg-zinc-800 shadow-md min-w-[160px] overflow-hidden ${borderClass}`}
+    >
+      {/* Dynamic input handles */}
+      {Array.from({ length: inputCount }).map((_, i) => (
+        <Handle
+          key={i}
+          type="target"
+          position={Position.Left}
+          id={`in[${i}]`}
+          className="w-2.5 h-2.5 !bg-orange-400"
+          style={{
+            top: `${((i + 1) / (inputCount + 1)) * 100}%`,
+          }}
+          title={`Input ${i}`}
+        />
+      ))}
+
+      <div className="px-4 py-3">
+        <div className="flex items-center gap-2 mb-2">
+          {/* Merge/collect icon */}
+          <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h12m0 0l-4-4m4 4l-4 4m8 6H8m0 0l4 4m-4-4l4-4" />
+          </svg>
+          <span className="font-semibold text-sm text-orange-700 dark:text-orange-400">
+            Collect
+          </span>
+          <span className="ml-auto text-xs bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded">
+            {inputCount}→1
+          </span>
+        </div>
+        <div className="text-xs text-gray-500 dark:text-zinc-400">
+          {data.waitMode === "all" ? "Wait for all" : "Use available"}
+        </div>
+      </div>
+
+      {/* Output handle - single array output */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="output"
+        className="w-3 h-3 !bg-orange-500"
+        style={{ top: "50%" }}
+      />
+    </div>
+  );
+});
+
+// Router Node - routes based on AI selection
+export const RouterNode = memo(function RouterNode({
+  id,
+  data,
+  selected,
+}: NodeProps<RouterNodeData>) {
+  const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[id]);
+
+  const executionClass = getExecutionClass(nodeStatus);
+  const borderClass = executionClass || (selected ? "border-violet-500" : "border-violet-200");
+
+  const hasContextOutput = !!data.contextProperty;
+
+  return (
+    <div
+      className={`rounded-lg border-2 bg-white dark:bg-zinc-800 shadow-md min-w-[160px] overflow-hidden ${borderClass}`}
+    >
+      {/* Candidates input - array of options */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="candidates"
+        className="w-3 h-3 !bg-violet-500"
+        style={{ top: "35%" }}
+        title="Candidates (array)"
+      />
+      {/* Selection input - AI decision data */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="selection"
+        className="w-3 h-3 !bg-cyan-500"
+        style={{ top: "65%" }}
+        title="Selection (from vision/text)"
+      />
+
+      <div className="px-4 py-3">
+        <div className="flex items-center gap-2 mb-2">
+          {/* Router/switch icon */}
+          <svg className="w-4 h-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+          <span className="font-semibold text-sm text-violet-700 dark:text-violet-400">
+            Router
+          </span>
+        </div>
+        <div className="text-xs text-gray-500 dark:text-zinc-400 space-y-0.5">
+          <div className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-400"></span>
+            candidates
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+            selection.{data.selectionProperty || "winner"}
+          </div>
+        </div>
+        {hasContextOutput && (
+          <div className="mt-2 pt-2 border-t border-violet-200 dark:border-violet-800">
+            <div className="text-[10px] text-violet-500 dark:text-violet-400">
+              + context: {data.contextProperty}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Winner output */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="winner"
+        className="w-3 h-3 !bg-violet-500"
+        style={{ top: hasContextOutput ? "35%" : "50%" }}
+        title="Selected item"
+      />
+      {/* Context output (optional) */}
+      {hasContextOutput && (
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="context"
+          className="w-3 h-3 !bg-pink-500"
+          style={{ top: "65%" }}
+          title={`Context: ${data.contextProperty}`}
+        />
+      )}
+    </div>
+  );
+});
+
 export const nodeTypes = {
   generator: GeneratorNode,
   transform: TransformNode,
@@ -605,4 +830,8 @@ export const nodeTypes = {
   input: InputNode,
   vision: VisionNode,
   text: TextNode,
+  // Iterative workflow nodes
+  fanout: FanOutNode,
+  collect: CollectNode,
+  router: RouterNode,
 };
