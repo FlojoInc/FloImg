@@ -323,6 +323,32 @@ apps/
 
 Each package in `packages/` is published to npm under `@teamflojo/*`. See the [Monorepo Guide](./vault/architecture/Monorepo-Guide.md) for development setup and creating new plugins.
 
+## For Developers
+
+### Quick Setup
+
+```bash
+# Verify prerequisites (Node 22+, pnpm 9+)
+pnpm verify-setup
+
+# Install and build
+pnpm install
+pnpm -r build
+pnpm -r test
+```
+
+### Architecture Docs
+
+- [Monorepo Guide](./vault/architecture/Monorepo-Guide.md) - Project structure and development
+- [Plugin Architecture](./vault/architecture/Plugin-Architecture.md) - Creating generators and transforms
+- [Development Setup](./vault/community/Development-Setup.md) - Local environment configuration
+
+### Community
+
+- [Contributing Guide](./vault/community/Contributing.md) - How to contribute
+- [Code of Conduct](./CODE_OF_CONDUCT.md) - Community standards
+- [Security Policy](./SECURITY.md) - Reporting vulnerabilities
+
 ## Contributing
 
 We welcome contributions—generators, storage backends, tests, docs.
