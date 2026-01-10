@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useShortcutBinding } from "../lib/keyboard/useKeyboardShortcuts";
+import { bindingToDisplay } from "../lib/keyboard/platformUtils";
 import { useWorkflowStore } from "../stores/workflowStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { generateJavaScript } from "../utils/codeGenerator";
@@ -47,9 +49,8 @@ export function Toolbar({
   const toggleLibrary = useWorkflowStore((s) => s.toggleLibrary);
   const setActiveWorkflowName = useWorkflowStore((s) => s.setActiveWorkflowName);
 
-  // Node operations
-  const selectedNodeId = useWorkflowStore((s) => s.selectedNodeId);
-  const duplicateNode = useWorkflowStore((s) => s.duplicateNode);
+  // Get shortcut bindings for tooltip hints
+  const saveShortcut = useShortcutBinding("save");
 
   const [showExport, setShowExport] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -91,29 +92,6 @@ export function Toolbar({
     }
     setIsEditingName(false);
   };
-
-  // Handle duplicate with Cmd+D / Ctrl+D
-  const handleDuplicate = useCallback(() => {
-    if (selectedNodeId) {
-      duplicateNode(selectedNodeId);
-    }
-  }, [selectedNodeId, duplicateNode]);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-        e.preventDefault();
-        handleSave();
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === "d") {
-        e.preventDefault();
-        handleDuplicate();
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleSave, handleDuplicate]);
 
   const handleExecute = async () => {
     await execute();
@@ -238,7 +216,7 @@ export function Toolbar({
             onClick={handleSave}
             disabled={nodes.length === 0}
             className="floimg-toolbar__btn disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Save Workflow (Cmd+S)"
+            title={`Save Workflow${saveShortcut ? ` (${bindingToDisplay(saveShortcut)})` : ""}`}
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path

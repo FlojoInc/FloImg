@@ -41,6 +41,7 @@ const browserGlobals = {
   HTMLInputElement: "readonly",
   HTMLDivElement: "readonly",
   HTMLTextAreaElement: "readonly",
+  HTMLButtonElement: "readonly",
   Event: "readonly",
   CustomEvent: "readonly",
   KeyboardEvent: "readonly",
@@ -50,6 +51,21 @@ const browserGlobals = {
   alert: "readonly",
   confirm: "readonly",
   React: "readonly",
+};
+
+// Test globals for Vitest
+const testGlobals = {
+  ...browserGlobals,
+  describe: "readonly",
+  it: "readonly",
+  expect: "readonly",
+  test: "readonly",
+  beforeEach: "readonly",
+  afterEach: "readonly",
+  beforeAll: "readonly",
+  afterAll: "readonly",
+  vi: "readonly",
+  global: "readonly",
 };
 
 export default [
@@ -121,6 +137,37 @@ export default [
       "@typescript-eslint/no-explicit-any": "warn",
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
+      "no-console": "off",
+    },
+  },
+  // Test files (Vitest)
+  {
+    files: ["**/*.test.{ts,tsx}", "**/test/**/*.{ts,tsx}"],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+      globals: testGlobals,
+    },
+    plugins: {
+      "@typescript-eslint": tsPlugin,
+    },
+    rules: {
+      ...tsPlugin.configs.recommended.rules,
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+      "@typescript-eslint/no-explicit-any": "off",
       "no-console": "off",
     },
   },

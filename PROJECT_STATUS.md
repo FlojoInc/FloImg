@@ -1,8 +1,12 @@
 # PROJECT STATUS
 
-**Last Updated**: 2026-01-09
+**Last Updated**: 2026-01-10
 
 ## Current Focus
+
+**T-2026-011: Keyboard Shortcuts for FloImg Studio** (IN PROGRESS)
+
+Comprehensive keyboard shortcuts with command palette (Cmd+K), full customization, and WCAG accessibility. Enables power users to work faster.
 
 **T-2026-010: Enhance FloImg Studio Visual Identity** (IN PROGRESS)
 
@@ -14,6 +18,7 @@ Add enhancePrompt parameter to Gemini generate and edit nodes.
 
 ## Next Up
 
+- **T-2026-012**: Undo/Redo (requires zundo middleware)
 - **T-2025-008**: Shape Generator UX Overhaul
 - **T-2025-006**: Add node duplication in FloImg Studio
 - Additional FloImg Studio UX improvements

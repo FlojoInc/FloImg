@@ -10,9 +10,21 @@ import { WorkflowLibrary } from "./components/WorkflowLibrary";
 import { AISettings } from "./components/AISettings";
 import { AIChat } from "./components/AIChat";
 import { OutputInspector } from "./components/OutputInspector";
+import { CommandPalette } from "./components/CommandPalette";
+import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
+import { ConfirmationDialog } from "./components/ConfirmationDialog";
+import { useKeyboardShortcuts } from "./lib/keyboard/useKeyboardShortcuts";
 import { useWorkflowStore } from "./stores/workflowStore";
+import { useSettingsStore } from "./stores/settingsStore";
 import { resolveTemplate } from "@teamflojo/floimg-templates";
 import type { NodeDefinition, GeneratedWorkflowData } from "@teamflojo/floimg-studio-shared";
+
+// KeyboardShortcutsProvider - registers global keyboard shortcuts
+// Must be inside ReactFlowProvider to access useReactFlow hook
+function KeyboardShortcutsProvider({ onToggleAIChat }: { onToggleAIChat: () => void }) {
+  useKeyboardShortcuts({ onToggleAIChat });
+  return null;
+}
 
 // EditorDropZone - handles node drops with correct coordinate conversion
 // Must be inside ReactFlowProvider to access useReactFlow hook
@@ -124,8 +136,39 @@ function App() {
     [loadGeneratedWorkflow]
   );
 
+  // Toggle AI chat handler for keyboard shortcuts
+  const handleToggleAIChat = useCallback(() => {
+    setShowAIChat((prev) => !prev);
+  }, []);
+
+  // New workflow confirmation dialog
+  const showNewWorkflowConfirm = useSettingsStore((s) => s.showNewWorkflowConfirm);
+  const confirmNewWorkflow = useSettingsStore((s) => s.confirmNewWorkflow);
+  const cancelNewWorkflow = useSettingsStore((s) => s.cancelNewWorkflow);
+
   return (
     <ReactFlowProvider>
+      {/* Global Keyboard Shortcuts - must be inside ReactFlowProvider */}
+      <KeyboardShortcutsProvider onToggleAIChat={handleToggleAIChat} />
+
+      {/* Command Palette (Cmd+K) */}
+      <CommandPalette onToggleAIChat={handleToggleAIChat} />
+
+      {/* Keyboard Shortcuts Help Modal (Cmd+?) */}
+      <KeyboardShortcutsModal />
+
+      {/* New Workflow Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showNewWorkflowConfirm}
+        title="Unsaved Changes"
+        message="You have unsaved changes. Creating a new workflow will discard them. Are you sure you want to continue?"
+        confirmText="Create New"
+        cancelText="Keep Editing"
+        onConfirm={confirmNewWorkflow}
+        onCancel={cancelNewWorkflow}
+        destructive
+      />
+
       {/* AI Settings Modal */}
       <AISettings />
 
