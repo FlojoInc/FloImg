@@ -10,9 +10,19 @@ import { WorkflowLibrary } from "./components/WorkflowLibrary";
 import { AISettings } from "./components/AISettings";
 import { AIChat } from "./components/AIChat";
 import { OutputInspector } from "./components/OutputInspector";
+import { CommandPalette } from "./components/CommandPalette";
+import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
+import { useKeyboardShortcuts } from "./lib/keyboard/useKeyboardShortcuts";
 import { useWorkflowStore } from "./stores/workflowStore";
 import { resolveTemplate } from "@teamflojo/floimg-templates";
 import type { NodeDefinition, GeneratedWorkflowData } from "@teamflojo/floimg-studio-shared";
+
+// KeyboardShortcutsProvider - registers global keyboard shortcuts
+// Must be inside ReactFlowProvider to access useReactFlow hook
+function KeyboardShortcutsProvider({ onToggleAIChat }: { onToggleAIChat: () => void }) {
+  useKeyboardShortcuts({ onToggleAIChat });
+  return null;
+}
 
 // EditorDropZone - handles node drops with correct coordinate conversion
 // Must be inside ReactFlowProvider to access useReactFlow hook
@@ -124,8 +134,22 @@ function App() {
     [loadGeneratedWorkflow]
   );
 
+  // Toggle AI chat handler for keyboard shortcuts
+  const handleToggleAIChat = useCallback(() => {
+    setShowAIChat((prev) => !prev);
+  }, []);
+
   return (
     <ReactFlowProvider>
+      {/* Global Keyboard Shortcuts - must be inside ReactFlowProvider */}
+      <KeyboardShortcutsProvider onToggleAIChat={handleToggleAIChat} />
+
+      {/* Command Palette (Cmd+K) */}
+      <CommandPalette onToggleAIChat={handleToggleAIChat} />
+
+      {/* Keyboard Shortcuts Help Modal (Cmd+?) */}
+      <KeyboardShortcutsModal />
+
       {/* AI Settings Modal */}
       <AISettings />
 

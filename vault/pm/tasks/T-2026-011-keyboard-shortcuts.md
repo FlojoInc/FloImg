@@ -36,14 +36,14 @@ Key features:
 
 ## Acceptance Criteria
 
-- [ ] Core workflow operations have default keyboard shortcuts
-- [ ] Command palette (Cmd+K) with fuzzy search for all actions
-- [ ] Settings UI allows viewing and customizing keyboard shortcuts
-- [ ] Shortcuts avoid conflicts with common browser/OS defaults
-- [ ] Shortcuts work consistently across macOS, Windows, and Linux
-- [ ] Help modal (Cmd+?) shows all available shortcuts
-- [ ] Shortcuts persist across sessions (localStorage)
-- [ ] Shortcuts don't fire when typing in input fields
+- [x] Core workflow operations have default keyboard shortcuts
+- [x] Command palette (Cmd+K) with fuzzy search for all actions
+- [x] Settings UI allows viewing and customizing keyboard shortcuts
+- [x] Shortcuts avoid conflicts with common browser/OS defaults
+- [ ] Shortcuts work consistently across macOS, Windows, and Linux (needs manual testing)
+- [x] Help modal (Cmd+?) shows all available shortcuts
+- [x] Shortcuts persist across sessions (localStorage)
+- [x] Shortcuts don't fire when typing in input fields
 
 ## Implementation Details
 
@@ -84,6 +84,13 @@ Key features:
 ### Work Log
 
 - **2026-01-10**: Task created, plan approved, starting implementation
+- **2026-01-10**: Implementation complete:
+  - Created keyboard module (`src/lib/keyboard/`) with types, shortcuts, conflicts, platform utils
+  - Built all UI components: KeyBadge, ShortcutRecorder, KeyboardSettings, CommandPalette, KeyboardShortcutsModal
+  - Integrated into App.tsx and removed old shortcuts from Toolbar.tsx
+  - Added 83 unit tests for keyboard utilities
+  - Updated settingsStore with keyboard settings and persistence
+  - PR ready for review on feat/keyboard-shortcuts branch
 
 ## Review Checklist
 

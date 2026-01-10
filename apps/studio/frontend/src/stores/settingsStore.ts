@@ -1,5 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { ShortcutAction } from "../lib/keyboard/types";
+import { getDefaultShortcuts } from "../lib/keyboard/shortcuts";
+import { checkShortcutConflict } from "../lib/keyboard/conflicts";
 
 // Provider configuration for cloud APIs
 interface CloudProvider {
@@ -27,16 +30,51 @@ export interface AISettings {
   lmstudio?: LocalProvider;
 }
 
+// Keyboard settings
+export interface KeyboardSettings {
+  // User's custom shortcut overrides (action -> binding)
+  shortcuts: Partial<Record<ShortcutAction, string>>;
+  // Whether keyboard shortcuts are enabled globally
+  enabled: boolean;
+}
+
 interface SettingsStore {
   // AI provider settings
   ai: AISettings;
   setAIProvider: (provider: keyof AISettings, config: CloudProvider | LocalProvider) => void;
   clearAIProvider: (provider: keyof AISettings) => void;
 
+  // Keyboard settings
+  keyboard: KeyboardSettings;
+  updateShortcut: (action: ShortcutAction, binding: string | null) => void;
+  resetShortcut: (action: ShortcutAction) => void;
+  resetAllShortcuts: () => void;
+  isShortcutConflicting: (binding: string, excludeAction?: ShortcutAction) => string | null;
+
   // Settings modal visibility
   showSettings: boolean;
   openSettings: () => void;
   closeSettings: () => void;
+
+  // Command palette modal
+  showCommandPalette: boolean;
+  openCommandPalette: () => void;
+  closeCommandPalette: () => void;
+
+  // Keyboard shortcuts help modal
+  showShortcutsModal: boolean;
+  openShortcutsModal: () => void;
+  closeShortcutsModal: () => void;
+
+  // Export modal
+  showExport: boolean;
+  openExport: () => void;
+  closeExport: () => void;
+
+  // Import modal
+  showImport: boolean;
+  openImport: () => void;
+  closeImport: () => void;
 
   // Get configured providers for API calls
   getConfiguredProviders: () => {
@@ -67,7 +105,19 @@ export const useSettingsStore = create<SettingsStore>()(
           enabled: false,
         },
       },
+
+      // Keyboard settings with defaults
+      keyboard: {
+        shortcuts: {},
+        enabled: true,
+      },
+
+      // Modal visibility states
       showSettings: false,
+      showCommandPalette: false,
+      showShortcutsModal: false,
+      showExport: false,
+      showImport: false,
 
       setAIProvider: (provider, config) => {
         set((state) => ({
@@ -86,8 +136,75 @@ export const useSettingsStore = create<SettingsStore>()(
         });
       },
 
+      // Keyboard shortcut methods
+      updateShortcut: (action, binding) => {
+        set((state) => ({
+          keyboard: {
+            ...state.keyboard,
+            shortcuts: {
+              ...state.keyboard.shortcuts,
+              [action]: binding ?? undefined,
+            },
+          },
+        }));
+      },
+
+      resetShortcut: (action) => {
+        set((state) => {
+          const newShortcuts = { ...state.keyboard.shortcuts };
+          delete newShortcuts[action];
+          return {
+            keyboard: {
+              ...state.keyboard,
+              shortcuts: newShortcuts,
+            },
+          };
+        });
+      },
+
+      resetAllShortcuts: () => {
+        set((state) => ({
+          keyboard: {
+            ...state.keyboard,
+            shortcuts: {},
+          },
+        }));
+      },
+
+      isShortcutConflicting: (binding, excludeAction) => {
+        const { keyboard } = get();
+        // Merge defaults with user overrides
+        const defaults = getDefaultShortcuts();
+        const currentShortcuts: Partial<Record<ShortcutAction, string>> = {};
+
+        for (const [action, defaultBinding] of Object.entries(defaults)) {
+          const userBinding = keyboard.shortcuts[action as ShortcutAction];
+          if (userBinding !== undefined) {
+            currentShortcuts[action as ShortcutAction] = userBinding;
+          } else if (defaultBinding) {
+            currentShortcuts[action as ShortcutAction] = defaultBinding;
+          }
+        }
+
+        const result = checkShortcutConflict(binding, currentShortcuts, excludeAction);
+        return result.hasConflict ? (result.message ?? "Conflict detected") : null;
+      },
+
+      // Modal controls
       openSettings: () => set({ showSettings: true }),
       closeSettings: () => set({ showSettings: false }),
+
+      openCommandPalette: () => set({ showCommandPalette: true }),
+      closeCommandPalette: () => set({ showCommandPalette: false }),
+
+      openShortcutsModal: () => set({ showShortcutsModal: true }),
+      closeShortcutsModal: () => set({ showShortcutsModal: false }),
+
+      openExport: () => set({ showExport: true }),
+      closeExport: () => set({ showExport: false }),
+
+      openImport: () => set({ showImport: true }),
+      closeImport: () => set({ showImport: false }),
 
       getConfiguredProviders: () => {
         const { ai } = get();
@@ -123,8 +240,11 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: "floimg-studio-settings",
-      // Only persist AI settings, not modal visibility
-      partialize: (state) => ({ ai: state.ai }),
+      // Persist AI settings and keyboard settings, not modal visibility
+      partialize: (state) => ({
+        ai: state.ai,
+        keyboard: state.keyboard,
+      }),
     }
   )
 );

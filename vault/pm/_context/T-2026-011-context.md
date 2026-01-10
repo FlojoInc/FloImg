@@ -72,9 +72,46 @@ From user request:
 
 None - all questions resolved in planning phase.
 
+## Implementation Status
+
+All implementation complete:
+
+- [x] Install react-hotkeys-hook
+- [x] Create keyboard manager module (`src/lib/keyboard/`)
+- [x] Build KeyBadge component
+- [x] Build ShortcutRecorder component
+- [x] Build KeyboardSettings component
+- [x] Build CommandPalette component (Cmd+K)
+- [x] Build KeyboardShortcutsModal component (Cmd+?)
+- [x] Integrate in App.tsx
+- [x] Remove old shortcuts from Toolbar.tsx
+- [x] Add 83 unit tests
+- [ ] Cross-platform testing (manual)
+
+## Files Created
+
+```
+src/lib/keyboard/
+├── types.ts              # ShortcutAction, ShortcutCategory, etc.
+├── platformUtils.ts      # isMac(), bindingToDisplay(), etc.
+├── platformUtils.test.ts # 37 tests
+├── shortcuts.ts          # SHORTCUT_DEFINITIONS, defaults
+├── shortcuts.test.ts     # 15 tests
+├── conflicts.ts          # Browser reserved, React Flow defaults
+├── conflicts.test.ts     # 31 tests
+├── useKeyboardShortcuts.tsx # Main hook
+└── index.ts              # Exports
+
+src/components/
+├── KeyBadge.tsx           # Platform-aware key display
+├── ShortcutRecorder.tsx   # VS Code-style recording
+├── KeyboardSettings.tsx   # Full customization UI
+├── CommandPalette.tsx     # Cmd+K Raycast-style palette
+└── KeyboardShortcutsModal.tsx # Cmd+? help modal
+```
+
 ## Next Steps
 
-1. Install react-hotkeys-hook
-2. Create keyboard manager module
-3. Build components
-4. Integrate and test
+1. PR review
+2. Cross-platform testing
+3. Merge to main
