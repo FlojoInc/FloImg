@@ -47,7 +47,7 @@ export function NodeInspector() {
     nodeLabel = def?.label || data.operation;
   } else if (selectedNode.type === "save") {
     const data = selectedNode.data as SaveNodeData;
-    const isCloudSave = data.provider === "floimg-cloud";
+    const isCloudSave = data.provider === "cloud";
 
     nodeLabel = isCloudSave ? "Save to FloImg Cloud" : "Save";
     schema = {

@@ -45,7 +45,7 @@ interface ErrorResponse {
 }
 
 export class CloudSaveProvider implements SaveProvider {
-  name = "floimg-cloud";
+  name = "cloud";
 
   constructor(
     private userId: string,
