@@ -1,6 +1,6 @@
 {
   "name": "@teamflojo/floimg-xai",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "xAI Grok text and vision providers for floimg",
   "type": "module",
   "main": "./dist/index.js",

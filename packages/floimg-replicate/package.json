@@ -1,6 +1,6 @@
 {
   "name": "@teamflojo/floimg-replicate",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Replicate AI model integration for floimg (FLUX, GFPGAN, DeOldify, Real-ESRGAN)",
   "type": "module",
   "main": "./dist/index.js",

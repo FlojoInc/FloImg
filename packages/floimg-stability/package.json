@@ -1,6 +1,6 @@
 {
   "name": "@teamflojo/floimg-stability",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Stability AI image generation plugin for floimg (SDXL, SD3)",
   "type": "module",
   "main": "./dist/index.js",

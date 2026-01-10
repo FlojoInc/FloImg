@@ -1,6 +1,6 @@
 {
   "name": "@teamflojo/floimg-studio-backend",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "FloImg Studio backend server with API and workflow execution",
   "type": "module",
   "license": "MIT",

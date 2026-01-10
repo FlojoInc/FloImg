@@ -5,43 +5,43 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v0.14.0] - 2026-01-10
 
-### @teamflojo/floimg
+### @teamflojo/floimg (0.12.0)
 
 - feat: add `UsageEvent` and `UsageHooks` interfaces for AI cost observability
   - Enables tracking of API costs across providers for billing/chargebacks
   - Providers emit events with token counts, image dimensions, and metadata
 
-### @teamflojo/floimg-openai
+### @teamflojo/floimg-openai (0.3.0)
 
 - feat: add optional `hooks` config for usage event emission
   - Supports generate, vision, text, edit, and variations operations
   - Emits events with model, dimensions, quality, and token counts
 
-### @teamflojo/floimg-stability
+### @teamflojo/floimg-stability (0.3.0)
 
 - feat: add optional `hooks` config for usage event emission
   - Supports generate and transform operations
 
-### @teamflojo/floimg-google
+### @teamflojo/floimg-google (0.6.0)
 
 - feat: add optional `hooks` config for usage event emission
   - Supports Imagen generate, Gemini vision/text, and Gemini transforms
   - Emits events with actual token counts from API responses
 
-### @teamflojo/floimg-replicate
+### @teamflojo/floimg-replicate (0.2.0)
 
 - feat: add optional `hooks` config for usage event emission
   - Supports transform operations (upscale, remove-bg, etc.)
 
-### @teamflojo/floimg-xai
+### @teamflojo/floimg-xai (0.2.0)
 
 - feat: add optional `hooks` config for usage event emission
   - Supports Grok text and vision operations
   - Emits events with actual token counts from API responses
 
-### @teamflojo/floimg-studio-backend
+### @teamflojo/floimg-studio-backend (0.4.0)
 
 - feat: collect and return usage events from workflow execution
   - OSS backend now returns `usageEvents` in execution results

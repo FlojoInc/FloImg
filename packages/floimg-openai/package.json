@@ -1,6 +1,6 @@
 {
   "name": "@teamflojo/floimg-openai",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "OpenAI image generation, vision, and text providers for floimg",
   "type": "module",
   "main": "./dist/index.js",
