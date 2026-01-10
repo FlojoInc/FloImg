@@ -7,6 +7,7 @@ import type {
   GeneratorSchema,
   MimeType,
 } from "@teamflojo/floimg";
+import { enhancePrompt as enhancePromptFn } from "./prompt-enhancer.js";
 
 /**
  * Supported Gemini models for image generation/editing (Nano Banana)
@@ -115,6 +116,12 @@ export const geminiEditSchema: TransformOperationSchema = {
       description: "Enable Google Search grounding for real-time data (weather, stocks, events)",
       default: false,
     },
+    enhancePrompt: {
+      type: "boolean",
+      title: "Enhance Prompt",
+      description: "Automatically expand prompt using Google's best practices for better results",
+      default: false,
+    },
     apiKey: {
       type: "string",
       title: "API Key",
@@ -211,6 +218,7 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
       aspectRatio = "1:1",
       imageSize = "1K",
       groundingWithSearch = false,
+      enhancePrompt = false,
       apiKey: requestApiKey,
       referenceImages,
     } = params as {
@@ -220,6 +228,7 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
       aspectRatio?: GeminiAspectRatio;
       imageSize?: GeminiImageSize;
       groundingWithSearch?: boolean;
+      enhancePrompt?: boolean;
       apiKey?: string;
       referenceImages?: ImageBlob[];
     };
@@ -249,9 +258,12 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
     // Convert input image to base64
     const base64Image = input.bytes.toString("base64");
 
-    // Build full prompt: prePrompt (if set) + prompt
+    // Optionally enhance the prompt using Google's best practices
+    const processedPrompt = enhancePrompt ? enhancePromptFn(prompt, "edit") : prompt;
+
+    // Build full prompt: prePrompt (if set) + processed prompt
     // prePrompt helps guide the model when receiving dynamic prompts from text nodes
-    const fullPrompt = prePrompt ? `${prePrompt}\n\n${prompt}` : prompt;
+    const fullPrompt = prePrompt ? `${prePrompt}\n\n${processedPrompt}` : processedPrompt;
 
     // Build config with imageConfig for aspect ratio and size
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -348,11 +360,13 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
       metadata: {
         operation: "edit",
         prompt: fullPrompt,
+        originalPrompt: enhancePrompt ? prompt : undefined,
         prePrompt,
         model,
         aspectRatio,
         imageSize,
         groundingWithSearch,
+        enhancePrompt,
         referenceImageCount: referenceImages?.length || 0,
       },
     };
@@ -444,6 +458,12 @@ export const geminiGenerateSchema: GeneratorSchema = {
       description: "Enable Google Search grounding for real-time data (weather, stocks, events)",
       default: false,
     },
+    enhancePrompt: {
+      type: "boolean",
+      title: "Enhance Prompt",
+      description: "Automatically expand prompt using Google's best practices for better results",
+      default: false,
+    },
     apiKey: {
       type: "string",
       title: "API Key",
@@ -531,6 +551,7 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
         aspectRatio = "1:1",
         imageSize = "1K",
         groundingWithSearch = false,
+        enhancePrompt = false,
         apiKey: requestApiKey,
         referenceImages,
       } = params as {
@@ -540,6 +561,7 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
         aspectRatio?: GeminiAspectRatio;
         imageSize?: GeminiImageSize;
         groundingWithSearch?: boolean;
+        enhancePrompt?: boolean;
         apiKey?: string;
         referenceImages?: ImageBlob[];
       };
@@ -556,9 +578,12 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
         throw new Error("prompt is required for Gemini image generation");
       }
 
-      // Build full prompt: prePrompt (if set) + prompt
+      // Optionally enhance the prompt using Google's best practices
+      const processedPrompt = enhancePrompt ? enhancePromptFn(prompt, "generate") : prompt;
+
+      // Build full prompt: prePrompt (if set) + processed prompt
       // prePrompt helps guide the model when receiving dynamic prompts from text nodes
-      const fullPrompt = prePrompt ? `${prePrompt}\n\n${prompt}` : prompt;
+      const fullPrompt = prePrompt ? `${prePrompt}\n\n${processedPrompt}` : processedPrompt;
 
       // Validate reference images count (max 14 per Google docs)
       if (referenceImages && referenceImages.length > 14) {
@@ -655,11 +680,13 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
         source: `ai:gemini:${model}`,
         metadata: {
           operation: "generate",
-          prompt,
+          prompt: fullPrompt,
+          originalPrompt: enhancePrompt ? prompt : undefined,
           model,
           aspectRatio,
           imageSize,
           groundingWithSearch,
+          enhancePrompt,
           referenceImageCount: referenceImages?.length || 0,
         },
       };

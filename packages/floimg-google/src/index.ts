@@ -233,3 +233,11 @@ export {
   type GeminiVisionConfig,
   type GeminiVisionParams,
 } from "./text.js";
+
+// Prompt enhancement utilities
+export {
+  enhancePrompt,
+  detectPromptType,
+  isPromptDetailed,
+  type PromptType,
+} from "./prompt-enhancer.js";
