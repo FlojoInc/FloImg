@@ -10,6 +10,7 @@ import { WorkflowLibrary } from "./components/WorkflowLibrary";
 import { AISettings } from "./components/AISettings";
 import { AIChat } from "./components/AIChat";
 import { OutputInspector } from "./components/OutputInspector";
+import { Terminal } from "./components/terminal/Terminal";
 import { useWorkflowStore } from "./stores/workflowStore";
 import { resolveTemplate } from "@teamflojo/floimg-templates";
 import type { NodeDefinition, GeneratedWorkflowData } from "@teamflojo/floimg-studio-shared";
@@ -57,7 +58,7 @@ function EditorDropZone() {
   );
 }
 
-type TabType = "editor" | "gallery" | "templates";
+type TabType = "editor" | "gallery" | "templates" | "terminal";
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>("editor");
@@ -179,6 +180,12 @@ function App() {
               >
                 Templates
               </button>
+              <button
+                onClick={() => setActiveTab("terminal")}
+                className={`floimg-tab ${activeTab === "terminal" ? "floimg-tab--active" : ""}`}
+              >
+                Terminal
+              </button>
             </div>
 
             {/* AI Generate button */}
@@ -214,6 +221,14 @@ function App() {
             <div className="flex-1 overflow-auto">
               <TemplateGallery onSelect={handleTemplateSelect} />
             </div>
+          )}
+          {activeTab === "terminal" && (
+            <Terminal
+              onApplyWorkflow={(workflow) => {
+                loadGeneratedWorkflow(workflow);
+                setActiveTab("editor");
+              }}
+            />
           )}
         </div>
       </div>

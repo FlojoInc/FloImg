@@ -4,6 +4,10 @@
 
 ## Current Focus
 
+**T-2026-011: Terminal Interface for FloImg Studio** (IN PROGRESS)
+
+Conversational, command-driven interface as an alternative to the visual node editor. Slash commands for workflow operations, AI-assisted creation, slide-out panels for selection, and inline execution results.
+
 **T-2026-010: Enhance FloImg Studio Visual Identity** (IN PROGRESS)
 
 Customize canvas and node styling to feel unique and high-quality.
