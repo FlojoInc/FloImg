@@ -166,7 +166,7 @@ export const TransformNode = memo(function TransformNode({
 
   const executionClass = getExecutionClass(nodeStatus);
 
-  // AI transforms get a purple accent to indicate AI-powered
+  // AI transforms get an indigo accent to indicate AI-powered
   const isAI = data.isAI;
   // Check if this transform accepts reference images
   const acceptsReferences = data.acceptsReferenceImages;
@@ -210,9 +210,9 @@ export const TransformNode = memo(function TransformNode({
         </div>
       )}
       <div className="floimg-node__header">
-        <div className={`floimg-node__icon ${isAI ? "bg-purple-500/10" : "bg-teal-500/10"}`}>
+        <div className={`floimg-node__icon ${isAI ? "bg-indigo-500/10" : "bg-teal-500/10"}`}>
           {isAI ? (
-            <svg className="w-2.5 h-2.5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-2.5 h-2.5 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
               <path d="M13 7H7v6h6V7z" />
               <path
                 fillRule="evenodd"
@@ -225,7 +225,7 @@ export const TransformNode = memo(function TransformNode({
           )}
         </div>
         <span
-          className={`floimg-node__title ${isAI ? "text-purple-600 dark:text-purple-400" : "text-teal-600 dark:text-teal-400"}`}
+          className={`floimg-node__title ${isAI ? "text-indigo-600 dark:text-indigo-400" : "text-teal-600 dark:text-teal-400"}`}
         >
           {data.operation}
         </span>
@@ -262,7 +262,7 @@ export const TransformNode = memo(function TransformNode({
       <Handle
         type="source"
         position={Position.Right}
-        className={`!w-3 !h-3 ${isAI ? "!bg-purple-500" : "!bg-teal-500"} !border-2 !border-white dark:!border-zinc-800`}
+        className={`!w-3 !h-3 ${isAI ? "!bg-indigo-500" : "!bg-teal-500"} !border-2 !border-white dark:!border-zinc-800`}
       />
     </div>
   );

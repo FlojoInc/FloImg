@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Detects prompt type (photorealistic, illustration, logo, product, etc.)
   - Applies appropriate enhancement templates
 - feat: export prompt enhancement utilities: `enhancePrompt()`, `detectPromptType()`, `isPromptDetailed()`
+- chore: improve TypeScript types with proper SDK type imports
+
+### @teamflojo/floimg-studio-ui (0.6.0)
+
+- feat: comprehensive visual identity refresh with custom theming system
+- feat: gradient backgrounds for toolbar and sidebars
+- feat: color-coded palette items by node category
+- feat: node execution state animations (running shimmer, completed/error indicators)
+- feat: hide right sidebar when no node selected for cleaner canvas view
+- fix: rename cloud save provider from "floimg-cloud" to "cloud" for clarity
 
 ## [v0.12.0] - 2026-01-09
 
