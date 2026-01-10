@@ -4,18 +4,16 @@
 
 ## Current Focus
 
-**T-2025-008: Shape Generator UX Overhaul** (IN PROGRESS)
+**T-2026-009: Gemini Prompt Auto-Enhancement** (IN PROGRESS)
 
-Separate shape type from fill type to fix conceptual confusion. Branch: `feat/T-2025-008-shape-ux-overhaul`
+Add toggle to automatically enhance prompts using Google's best practices. Branch: `feat/gemini-prompt-auto-enhance`
 
-- Replace `type` enum with `shapeType` and `fillType` parameters
-- Add new shapes: ellipse, triangle, polygon (with sides), star (with points)
-- Add stroke support (strokeColor, strokeWidth)
-- Backward compatibility migration for existing workflows
+- Add `enhancePrompt` boolean to geminiGenerate and geminiEdit schemas
+- Rule-based prompt enhancement (no extra LLM calls)
+- Pattern-match prompt type → apply appropriate template
 
 ## Next Up
 
-- **T-2026-009**: Add prompt enhancement toggle to Gemini generate/edit nodes
 - **T-2025-006**: Add node duplication in FloImg Studio
 - Additional FloImg Studio UX improvements
 
