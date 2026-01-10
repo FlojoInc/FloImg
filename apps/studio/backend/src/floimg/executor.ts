@@ -329,9 +329,21 @@ export async function executeWorkflow(
       console.log(`Resolving ${textVarToResolve.size} text inputs for AI generators/transforms`);
 
       // Execute text/vision nodes first to get their outputs
-      const textSteps = pipeline.steps.filter(
-        (s) => (s.kind === "text" || s.kind === "vision") && textVarToResolve.has(s.out)
-      );
+      // BUT only if they have NO 'in' dependency - steps with dependencies run in main loop
+      // This is a conservative approach: text/vision steps that depend on other steps
+      // (even other text steps) will execute in the normal pipeline flow
+      const textSteps = pipeline.steps.filter((s) => {
+        if (!((s.kind === "text" || s.kind === "vision") && textVarToResolve.has(s.out))) {
+          return false;
+        }
+        // Check if this step has an 'in' dependency - if so, skip early resolution
+        const stepIn = "in" in s ? (s.in as string | undefined) : undefined;
+        if (stepIn) {
+          console.log(`Skipping early resolution of ${s.out} - has dependency on ${stepIn}`);
+          return false;
+        }
+        return true;
+      });
 
       if (textSteps.length > 0) {
         // Execute each text step individually for real-time progress
@@ -917,6 +929,41 @@ export async function executeWorkflow(
         }
       }
 
+      // Dynamic prompt injection for generators whose text source wasn't resolved early
+      // (e.g., text step that depends on vision output)
+      if ((step.kind === "generate" || step.kind === "transform") && step.params?._promptFromVar) {
+        const varName = step.params._promptFromVar as string;
+        const propertyName = step.params._promptFromProperty as string | undefined;
+
+        // Check if the source variable is now available in stepVariables (from a text step that ran in main loop)
+        const sourceValue = stepVariables[varName];
+        const sourceParsed = stepVariables[`${varName}_parsed`] as unknown as
+          | Record<string, unknown>
+          | undefined;
+
+        if (sourceValue || sourceParsed) {
+          let text: string | undefined;
+
+          if (propertyName && sourceParsed && propertyName in sourceParsed) {
+            const value = sourceParsed[propertyName];
+            text = typeof value === "string" ? value : JSON.stringify(value);
+          } else if (sourceParsed && "prompt" in sourceParsed) {
+            // Default to 'prompt' property if available
+            text = sourceParsed.prompt as string;
+          } else if (typeof sourceValue === "string") {
+            text = sourceValue;
+          }
+
+          if (text) {
+            step.params.prompt = text;
+            console.log(`Dynamic prompt injection for ${step.kind}: "${text.slice(0, 50)}..."`);
+          }
+          // Clean up markers
+          delete step.params._promptFromVar;
+          delete step.params._promptFromProperty;
+        }
+      }
+
       // Execute single step (existing logic for generator, transform, etc.)
       const singlePipeline: Pipeline = {
         name: "Single Step",
@@ -1044,7 +1091,11 @@ export async function executeWorkflow(
             parsed: dataBlob.parsed,
           });
 
-          // Store parsed data in stepVariables for fan-out array mode access
+          // Store the DataBlob in stepVariables so dependent steps can access it
+          if (stepOut) {
+            stepVariables[stepOut] = dataBlob as unknown as ImageBlob;
+          }
+          // Also store parsed data separately for property extraction
           if (stepOut && dataBlob.parsed) {
             stepVariables[`${stepOut}_parsed`] = dataBlob.parsed as unknown as ImageBlob;
           }

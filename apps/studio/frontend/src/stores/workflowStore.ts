@@ -868,12 +868,70 @@ export const useWorkflowStore = create<WorkflowStore>()(
           // Convert AI-generated workflow to React Flow nodes
           const idMap = new Map<string, string>();
 
-          // Auto-layout: arrange nodes in a grid
-          const GRID_SPACING_X = 250;
-          const GRID_SPACING_Y = 150;
-          const NODES_PER_ROW = 3;
+          // Flow-based layout: arrange nodes left-to-right following data flow
+          const COLUMN_SPACING = 300; // Horizontal space between columns
+          const ROW_SPACING = 180; // Vertical space between nodes in same column
 
-          const nodes: Node<NodeData>[] = workflow.nodes.map((genNode, index) => {
+          // Step 1: Build dependency graph to compute node depths
+          const incomingEdges = new Map<string, string[]>();
+          const outgoingEdges = new Map<string, string[]>();
+          for (const node of workflow.nodes) {
+            incomingEdges.set(node.id, []);
+            outgoingEdges.set(node.id, []);
+          }
+          for (const edge of workflow.edges) {
+            incomingEdges.get(edge.target)?.push(edge.source);
+            outgoingEdges.get(edge.source)?.push(edge.target);
+          }
+
+          // Step 2: Compute depth (column) for each node using topological order
+          const nodeDepth = new Map<string, number>();
+          const visited = new Set<string>();
+
+          function computeDepth(nodeId: string): number {
+            if (nodeDepth.has(nodeId)) return nodeDepth.get(nodeId)!;
+            if (visited.has(nodeId)) return 0; // Cycle protection
+            visited.add(nodeId);
+
+            const incoming = incomingEdges.get(nodeId) || [];
+            if (incoming.length === 0) {
+              nodeDepth.set(nodeId, 0);
+              return 0;
+            }
+
+            const maxParentDepth = Math.max(...incoming.map(computeDepth));
+            const depth = maxParentDepth + 1;
+            nodeDepth.set(nodeId, depth);
+            return depth;
+          }
+
+          for (const node of workflow.nodes) {
+            computeDepth(node.id);
+          }
+
+          // Step 3: Group nodes by depth (column)
+          const nodesByDepth = new Map<number, string[]>();
+          for (const node of workflow.nodes) {
+            const depth = nodeDepth.get(node.id) || 0;
+            if (!nodesByDepth.has(depth)) nodesByDepth.set(depth, []);
+            nodesByDepth.get(depth)!.push(node.id);
+          }
+
+          // Step 4: Calculate positions based on depth and vertical index
+          const nodePositions = new Map<string, { x: number; y: number }>();
+          for (const [depth, nodeIds] of nodesByDepth) {
+            const columnHeight = nodeIds.length * ROW_SPACING;
+            const startY = 100 + (columnHeight > ROW_SPACING ? -columnHeight / 4 : 0);
+
+            nodeIds.forEach((nodeId, verticalIndex) => {
+              nodePositions.set(nodeId, {
+                x: 100 + depth * COLUMN_SPACING,
+                y: startY + verticalIndex * ROW_SPACING,
+              });
+            });
+          }
+
+          const nodes: Node<NodeData>[] = workflow.nodes.map((genNode) => {
             const newId = generateNodeId();
             idMap.set(genNode.id, newId);
 
@@ -881,13 +939,8 @@ export const useWorkflowStore = create<WorkflowStore>()(
             // Format: "generator:dalle-3", "transform:sharp:resize", "input:upload", "flow:fanout", etc.
             const parts = genNode.nodeType.split(":");
 
-            // Calculate grid position
-            const row = Math.floor(index / NODES_PER_ROW);
-            const col = index % NODES_PER_ROW;
-            const position = {
-              x: 100 + col * GRID_SPACING_X,
-              y: 100 + row * GRID_SPACING_Y,
-            };
+            // Use computed flow position
+            const position = nodePositions.get(genNode.id) || { x: 100, y: 100 };
 
             // Handle flow control nodes specially (flow:fanout, flow:collect, flow:router)
             // The actual node type is the second part, not "flow"
