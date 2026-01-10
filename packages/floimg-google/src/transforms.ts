@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, type Part, type GenerateContentConfig } from "@google/genai";
 import type {
   TransformProvider,
   TransformOperationSchema,
@@ -8,6 +8,22 @@ import type {
   MimeType,
 } from "@teamflojo/floimg";
 import { enhancePrompt as enhancePromptFn } from "./prompt-enhancer.js";
+
+/**
+ * Extended GenerateContentConfig with imageConfig for image generation.
+ *
+ * The @google/genai SDK types don't include imageConfig yet as it's a newer
+ * feature for Gemini's image generation models. This interface extends the
+ * base config to add type safety for the imageConfig field.
+ *
+ * @see https://ai.google.dev/gemini-api/docs/image-generation
+ */
+interface GeminiImageGenerationConfig extends GenerateContentConfig {
+  imageConfig?: {
+    aspectRatio?: string;
+    imageSize?: string;
+  };
+}
 
 /**
  * Supported Gemini models for image generation/editing (Nano Banana)
@@ -266,8 +282,7 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
     const fullPrompt = prePrompt ? `${prePrompt}\n\n${processedPrompt}` : processedPrompt;
 
     // Build config with imageConfig for aspect ratio and size
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const genConfig: Record<string, any> = {
+    const genConfig: GeminiImageGenerationConfig = {
       responseModalities: ["TEXT", "IMAGE"],
       imageConfig: {
         aspectRatio,
@@ -281,8 +296,7 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
     }
 
     // Build parts array: text prompt + primary input image + reference images
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const parts: any[] = [
+    const parts: Part[] = [
       { text: fullPrompt },
       {
         inlineData: {
@@ -595,8 +609,7 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
       const client = getClient(apiKey);
 
       // Build config with imageConfig for aspect ratio and size
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const genConfig: Record<string, any> = {
+      const genConfig: GeminiImageGenerationConfig = {
         responseModalities: ["TEXT", "IMAGE"],
         imageConfig: {
           aspectRatio,
@@ -610,8 +623,7 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
       }
 
       // Build parts array: text prompt + reference images (if any)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const parts: any[] = [{ text: fullPrompt }];
+      const parts: Part[] = [{ text: fullPrompt }];
 
       // Add reference images as inline data parts
       if (referenceImages && referenceImages.length > 0) {
