@@ -778,7 +778,7 @@ export const RouterNode = memo(function RouterNode({
   const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[id]);
 
   const executionClass = getExecutionClass(nodeStatus);
-  const borderClass = executionClass || (selected ? "border-violet-500" : "border-violet-200");
+  const borderClass = executionClass || (selected ? "border-amber-500" : "border-amber-200");
 
   const hasContextOutput = !!data.contextProperty;
 
@@ -791,7 +791,7 @@ export const RouterNode = memo(function RouterNode({
         type="target"
         position={Position.Left}
         id="candidates"
-        className="w-3 h-3 !bg-violet-500"
+        className="w-3 h-3 !bg-amber-500"
         style={{ top: "35%" }}
         title="Candidates (array)"
       />
@@ -809,7 +809,7 @@ export const RouterNode = memo(function RouterNode({
         <div className="flex items-center gap-2 mb-2">
           {/* Router/switch icon */}
           <svg
-            className="w-4 h-4 text-violet-500"
+            className="w-4 h-4 text-amber-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -821,11 +821,11 @@ export const RouterNode = memo(function RouterNode({
               d="M13 5l7 7-7 7M5 5l7 7-7 7"
             />
           </svg>
-          <span className="font-semibold text-sm text-violet-700 dark:text-violet-400">Router</span>
+          <span className="font-semibold text-sm text-amber-700 dark:text-amber-400">Router</span>
         </div>
         <div className="text-xs text-gray-500 dark:text-zinc-400 space-y-0.5">
           <div className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-violet-400"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
             candidates
           </div>
           <div className="flex items-center gap-1">
@@ -834,8 +834,8 @@ export const RouterNode = memo(function RouterNode({
           </div>
         </div>
         {hasContextOutput && (
-          <div className="mt-2 pt-2 border-t border-violet-200 dark:border-violet-800">
-            <div className="text-[10px] text-violet-500 dark:text-violet-400">
+          <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800">
+            <div className="text-[10px] text-amber-500 dark:text-amber-400">
               + context: {data.contextProperty}
             </div>
           </div>
@@ -847,7 +847,7 @@ export const RouterNode = memo(function RouterNode({
         type="source"
         position={Position.Right}
         id="winner"
-        className="w-3 h-3 !bg-violet-500"
+        className="w-3 h-3 !bg-amber-500"
         style={{ top: hasContextOutput ? "35%" : "50%" }}
         title="Selected item"
       />

@@ -390,7 +390,9 @@ export function NodePalette() {
             className="px-3 py-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 rounded mb-1 cursor-grab active:cursor-grabbing hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors"
           >
             <div className="text-sm font-medium text-orange-700 dark:text-orange-300">Fan-Out</div>
-            <div className="text-xs text-gray-500 dark:text-zinc-400">Distribute to parallel branches</div>
+            <div className="text-xs text-gray-500 dark:text-zinc-400">
+              Distribute to parallel branches
+            </div>
           </div>
           <div
             draggable
@@ -405,10 +407,12 @@ export function NodePalette() {
             draggable
             onDragStart={(e) => handleDragStart(e, routerDefinition)}
             onDoubleClick={() => handleDoubleClick(routerDefinition)}
-            className="px-3 py-2 bg-violet-50 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-700 rounded cursor-grab active:cursor-grabbing hover:bg-violet-100 dark:hover:bg-violet-900/50 transition-colors"
+            className="px-3 py-2 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded cursor-grab active:cursor-grabbing hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
           >
-            <div className="text-sm font-medium text-violet-700 dark:text-violet-300">Router</div>
-            <div className="text-xs text-gray-500 dark:text-zinc-400">Route based on AI selection</div>
+            <div className="text-sm font-medium text-amber-700 dark:text-amber-300">Router</div>
+            <div className="text-xs text-gray-500 dark:text-zinc-400">
+              Route based on AI selection
+            </div>
           </div>
         </div>
 

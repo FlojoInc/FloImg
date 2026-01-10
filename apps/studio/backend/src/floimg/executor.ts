@@ -40,48 +40,24 @@ import {
 // Output directory for generated images
 const OUTPUT_DIR = "./data/images";
 
-// Type definitions for iterative workflow steps
-interface FanOutStep {
-  kind: "fanout";
-  in?: string;
-  mode: "array" | "count";
-  count: number;
-  arrayProperty?: string;
-  out: string;
+// SDK branching step types from @teamflojo/floimg (PR #114)
+// The SDK handles fan-out, collect, and router execution - we just convert Studio nodes to SDK types
+
+// Type guards for SDK branching steps
+function isFanOutStep(step: { kind: string }): step is { kind: "fan-out"; out: string[] } {
+  return step.kind === "fan-out";
 }
 
-interface CollectStep {
-  kind: "collect";
-  inputs: string[];
-  expectedInputs: number;
-  waitMode: "all" | "available";
-  out: string;
+function isCollectStep(step: {
+  kind: string;
+}): step is { kind: "collect"; in: string[]; out: string } {
+  return step.kind === "collect";
 }
 
-interface RouterStep {
-  kind: "router";
-  candidatesIn?: string;
-  selectionIn?: string;
-  selectionProperty: string;
-  selectionType: "index" | "value";
-  outputCount: number;
-  contextProperty?: string;
-  out: string;
-}
-
-// Type guard for fanout step
-function isFanOutStep(step: unknown): step is FanOutStep {
-  return typeof step === "object" && step !== null && (step as FanOutStep).kind === "fanout";
-}
-
-// Type guard for collect step
-function isCollectStep(step: unknown): step is CollectStep {
-  return typeof step === "object" && step !== null && (step as CollectStep).kind === "collect";
-}
-
-// Type guard for router step
-function isRouterStep(step: unknown): step is RouterStep {
-  return typeof step === "object" && step !== null && (step as RouterStep).kind === "router";
+function isRouterStep(step: {
+  kind: string;
+}): step is { kind: "router"; in: string; selectionIn: string; out: string } {
+  return step.kind === "router";
 }
 
 /**
@@ -105,10 +81,6 @@ function findPromptInParsed(parsed: Record<string, unknown>): string | undefined
   }
   return undefined;
 }
-
-// Branch info (_branchInfo) is attached to steps inside fan-out/collect regions
-// Structure: { fanoutVar: string, branchIndex: number }
-
 // Mime type to file extension mapping
 const MIME_TO_EXT: Record<string, string> = {
   "image/svg+xml": "svg",
@@ -326,19 +298,21 @@ export async function executeWorkflow(
       if ((step.kind === "generate" || step.kind === "transform") && step.params?._promptFromVar) {
         const varName = step.params._promptFromVar as string;
 
-        // Check if this is a branch variable (e.g., "v1_branch_0")
-        // If so, we need to trace back through the fanout to find the source text node
-        const branchMatch = varName.match(/^(.+)_branch_(\d+)$/);
+        // Check if this is a branch variable (e.g., "v1_0" from fan-out)
+        // If so, we need to trace back through the fan-out to find the source text node
+        // SDK fan-out outputs: ["v1_0", "v1_1", "v1_2"] (varName_index format)
+        const branchMatch = varName.match(/^(.+)_(\d+)$/);
         if (branchMatch) {
-          const fanoutVar = branchMatch[1];
-          // Find the fanout step to get its input variable (the actual text source)
+          // Find the fan-out step whose output array contains this branch variable
           const allSteps = pipeline.steps as unknown[];
-          const fanoutStep = allSteps.find((s) => isFanOutStep(s) && s.out === fanoutVar) as
-            | FanOutStep
-            | undefined;
+          const fanoutStep = allSteps.find((s) => {
+            if (!isFanOutStep(s as { kind: string })) return false;
+            const step = s as { kind: "fan-out"; in: string; out: string[] };
+            return step.out.includes(varName);
+          }) as { kind: "fan-out"; in: string; out: string[] } | undefined;
 
           if (fanoutStep?.in) {
-            // Add the fanout's input (the text node's output) to resolution set
+            // Add the fan-out's input (the text node's output) to resolution set
             textVarToResolve.add(fanoutStep.in);
           }
         } else {
@@ -444,19 +418,27 @@ export async function executeWorkflow(
 
             let text: string | undefined;
 
-            // Check if this is a branch variable (e.g., "v1_branch_0")
-            const branchMatch = varName.match(/^(.+)_branch_(\d+)$/);
+            // Check if this is a branch variable (e.g., "v1_0" from SDK fan-out)
+            // SDK fan-out outputs: ["v1_0", "v1_1", "v1_2"] (varName_index format)
+            const branchMatch = varName.match(/^(.+)_(\d+)$/);
 
             if (branchMatch) {
               // This is a branch variable - extract from fan-out's source text node
-              const fanoutVar = branchMatch[1]; // e.g., "v1"
               const branchIndex = parseInt(branchMatch[2], 10); // e.g., 0
 
-              // Find the fan-out step to get its input variable
-              // Cast to unknown first since Pipeline.steps doesn't include FanOutStep type
+              // Find the fan-out step whose output array contains this branch variable
               const allSteps = pipeline.steps as unknown[];
-              const fanoutStep = allSteps.find((s) => isFanOutStep(s) && s.out === fanoutVar) as
-                | FanOutStep
+              const fanoutStep = allSteps.find((s) => {
+                if (!isFanOutStep(s as { kind: string })) return false;
+                const step = s as {
+                  kind: "fan-out";
+                  in: string;
+                  out: string[];
+                  arrayProperty?: string;
+                };
+                return step.out.includes(varName);
+              }) as
+                | { kind: "fan-out"; in: string; out: string[]; arrayProperty?: string }
                 | undefined;
 
               if (fanoutStep?.in && fanoutStep.arrayProperty) {
@@ -713,69 +695,78 @@ export async function executeWorkflow(
         });
       }
 
-      // Handle iterative workflow steps (fanout, collect, router)
-      // Cast step to unknown first, then check with type guards
-      const unknownStep = step as unknown;
+      // Handle SDK branching steps (fan-out, collect, router) via SDK execution
+      // The SDK handles these step types natively - we delegate execution and handle results
+      const stepWithKind = step as { kind: string };
 
-      if (isFanOutStep(unknownStep)) {
-        const fanoutStep = unknownStep;
-        // Fan-out: distribute input to multiple branches
-        const inputValue = fanoutStep.in ? stepVariables[fanoutStep.in] : undefined;
-        const branchCount = fanoutStep.mode === "count" ? fanoutStep.count : 3;
+      if (isFanOutStep(stepWithKind)) {
+        // Fan-out: SDK distributes input to multiple branch outputs
+        const fanoutStep = step as unknown as {
+          kind: "fan-out";
+          in: string;
+          mode: string;
+          count?: number;
+          arrayProperty?: string;
+          out: string[];
+        };
+        const singlePipeline: Pipeline = {
+          name: "Fan-Out Step",
+          steps: [step] as Pipeline["steps"],
+          initialVariables: stepVariables,
+        };
 
-        // Create branch outputs (for now, pass through input to each branch)
-        // Full parallel execution will be implemented when subgraphs are identified
-        const branchOutputs: (ImageBlob | unknown)[] = [];
-        for (let branchIdx = 0; branchIdx < branchCount; branchIdx++) {
-          const branchId = `${fanoutStep.out}_branch_${branchIdx}`;
+        const fanoutResults = await client.run(singlePipeline);
 
-          if (fanoutStep.mode === "array" && fanoutStep.arrayProperty && inputValue) {
-            // Array mode: extract item from array property
-            const parsedData = stepVariables[`${fanoutStep.in}_parsed`] as unknown as
-              | Record<string, unknown>
-              | undefined;
-            if (parsedData && fanoutStep.arrayProperty in parsedData) {
-              const arrayValue = parsedData[fanoutStep.arrayProperty];
-              if (Array.isArray(arrayValue) && branchIdx < arrayValue.length) {
-                branchOutputs.push(arrayValue[branchIdx]);
-              }
-            }
-          } else {
-            // Count mode: duplicate input to each branch
-            branchOutputs.push(inputValue);
+        // Store branch outputs in stepVariables using the out array names
+        for (const result of fanoutResults) {
+          if (result.out && result.value !== undefined) {
+            stepVariables[result.out] = result.value as ImageBlob;
           }
+        }
 
-          // Store branch output in variables
-          stepVariables[branchId] = branchOutputs[branchIdx] as ImageBlob;
-
+        // Fire callback for each branch
+        const branchCount = fanoutStep.out.length;
+        for (let branchIdx = 0; branchIdx < branchCount; branchIdx++) {
           callbacks?.onStep?.({
             stepIndex: i,
             nodeId: stepNodeId!,
             status: "completed",
-            branchId,
+            branchId: fanoutStep.out[branchIdx],
             branchIndex: branchIdx,
             totalBranches: branchCount,
           });
         }
 
-        // Store fan-out metadata for collect to use
-        stepVariables[`${fanoutStep.out}_branchCount`] = branchCount as unknown as ImageBlob;
-        results.push({ step, value: branchOutputs, out: fanoutStep.out, nodeId: stepNodeId });
+        results.push({
+          step,
+          value: fanoutResults.map((r) => r.value),
+          out: fanoutStep.out[0],
+          nodeId: stepNodeId,
+        });
         continue;
       }
 
-      if (isCollectStep(unknownStep)) {
-        const collectStep = unknownStep;
-        // Collect: gather all inputs into an array
-        const collectedValues: unknown[] = [];
+      if (isCollectStep(stepWithKind)) {
+        // Collect: SDK gathers inputs from branches into an array
+        const collectStep = step as unknown as {
+          kind: "collect";
+          in: string[];
+          waitMode: string;
+          out: string;
+        };
+        const singlePipeline: Pipeline = {
+          name: "Collect Step",
+          steps: [step] as Pipeline["steps"],
+          initialVariables: stepVariables,
+        };
 
-        for (const inputVar of collectStep.inputs) {
-          const value = stepVariables[inputVar];
-          collectedValues.push(value ?? null); // null for failed branches
+        const collectResults = await client.run(singlePipeline);
+
+        // Store collected array in stepVariables
+        if (collectResults.length > 0) {
+          const collectResult = collectResults[0];
+          stepVariables[collectStep.out] = collectResult.value as ImageBlob;
         }
-
-        // Store as array in variables
-        stepVariables[collectStep.out] = collectedValues as unknown as ImageBlob;
 
         callbacks?.onStep?.({
           stepIndex: i,
@@ -783,50 +774,38 @@ export async function executeWorkflow(
           status: "completed",
         });
 
-        results.push({ step, value: collectedValues, out: collectStep.out, nodeId: stepNodeId });
+        results.push({
+          step,
+          value: collectResults[0]?.value,
+          out: collectStep.out,
+          nodeId: stepNodeId,
+        });
         continue;
       }
 
-      if (isRouterStep(unknownStep)) {
-        const routerStep = unknownStep;
-        // Router: select based on selection data
-        const candidates = routerStep.candidatesIn
-          ? stepVariables[routerStep.candidatesIn]
-          : undefined;
-        const selectionData = routerStep.selectionIn
-          ? stepVariables[routerStep.selectionIn]
-          : undefined;
+      if (isRouterStep(stepWithKind)) {
+        // Router: SDK selects from candidates based on selection data
+        const routerStep = step as unknown as {
+          kind: "router";
+          in: string;
+          selectionIn: string;
+          selectionProperty: string;
+          selectionType: string;
+          out: string;
+        };
+        const singlePipeline: Pipeline = {
+          name: "Router Step",
+          steps: [step] as Pipeline["steps"],
+          initialVariables: stepVariables,
+        };
 
+        const routerResults = await client.run(singlePipeline);
+
+        // Store selected value in stepVariables
         let winnerValue: unknown = null;
-        let contextValue: unknown = null;
-
-        if (candidates && selectionData) {
-          const candidatesArray = Array.isArray(candidates) ? candidates : [candidates];
-
-          // Extract selection from data
-          let selectionValue: number | string | undefined;
-          if (typeof selectionData === "object" && selectionData !== null) {
-            const dataRecord = selectionData as unknown as Record<string, unknown>;
-            selectionValue = dataRecord[routerStep.selectionProperty] as number | string;
-
-            // Extract context if specified
-            if (routerStep.contextProperty && routerStep.contextProperty in dataRecord) {
-              contextValue = dataRecord[routerStep.contextProperty];
-            }
-          }
-
-          // Route based on selection type
-          if (selectionValue !== undefined) {
-            if (routerStep.selectionType === "index" && typeof selectionValue === "number") {
-              winnerValue = candidatesArray[selectionValue];
-            } else if (routerStep.selectionType === "value") {
-              winnerValue = candidatesArray.find((c) => c === selectionValue);
-            }
-          }
-        }
-
-        // Store winner and context in variables
-        if (winnerValue) {
+        if (routerResults.length > 0) {
+          const routerResult = routerResults[0];
+          winnerValue = routerResult.value;
           stepVariables[routerStep.out] = winnerValue as ImageBlob;
 
           // If winner is an ImageBlob, save it and fire callback with preview
@@ -881,9 +860,6 @@ export async function executeWorkflow(
               continue;
             }
           }
-        }
-        if (contextValue) {
-          stepVariables[`${routerStep.out}_context`] = contextValue as unknown as ImageBlob;
         }
 
         callbacks?.onStep?.({
@@ -1287,13 +1263,13 @@ export function toPipeline(
       if (isFanoutBranch && textEdge) {
         // This generator is connected to a specific fan-out branch
         // Create a single step that references the branch variable
+        // SDK fan-out outputs use format: varName_index (e.g., "v3_0", "v3_1")
         const branchIndex = parseInt(fanoutBranchMatch[1], 10);
         const fanoutVar = nodeToVar.get(textEdge.source);
 
         params = {
           ...params,
-          _promptFromVar: `${fanoutVar}_branch_${branchIndex}`,
-          _branchInfo: { fanoutVar, branchIndex },
+          _promptFromVar: `${fanoutVar}_${branchIndex}`, // SDK format: varName_index
         };
 
         steps.push({
@@ -1301,7 +1277,6 @@ export function toPipeline(
           generator: data.generatorName,
           params,
           out: varName,
-          _branchInfo: { fanoutVar, branchIndex },
         });
       } else {
         // Regular non-branch generator
@@ -1458,13 +1433,17 @@ export function toPipeline(
       const inputEdge = edges.find((e) => e.target === node.id);
       const inputVar = inputEdge ? nodeToVar.get(inputEdge.source) : undefined;
 
+      // SDK fan-out: out is an array of branch variable names
+      const branchCount = data.count || 3;
+      const branchVars = Array.from({ length: branchCount }, (_, i) => `${varName}_${i}`);
+
       steps.push({
-        kind: "fanout",
-        in: inputVar,
-        mode: data.mode,
-        count: data.count || 3,
+        kind: "fan-out", // SDK uses hyphen
+        in: inputVar || "",
+        mode: data.mode || "count",
+        count: branchCount,
         arrayProperty: data.arrayProperty,
-        out: varName,
+        out: branchVars, // Array of output variable names
       });
     } else if (node.type === "collect") {
       const data = node.data as CollectNodeData;
@@ -1474,11 +1453,13 @@ export function toPipeline(
         .map((e) => nodeToVar.get(e.source))
         .filter((v): v is string => v !== undefined);
 
+      // SDK collect: uses 'in' (not 'inputs'), minRequired for available mode
+      const waitMode = data.waitMode || "all";
       steps.push({
-        kind: "collect",
-        inputs: inputVars,
-        expectedInputs: data.expectedInputs || inputVars.length,
-        waitMode: data.waitMode,
+        kind: "collect", // SDK format
+        in: inputVars, // SDK uses 'in' for input array
+        waitMode,
+        ...(waitMode === "available" && { minRequired: Math.max(1, data.expectedInputs || 1) }),
         out: varName,
       });
     } else if (node.type === "router") {
@@ -1494,15 +1475,18 @@ export function toPipeline(
       const candidatesVar = candidatesEdge ? nodeToVar.get(candidatesEdge.source) : undefined;
       const selectionVar = selectionEdge ? nodeToVar.get(selectionEdge.source) : undefined;
 
+      // SDK router: uses 'in' for candidates, proper selectionType values
+      // Note: SDK uses "property" not "value" for selection type
+      const selectionType =
+        data.selectionType === "value" ? "property" : data.selectionType || "index";
       steps.push({
         kind: "router",
-        candidatesIn: candidatesVar,
-        selectionIn: selectionVar,
-        selectionProperty: data.selectionProperty,
-        selectionType: data.selectionType,
-        outputCount: data.outputCount,
-        contextProperty: data.contextProperty,
+        in: candidatesVar || "", // SDK uses 'in' for candidates
+        selectionIn: selectionVar || "", // Selection data variable
+        selectionType: selectionType as "index" | "property",
+        selectionProperty: data.selectionProperty || "winner",
         out: varName,
+        // Note: outputCount and contextProperty are Studio-specific features not in SDK
       });
     }
   }
