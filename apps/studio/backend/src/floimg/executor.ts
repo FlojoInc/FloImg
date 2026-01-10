@@ -471,12 +471,16 @@ export async function executeWorkflow(
             if (text) {
               // Use resolved text as prompt (override any existing prompt)
               step.params.prompt = text;
+              // Only clean up markers if we successfully injected the prompt
+              // Otherwise, leave them for dynamic injection in the main loop
+              delete step.params._promptFromVar;
+              delete step.params._promptFromProperty;
             } else {
-              console.warn(`No text resolved for prompt variable ${varName}`);
+              // Don't delete markers - the text source will be resolved in main loop
+              console.log(
+                `Text source ${varName} not available during early resolution, will inject dynamically`
+              );
             }
-            // Clean up the markers
-            delete step.params._promptFromVar;
-            delete step.params._promptFromProperty;
           }
         }
 
