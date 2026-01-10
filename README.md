@@ -42,7 +42,7 @@ The same workflow definition is portable across interfaces:
 - **Multi-Interface** - SDK, CLI, YAML, and MCP
 - **Claude Code Ready** - Native plugin for AI-assisted workflows
 
-## Try It Now (No Install Required)
+## Try It Instantly
 
 ```bash
 # Resize and convert for social media
@@ -60,7 +60,7 @@ npx @teamflojo/floimg qr "https://floimg.com" -o qr.png
 npx @teamflojo/floimg
 ```
 
-Plugins auto-install on first use. [See all CLI commands →](https://floimg.com/docs/cli)
+[See all CLI commands →](https://floimg.com/docs/cli)
 
 ## Claude Code Integration
 

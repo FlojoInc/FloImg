@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get started with floimg in seconds using `npx` - no installation required.
+Get started with floimg in seconds using `npx` — no setup required.
 
 ## Try It Now
 

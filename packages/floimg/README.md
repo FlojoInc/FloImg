@@ -104,7 +104,7 @@ npx @teamflojo/floimg qr "https://floimg.com" -o qr.png
 npx @teamflojo/floimg
 ```
 
-Plugins auto-install on first use. See [QUICK_START.md](./QUICK_START.md) for full CLI documentation.
+See [QUICK_START.md](./QUICK_START.md) for full CLI documentation.
 
 ## Plugin Ecosystem
 
