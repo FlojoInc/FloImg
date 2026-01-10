@@ -84,6 +84,28 @@ function isRouterStep(step: unknown): step is RouterStep {
   return typeof step === "object" && step !== null && (step as RouterStep).kind === "router";
 }
 
+/**
+ * Find a string prompt in a parsed JSON object
+ * Checks for common prompt property names, then falls back to first long string property
+ */
+function findPromptInParsed(parsed: Record<string, unknown>): string | undefined {
+  // Priority order: common prompt property names, then first long string
+  const promptKeys = ["prompt", "refined_prompt", "improved_prompt", "image_prompt", "description"];
+  for (const key of promptKeys) {
+    if (key in parsed && typeof parsed[key] === "string") {
+      return parsed[key] as string;
+    }
+  }
+  // Fallback: find first string property that looks like a prompt (> 20 chars)
+  for (const [key, value] of Object.entries(parsed)) {
+    if (typeof value === "string" && value.length > 20) {
+      console.log(`Using "${key}" property as prompt source`);
+      return value;
+    }
+  }
+  return undefined;
+}
+
 // Branch info (_branchInfo) is attached to steps inside fan-out/collect regions
 // Structure: { fanoutVar: string, branchIndex: number }
 
@@ -459,13 +481,29 @@ export async function executeWorkflow(
                 text = typeof value === "string" ? value : JSON.stringify(value);
               } else {
                 console.warn(
-                  `Property "${propertyName}" not found in parsed output, using full content`
+                  `Property "${propertyName}" not found in parsed output, trying auto-detect`
                 );
-                text = resolvedText.get(varName);
+                // Try to find a prompt in the parsed output
+                if (parsed) {
+                  text = findPromptInParsed(parsed);
+                }
+                if (!text) {
+                  text = resolvedText.get(varName);
+                }
               }
             } else {
-              // No property specified, use full content
-              text = resolvedText.get(varName);
+              // No property specified - try parsed output first, then full content
+              const parsed = resolvedParsed.get(varName);
+              if (parsed) {
+                text = findPromptInParsed(parsed);
+              }
+              if (!text) {
+                // Fall back to raw content only if it's not JSON
+                const rawText = resolvedText.get(varName);
+                if (rawText && !rawText.startsWith("{")) {
+                  text = rawText;
+                }
+              }
             }
 
             if (text) {
@@ -957,17 +995,18 @@ export async function executeWorkflow(
             if (propertyName && dataBlob.parsed && propertyName in dataBlob.parsed) {
               const value = dataBlob.parsed[propertyName];
               text = typeof value === "string" ? value : JSON.stringify(value);
-            } else if (dataBlob.parsed && "prompt" in dataBlob.parsed) {
-              text = dataBlob.parsed.prompt as string;
-            } else {
+            } else if (dataBlob.parsed) {
+              text = findPromptInParsed(dataBlob.parsed);
+            }
+            // Final fallback to raw content only if it's not JSON
+            if (!text && !dataBlob.content.startsWith("{")) {
               text = dataBlob.content;
             }
           } else if (propertyName && sourceParsed && propertyName in sourceParsed) {
             const value = sourceParsed[propertyName];
             text = typeof value === "string" ? value : JSON.stringify(value);
-          } else if (sourceParsed && "prompt" in sourceParsed) {
-            // Default to 'prompt' property if available
-            text = sourceParsed.prompt as string;
+          } else if (sourceParsed) {
+            text = findPromptInParsed(sourceParsed);
           } else if (typeof sourceValue === "string") {
             text = sourceValue;
           }
