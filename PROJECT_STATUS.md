@@ -4,26 +4,48 @@
 
 ## Current Focus
 
-**T-2026-011: Keyboard Shortcuts for FloImg Studio** (IN PROGRESS)
-
-Comprehensive keyboard shortcuts with command palette (Cmd+K), full customization, and WCAG accessibility. Enables power users to work faster.
-
-**T-2026-010: Enhance FloImg Studio Visual Identity** (IN PROGRESS)
-
-Customize canvas and node styling to feel unique and high-quality.
-
-**T-2026-009: Gemini Prompt Auto-Enhancement** (IN PROGRESS)
-
-Add enhancePrompt parameter to Gemini generate and edit nodes.
+No active tasks. See "Next Up" for prioritized backlog.
 
 ## Next Up
 
 - **T-2026-012**: Undo/Redo (requires zundo middleware)
 - **T-2025-008**: Shape Generator UX Overhaul
-- **T-2025-006**: Add node duplication in FloImg Studio
 - Additional FloImg Studio UX improvements
 
 ## Just Completed
+
+**T-2026-011: Keyboard Shortcuts for FloImg Studio** (2026-01-10)
+
+Comprehensive keyboard shortcuts with command palette (Cmd+K), full customization, and WCAG accessibility.
+
+- Command palette with fuzzy search and keyboard navigation
+- Keyboard shortcuts help modal showing all bindings
+- Full customization UI in settings
+- Platform-aware symbols (⌘ on Mac, Ctrl on Windows)
+- Focus traps, ARIA labels, and disabled command tooltips
+- Confirmation dialog for destructive actions with unsaved changes
+- PR #124 merged
+
+**T-2026-010: Enhance FloImg Studio Visual Identity** (2026-01-09)
+
+Premium visual styling to differentiate from default React Flow appearance.
+
+- Comprehensive visual identity refresh with custom theming system
+- Gradient backgrounds for toolbar and sidebars
+- Color-coded palette items by node category
+- Node execution state animations (running shimmer, completed/error indicators)
+- Hide right sidebar when no node selected for cleaner canvas view
+- Released in floimg-studio-ui@0.6.0
+
+**T-2026-009: Gemini Prompt Auto-Enhancement** (2026-01-09)
+
+Automatic prompt enhancement for better AI image generation.
+
+- `enhancePrompt` option for Gemini generate and edit nodes
+- Detects prompt type (photorealistic, illustration, logo, product, etc.)
+- Applies appropriate enhancement templates based on Google's best practices
+- Exported utilities: `enhancePrompt()`, `detectPromptType()`, `isPromptDetailed()`
+- Released in floimg-google@0.5.0
 
 **T-2025-007: Gemini 3 Pro Workflow Generation** (2026-01-07)
 
@@ -103,12 +125,32 @@ Natural language to workflow JSON using Gemini 3 Pro structured outputs.
 
 ## Recent Releases
 
+**v0.14.0** (2026-01-10)
+
+- UsageHooks for AI provider cost tracking (floimg@0.12.0)
+- Usage event emission across all AI provider packages
+- Backend returns usageEvents in execution results
+
+**v0.13.0** (2026-01-09)
+
+- Gemini prompt auto-enhancement (floimg-google@0.5.0)
+- Visual identity refresh (floimg-studio-ui@0.6.0)
+- Gradient backgrounds, color-coded palette items, execution animations
+
+**v0.12.0** (2026-01-09)
+
+- Fan-out, collect, and router pipeline primitives (floimg@0.11.0)
+- Iterative workflow nodes in Studio (floimg-studio-ui@0.5.0)
+
+**v0.10.0** (2026-01-07)
+
+- BREAKING: Shape generator schema restructured (geometry + appearance separation)
+- New shapes: ellipse, triangle, polygon, star
+- Stroke support, rotation, radial gradients
+
 **v0.9.6** (2026-01-04)
 
 - Fix peer dependencies in all 12 plugin packages (^0.2.0 → ^0.8.0)
-- floimg-mermaid@0.2.2, floimg-qr@0.2.2, floimg-quickchart@0.2.2, floimg-d3@0.2.2
-- floimg-screenshot@0.2.2, floimg-openai@0.2.1, floimg-stability@0.2.2, floimg-google@0.4.1
-- floimg-replicate@0.1.1, floimg-ollama@0.2.2, floimg-xai@0.1.1, floimg-claude@0.2.1
 
 **v0.8.0** (2025-12-31)
 
@@ -136,23 +178,25 @@ Natural language to workflow JSON using Gemini 3 Pro structured outputs.
 
 ## Package Versions
 
-| Package                         | npm Version | Description                        |
-| ------------------------------- | ----------- | ---------------------------------- |
-| @teamflojo/floimg               | 0.7.1       | Core library                       |
-| @teamflojo/floimg-openai        | 0.2.1       | OpenAI DALL-E + transforms         |
-| @teamflojo/floimg-stability     | 0.2.2       | Stability AI SDXL/SD3 + transforms |
-| @teamflojo/floimg-google        | 0.4.1       | Google Imagen + Gemini Text/Vision |
-| @teamflojo/floimg-replicate     | 0.1.1       | Replicate AI transforms            |
-| @teamflojo/floimg-ollama        | 0.2.2       | Ollama local AI                    |
-| @teamflojo/floimg-qr            | 0.2.2       | QR code generator                  |
-| @teamflojo/floimg-mermaid       | 0.2.2       | Mermaid diagrams                   |
-| @teamflojo/floimg-quickchart    | 0.2.2       | Chart.js via QuickChart            |
-| @teamflojo/floimg-d3            | 0.2.2       | D3 data visualizations             |
-| @teamflojo/floimg-screenshot    | 0.2.2       | Screenshot/Playwright              |
-| @teamflojo/floimg-studio-ui     | 0.3.3       | Studio React components            |
-| @teamflojo/floimg-studio-shared | 0.3.0       | Studio shared types                |
-| @teamflojo/floimg-xai           | 0.1.1       | Grok Text/Vision                   |
-| @teamflojo/floimg-claude        | 0.2.1       | Claude Code plugin                 |
+| Package                          | npm Version | Description                        |
+| -------------------------------- | ----------- | ---------------------------------- |
+| @teamflojo/floimg                | 0.12.0      | Core library                       |
+| @teamflojo/floimg-openai         | 0.3.0       | OpenAI DALL-E + transforms         |
+| @teamflojo/floimg-stability      | 0.3.0       | Stability AI SDXL/SD3 + transforms |
+| @teamflojo/floimg-google         | 0.6.0       | Google Imagen + Gemini Text/Vision |
+| @teamflojo/floimg-replicate      | 0.2.0       | Replicate AI transforms            |
+| @teamflojo/floimg-xai            | 0.2.0       | Grok Text/Vision                   |
+| @teamflojo/floimg-ollama         | 0.2.2       | Ollama local AI                    |
+| @teamflojo/floimg-qr             | 0.2.3       | QR code generator                  |
+| @teamflojo/floimg-mermaid        | 0.2.2       | Mermaid diagrams                   |
+| @teamflojo/floimg-quickchart     | 0.2.2       | Chart.js via QuickChart            |
+| @teamflojo/floimg-d3             | 0.2.2       | D3 data visualizations             |
+| @teamflojo/floimg-screenshot     | 0.2.2       | Screenshot/Playwright              |
+| @teamflojo/floimg-templates      | 0.2.1       | Workflow templates                 |
+| @teamflojo/floimg-studio-ui      | 0.6.0       | Studio React components            |
+| @teamflojo/floimg-studio-shared  | 0.5.0       | Studio shared types                |
+| @teamflojo/floimg-studio-backend | 0.4.0       | Studio backend server              |
+| @teamflojo/floimg-claude         | 0.2.1       | Claude Code plugin                 |
 
 ## FloImg Studio
 
