@@ -944,7 +944,21 @@ export async function executeWorkflow(
         if (sourceValue || sourceParsed) {
           let text: string | undefined;
 
-          if (propertyName && sourceParsed && propertyName in sourceParsed) {
+          // Handle DataBlob objects (text step results stored as full DataBlob)
+          if (isDataBlob(sourceValue as unknown)) {
+            const dataBlob = sourceValue as unknown as {
+              content: string;
+              parsed?: Record<string, unknown>;
+            };
+            if (propertyName && dataBlob.parsed && propertyName in dataBlob.parsed) {
+              const value = dataBlob.parsed[propertyName];
+              text = typeof value === "string" ? value : JSON.stringify(value);
+            } else if (dataBlob.parsed && "prompt" in dataBlob.parsed) {
+              text = dataBlob.parsed.prompt as string;
+            } else {
+              text = dataBlob.content;
+            }
+          } else if (propertyName && sourceParsed && propertyName in sourceParsed) {
             const value = sourceParsed[propertyName];
             text = typeof value === "string" ? value : JSON.stringify(value);
           } else if (sourceParsed && "prompt" in sourceParsed) {
@@ -957,6 +971,10 @@ export async function executeWorkflow(
           if (text) {
             step.params.prompt = text;
             console.log(`Dynamic prompt injection for ${step.kind}: "${text.slice(0, 50)}..."`);
+          } else {
+            console.warn(
+              `No text extracted for ${varName} - sourceValue type: ${typeof sourceValue}`
+            );
           }
           // Clean up markers
           delete step.params._promptFromVar;
