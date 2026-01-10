@@ -360,7 +360,7 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
       metadata: {
         operation: "edit",
         prompt: fullPrompt,
-        originalPrompt: enhancePrompt ? prompt : undefined,
+        userPrompt: prompt,
         prePrompt,
         model,
         aspectRatio,
@@ -681,7 +681,8 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
         metadata: {
           operation: "generate",
           prompt: fullPrompt,
-          originalPrompt: enhancePrompt ? prompt : undefined,
+          userPrompt: prompt,
+          prePrompt,
           model,
           aspectRatio,
           imageSize,

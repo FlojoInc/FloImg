@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### @teamflojo/floimg-google
+
+- feat: add `enhancePrompt` option for Gemini generate and edit nodes
+  - Automatically expands prompts based on Google's image generation best practices
+  - Detects prompt type (photorealistic, illustration, logo, product, etc.)
+  - Applies appropriate enhancement templates
+- feat: export prompt enhancement utilities: `enhancePrompt()`, `detectPromptType()`, `isPromptDetailed()`
+
 ## [v0.12.0] - 2026-01-09
 
 ### @teamflojo/floimg (0.11.0)

@@ -111,7 +111,7 @@ describe("prompt-enhancer", () => {
     });
 
     it("should enhance product prompts with photography terms", () => {
-      const prompt = "product shot of headphones";
+      const prompt = "e-commerce product headphones";
       const enhanced = enhancePrompt(prompt);
       expect(enhanced.toLowerCase()).toMatch(/studio|professional|lighting|focus/);
     });

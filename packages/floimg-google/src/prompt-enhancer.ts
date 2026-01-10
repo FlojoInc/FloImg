@@ -265,10 +265,9 @@ function enhancePhotorealistic(prompt: string, _subject: string): string {
     enhanced = `A photorealistic ${enhanced}`;
   }
 
-  // Add lighting if not present
+  // Add lighting if not present (use first option for deterministic results)
   if (!hasLighting) {
-    const lighting =
-      PHOTOGRAPHY_TERMS.lighting[Math.floor(Math.random() * PHOTOGRAPHY_TERMS.lighting.length)];
+    const lighting = PHOTOGRAPHY_TERMS.lighting[0];
     enhanced += `. The scene is illuminated by ${lighting}`;
   }
 
@@ -294,9 +293,9 @@ function enhanceIllustration(prompt: string, subject: string): string {
     enhanced = `A detailed illustration of ${subject}`;
   }
 
-  // Add color/style details
+  // Add color/style details (use first option for deterministic results)
   if (!hasColors) {
-    const style = ARTISTIC_TERMS.styles[Math.floor(Math.random() * ARTISTIC_TERMS.styles.length)];
+    const style = ARTISTIC_TERMS.styles[0];
     enhanced += `, ${style}`;
   }
 
