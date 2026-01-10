@@ -617,7 +617,7 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
 });
 
 // ============================================
-// Iterative Workflow Nodes (EPIC-2026-001)
+// Iterative Workflow Nodes
 // ============================================
 
 // Fan-Out Node - distributes execution across parallel branches

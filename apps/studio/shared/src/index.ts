@@ -10,7 +10,7 @@ export type StudioNodeType =
   | "input"
   | "vision" // AI image analysis
   | "text" // AI text generation
-  // Iterative workflow nodes (EPIC-2026-001)
+  // Iterative workflow nodes
   | "fanout" // Distribute execution across parallel branches
   | "collect" // Gather outputs from parallel branches
   | "router"; // Route based on AI selection
@@ -80,7 +80,7 @@ export interface TextNodeData {
 }
 
 // ============================================
-// Iterative Workflow Node Data (EPIC-2026-001)
+// Iterative Workflow Node Data
 // ============================================
 
 /**

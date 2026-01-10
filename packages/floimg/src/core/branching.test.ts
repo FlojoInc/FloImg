@@ -350,7 +350,7 @@ describe("router execution", () => {
 
 describe("integration: full iterative workflow", () => {
   it("should correctly order a logo variation workflow", () => {
-    // This is the canonical use case from EPIC-2026-001
+    // Logo variation workflow: text → fan-out → generators → collect → vision → router
     const steps: PipelineStep[] = [
       // Text node generates prompts
       {
