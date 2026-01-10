@@ -3,7 +3,7 @@
  * Triggered by Cmd+? or clicking help
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useId } from "react";
 import { useSettingsStore } from "../stores/settingsStore";
 import { KeyBadge } from "./KeyBadge";
 import {
@@ -12,6 +12,7 @@ import {
   CATEGORY_NAMES,
 } from "../lib/keyboard/shortcuts";
 import type { ShortcutAction, ShortcutCategory } from "../lib/keyboard/types";
+import { useFocusTrap } from "../lib/useFocusTrap";
 
 export function KeyboardShortcutsModal() {
   const showModal = useSettingsStore((s) => s.showShortcutsModal);
@@ -19,6 +20,8 @@ export function KeyboardShortcutsModal() {
   const keyboardSettings = useSettingsStore((s) => s.keyboard);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const titleId = useId();
+  const focusTrapRef = useFocusTrap(showModal);
 
   // Get effective binding for an action
   const getEffectiveBinding = (action: ShortcutAction): string | null => {
@@ -71,17 +74,30 @@ export function KeyboardShortcutsModal() {
         if (e.target === e.currentTarget) closeModal();
       }}
     >
-      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-2xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+      <div
+        ref={focusTrapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="bg-white dark:bg-zinc-800 rounded-xl shadow-2xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col overflow-hidden"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+          <h2 id={titleId} className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
             Keyboard Shortcuts
           </h2>
           <button
             onClick={closeModal}
+            aria-label="Close keyboard shortcuts"
             className="p-1 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -99,6 +115,8 @@ export function KeyboardShortcutsModal() {
             placeholder="Search shortcuts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search shortcuts"
+            autoFocus
             className="w-full px-3 py-2 text-sm bg-zinc-100 dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-zinc-900 dark:text-zinc-100 placeholder-zinc-500"
           />
         </div>

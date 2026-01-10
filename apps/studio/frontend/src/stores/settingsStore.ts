@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { ShortcutAction } from "../lib/keyboard/types";
+import { VALID_SHORTCUT_ACTIONS } from "../lib/keyboard/types";
 import { getDefaultShortcuts } from "../lib/keyboard/shortcuts";
-import { checkShortcutConflict } from "../lib/keyboard/conflicts";
+import { checkShortcutConflict, isValidBinding } from "../lib/keyboard/conflicts";
 
 // Provider configuration for cloud APIs
 interface CloudProvider {
@@ -76,6 +77,13 @@ interface SettingsStore {
   openImport: () => void;
   closeImport: () => void;
 
+  // New workflow confirmation dialog
+  showNewWorkflowConfirm: boolean;
+  newWorkflowConfirmCallback: (() => void) | null;
+  requestNewWorkflow: (hasUnsavedChanges: boolean, onConfirm: () => void) => void;
+  confirmNewWorkflow: () => void;
+  cancelNewWorkflow: () => void;
+
   // Get configured providers for API calls
   getConfiguredProviders: () => {
     openai?: { apiKey: string };
@@ -91,6 +99,66 @@ interface SettingsStore {
 // Default URLs for local providers
 const DEFAULT_OLLAMA_URL = "http://localhost:11434";
 const DEFAULT_LMSTUDIO_URL = "http://localhost:1234";
+
+/**
+ * Validate and sanitize keyboard settings loaded from localStorage.
+ * This prevents malicious or corrupted data from causing issues.
+ */
+function validateKeyboardSettings(stored: unknown): KeyboardSettings {
+  const defaultSettings: KeyboardSettings = {
+    shortcuts: {},
+    enabled: true,
+  };
+
+  // If stored is not an object, return defaults
+  if (!stored || typeof stored !== "object") {
+    return defaultSettings;
+  }
+
+  const settings = stored as Record<string, unknown>;
+
+  // Validate 'enabled' field
+  const enabled = typeof settings.enabled === "boolean" ? settings.enabled : true;
+
+  // Validate shortcuts object
+  const validatedShortcuts: Partial<Record<ShortcutAction, string>> = {};
+
+  if (settings.shortcuts && typeof settings.shortcuts === "object") {
+    const shortcuts = settings.shortcuts as Record<string, unknown>;
+
+    for (const [action, binding] of Object.entries(shortcuts)) {
+      // Skip if action is not a valid ShortcutAction
+      if (!VALID_SHORTCUT_ACTIONS.includes(action as ShortcutAction)) {
+        console.warn(`[Settings] Removing invalid shortcut action: ${action}`);
+        continue;
+      }
+
+      // Skip if binding is not a string or null
+      if (binding !== null && typeof binding !== "string") {
+        console.warn(`[Settings] Removing invalid binding for ${action}: ${binding}`);
+        continue;
+      }
+
+      // Skip if binding is a string but not a valid format
+      if (typeof binding === "string" && !isValidBinding(binding)) {
+        console.warn(`[Settings] Removing invalid binding format for ${action}: ${binding}`);
+        continue;
+      }
+
+      // Valid shortcut override
+      if (binding === null) {
+        validatedShortcuts[action as ShortcutAction] = undefined as unknown as string;
+      } else {
+        validatedShortcuts[action as ShortcutAction] = binding;
+      }
+    }
+  }
+
+  return {
+    shortcuts: validatedShortcuts,
+    enabled,
+  };
+}
 
 export const useSettingsStore = create<SettingsStore>()(
   persist(
@@ -118,6 +186,8 @@ export const useSettingsStore = create<SettingsStore>()(
       showShortcutsModal: false,
       showExport: false,
       showImport: false,
+      showNewWorkflowConfirm: false,
+      newWorkflowConfirmCallback: null,
 
       setAIProvider: (provider, config) => {
         set((state) => ({
@@ -206,6 +276,23 @@ export const useSettingsStore = create<SettingsStore>()(
       openImport: () => set({ showImport: true }),
       closeImport: () => set({ showImport: false }),
 
+      // New workflow confirmation
+      requestNewWorkflow: (hasUnsavedChanges, onConfirm) => {
+        if (hasUnsavedChanges) {
+          set({ showNewWorkflowConfirm: true, newWorkflowConfirmCallback: onConfirm });
+        } else {
+          onConfirm();
+        }
+      },
+      confirmNewWorkflow: () => {
+        const callback = get().newWorkflowConfirmCallback;
+        set({ showNewWorkflowConfirm: false, newWorkflowConfirmCallback: null });
+        callback?.();
+      },
+      cancelNewWorkflow: () => {
+        set({ showNewWorkflowConfirm: false, newWorkflowConfirmCallback: null });
+      },
+
       getConfiguredProviders: () => {
         const { ai } = get();
         const result: ReturnType<SettingsStore["getConfiguredProviders"]> = {};
@@ -245,6 +332,16 @@ export const useSettingsStore = create<SettingsStore>()(
         ai: state.ai,
         keyboard: state.keyboard,
       }),
+      // Validate persisted data on load to prevent malicious/corrupted data
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<SettingsStore> | undefined;
+
+        return {
+          ...currentState,
+          ai: persisted?.ai ?? currentState.ai,
+          keyboard: validateKeyboardSettings(persisted?.keyboard),
+        };
+      },
     }
   )
 );

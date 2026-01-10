@@ -71,6 +71,7 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
   const nodes = useWorkflowStore((s) => s.nodes);
   const selectedNodeId = useWorkflowStore((s) => s.selectedNodeId);
   const execution = useWorkflowStore((s) => s.execution);
+  const hasUnsavedChanges = useWorkflowStore((s) => s.hasUnsavedChanges);
   const saveWorkflow = useWorkflowStore((s) => s.saveWorkflow);
   const execute = useWorkflowStore((s) => s.execute);
   const cancelExecution = useWorkflowStore((s) => s.cancelExecution);
@@ -89,6 +90,7 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
   const showCommandPalette = useSettingsStore((s) => s.showCommandPalette);
   const openExport = useSettingsStore((s) => s.openExport);
   const openImport = useSettingsStore((s) => s.openImport);
+  const requestNewWorkflow = useSettingsStore((s) => s.requestNewWorkflow);
 
   // Workflow shortcuts
   const handleSave = useCallback(() => {
@@ -102,8 +104,8 @@ export function useKeyboardShortcuts(props: UseKeyboardShortcutsProps = {}) {
   }, [nodes.length, execution.status, execute]);
 
   const handleNewWorkflow = useCallback(() => {
-    newWorkflow();
-  }, [newWorkflow]);
+    requestNewWorkflow(hasUnsavedChanges, newWorkflow);
+  }, [requestNewWorkflow, hasUnsavedChanges, newWorkflow]);
 
   const handleExport = useCallback(() => {
     if (nodes.length === 0) return;

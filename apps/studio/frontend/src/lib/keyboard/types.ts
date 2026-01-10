@@ -5,34 +5,38 @@
 /** Categories for organizing shortcuts */
 export type ShortcutCategory = "workflow" | "editing" | "canvas" | "ui";
 
-/** Shortcut action identifiers */
-export type ShortcutAction =
+/** All valid shortcut action identifiers */
+export const VALID_SHORTCUT_ACTIONS = [
   // Workflow
-  | "save"
-  | "execute"
-  | "newWorkflow"
-  | "exportWorkflow"
-  | "importWorkflow"
+  "save",
+  "execute",
+  "newWorkflow",
+  "exportWorkflow",
+  "importWorkflow",
   // Editing
-  | "duplicate"
-  | "delete"
-  | "selectAll"
-  | "deselect"
+  "duplicate",
+  "delete",
+  "selectAll",
+  "deselect",
   // Canvas
-  | "zoomIn"
-  | "zoomOut"
-  | "zoomFit"
-  | "panMode"
+  "zoomIn",
+  "zoomOut",
+  "zoomFit",
+  "panMode",
   // UI
-  | "commandPalette"
-  | "showShortcuts"
-  | "toggleAIChat"
-  | "toggleLibrary"
-  | "settings"
-  | "toggleNodePalette"
+  "commandPalette",
+  "showShortcuts",
+  "toggleAIChat",
+  "toggleLibrary",
+  "settings",
+  "toggleNodePalette",
   // User-assignable (no default)
-  | "cancelExecution"
-  | "focusSearch";
+  "cancelExecution",
+  "focusSearch",
+] as const;
+
+/** Shortcut action identifiers */
+export type ShortcutAction = (typeof VALID_SHORTCUT_ACTIONS)[number];
 
 /** Shortcut definition with metadata */
 export interface ShortcutDefinition {

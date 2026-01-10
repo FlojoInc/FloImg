@@ -3,12 +3,35 @@
  * Triggered by Cmd+K for quick action discovery and execution
  */
 
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useDeferredValue, useId, useRef } from "react";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useWorkflowStore } from "../stores/workflowStore";
 import { KeyBadge } from "./KeyBadge";
 import { SHORTCUT_DEFINITIONS, CATEGORY_NAMES } from "../lib/keyboard/shortcuts";
 import type { ShortcutAction, ShortcutCategory, Command } from "../lib/keyboard/types";
+import { useFocusTrap } from "../lib/useFocusTrap";
+
+/** Get reason why a command is disabled */
+function getDisabledReason(
+  cmd: Command,
+  nodes: unknown[],
+  selectedNodeId: string | null,
+  executionStatus: string
+): string | null {
+  switch (cmd.id) {
+    case "save":
+    case "exportWorkflow":
+      return nodes.length === 0 ? "Add nodes to your workflow first" : null;
+    case "execute":
+      if (nodes.length === 0) return "Add nodes to your workflow first";
+      if (executionStatus === "running") return "Workflow is already running";
+      return null;
+    case "duplicate":
+      return !selectedNodeId ? "Select a node first" : null;
+    default:
+      return null;
+  }
+}
 
 interface CommandPaletteProps {
   /** Callback to toggle AI Chat (since it's local state in App) */
@@ -21,8 +44,10 @@ export function CommandPalette({ onToggleAIChat }: CommandPaletteProps) {
   const keyboardSettings = useSettingsStore((s) => s.keyboard);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const titleId = useId();
+  const focusTrapRef = useFocusTrap(showPalette);
   const listRef = useRef<HTMLDivElement>(null);
 
   // Get workflow store actions for commands
@@ -38,6 +63,8 @@ export function CommandPalette({ onToggleAIChat }: CommandPaletteProps) {
   const openShortcutsModal = useSettingsStore((s) => s.openShortcutsModal);
   const openExport = useSettingsStore((s) => s.openExport);
   const openImport = useSettingsStore((s) => s.openImport);
+  const requestNewWorkflow = useSettingsStore((s) => s.requestNewWorkflow);
+  const hasUnsavedChanges = useWorkflowStore((s) => s.hasUnsavedChanges);
 
   // Get effective binding for an action
   const getEffectiveBinding = useCallback(
@@ -83,7 +110,10 @@ export function CommandPalette({ onToggleAIChat }: CommandPaletteProps) {
         name: "New Workflow",
         category: "workflow",
         shortcut: getEffectiveBinding("newWorkflow") ?? undefined,
-        action: () => newWorkflow(),
+        action: () => {
+          closePalette?.();
+          requestNewWorkflow(hasUnsavedChanges, newWorkflow);
+        },
         keywords: ["new", "create", "blank"],
       },
       {
@@ -157,6 +187,7 @@ export function CommandPalette({ onToggleAIChat }: CommandPaletteProps) {
     nodes.length,
     selectedNodeId,
     execution.status,
+    hasUnsavedChanges,
     saveWorkflow,
     execute,
     newWorkflow,
@@ -168,19 +199,21 @@ export function CommandPalette({ onToggleAIChat }: CommandPaletteProps) {
     openImport,
     onToggleAIChat,
     getEffectiveBinding,
+    closePalette,
+    requestNewWorkflow,
   ]);
 
-  // Filter commands by search query
+  // Filter commands by search query (using deferred value for smooth typing)
   const filteredCommands = useMemo(() => {
-    if (!searchQuery.trim()) return commands;
+    if (!deferredSearchQuery.trim()) return commands;
 
-    const query = searchQuery.toLowerCase();
+    const query = deferredSearchQuery.toLowerCase();
     return commands.filter((cmd) => {
       const nameMatch = cmd.name.toLowerCase().includes(query);
       const keywordMatch = cmd.keywords?.some((kw) => kw.toLowerCase().includes(query));
       return nameMatch || keywordMatch;
     });
-  }, [commands, searchQuery]);
+  }, [commands, deferredSearchQuery]);
 
   // Group filtered commands by category
   const groupedCommands = useMemo(() => {
@@ -202,12 +235,11 @@ export function CommandPalette({ onToggleAIChat }: CommandPaletteProps) {
   // Reset selection when search changes
   useEffect(() => {
     setSelectedIndex(0);
-  }, [searchQuery]);
+  }, [deferredSearchQuery]);
 
-  // Focus input when opening
+  // Reset search when opening
   useEffect(() => {
-    if (showPalette && inputRef.current) {
-      inputRef.current.focus();
+    if (showPalette) {
       setSearchQuery("");
       setSelectedIndex(0);
     }
@@ -277,7 +309,13 @@ export function CommandPalette({ onToggleAIChat }: CommandPaletteProps) {
         if (e.target === e.currentTarget) closePalette?.();
       }}
     >
-      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-2xl max-w-xl w-full mx-4 overflow-hidden">
+      <div
+        ref={focusTrapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="bg-white dark:bg-zinc-800 rounded-xl shadow-2xl max-w-xl w-full mx-4 overflow-hidden"
+      >
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
           <svg
@@ -285,6 +323,7 @@ export function CommandPalette({ onToggleAIChat }: CommandPaletteProps) {
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -293,13 +332,17 @@ export function CommandPalette({ onToggleAIChat }: CommandPaletteProps) {
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
+          <label id={titleId} className="sr-only">
+            Command palette
+          </label>
           <input
-            ref={inputRef}
             type="text"
             placeholder="Type a command or search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleKeyDown}
+            aria-label="Search commands"
+            autoFocus
             className="flex-1 bg-transparent text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 focus:outline-none text-sm"
           />
           <kbd className="px-1.5 py-0.5 text-xs font-mono bg-zinc-100 dark:bg-zinc-700 text-zinc-500 border border-zinc-200 dark:border-zinc-600 rounded">
@@ -327,6 +370,9 @@ export function CommandPalette({ onToggleAIChat }: CommandPaletteProps) {
                     const index = getCommandIndex();
                     const isSelected = index === selectedIndex;
                     const isEnabled = !cmd.enabled || cmd.enabled();
+                    const disabledReason = !isEnabled
+                      ? getDisabledReason(cmd, nodes, selectedNodeId, execution.status)
+                      : null;
 
                     return (
                       <button
@@ -339,6 +385,7 @@ export function CommandPalette({ onToggleAIChat }: CommandPaletteProps) {
                           }
                         }}
                         disabled={!isEnabled}
+                        title={disabledReason ?? undefined}
                         className={`
                           w-full flex items-center justify-between px-4 py-2 text-left
                           ${isSelected ? "bg-teal-50 dark:bg-teal-900/30" : "hover:bg-zinc-50 dark:hover:bg-zinc-700/50"}
