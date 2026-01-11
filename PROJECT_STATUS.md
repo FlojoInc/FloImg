@@ -8,8 +8,9 @@ No active tasks. See "Next Up" for prioritized backlog.
 
 ## Next Up
 
-- **T-2026-012**: Undo/Redo (requires zundo middleware)
+- **T-2026-012**: Composable NodePalette export for library/cloud consistency
 - **T-2025-008**: Shape Generator UX Overhaul
+- Undo/Redo (requires zundo middleware)
 - Additional FloImg Studio UX improvements
 
 ## Just Completed
