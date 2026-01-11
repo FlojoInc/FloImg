@@ -6,7 +6,7 @@ tags: [task, studio-ui, architecture]
 status: in-progress
 priority: p1
 created: 2026-01-10
-updated: 2026-01-10
+updated: 2026-01-11
 
 ---
 
@@ -27,15 +27,15 @@ Currently, CloudNodePalette reimplements all styling with inline Tailwind classe
 ## Acceptance Criteria
 
 - [x] NodePaletteItem exported from floimg-studio-ui index.ts
-- [x] NodePaletteItem accepts extension props:
-  - `locked?: boolean` - determines if node shows locked state
-  - `onLockedClick?: (node: NodeDefinition) => void` - called when locked node clicked
+- [x] NodePaletteItem accepts extension props (OSS-neutral naming):
+  - `disabled?: boolean` - determines if node shows disabled state
+  - `onDisabledClick?: (node: NodeDefinition) => void` - called when disabled node clicked
   - `badge?: ReactNode` - custom badge (lock icon, "Cloud" tag, etc.)
-  - `upgradeMessage?: string` - message shown for locked nodes
+  - `alternateMessage?: string` - message shown for disabled nodes
 - [x] NodePaletteItem uses `floimg-palette-item` CSS classes (consistent theming)
-- [x] CSS updated with locked state, purple variant, and header styles
-- [ ] CloudNodePalette updated to use NodePaletteItem (pending floimg release)
-- [ ] Visual parity between OSS and FSC node palettes confirmed
+- [x] CSS updated with disabled state and header styles
+- [x] CloudNodePalette updated to use NodePaletteItem (floimg-cloud PR #4)
+- [ ] Visual parity between OSS and FSC node palettes confirmed (pending FSC deployment)
 
 ## Implementation Notes
 

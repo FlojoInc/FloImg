@@ -2,7 +2,7 @@
 
 **Task**: [[T-2026-012-composable-node-palette]]
 **Created**: 2026-01-10
-**Status**: Planning
+**Status**: In Progress (awaiting FSC deployment)
 
 ## Overview
 
@@ -62,18 +62,19 @@ import { NodePaletteItem } from "@teamflojo/floimg-studio-ui";
 
 ## Implementation Notes
 
-- Created `NodePaletteItem.tsx` with extension props (locked, badge, upgradeMessage)
-- Added CSS: `.floimg-palette-item--locked`, `.floimg-palette-item--purple`, `.floimg-palette-item__header`, `.floimg-palette-item__upgrade-message`
+- Created `NodePaletteItem.tsx` with OSS-neutral extension props (disabled, badge, alternateMessage)
+- Added CSS: `.floimg-palette-item--disabled`, `.floimg-palette-item__header`, `.floimg-palette-item__alternate-message`
 - Refactored `NodePalette.tsx` to use `NodePaletteItem` internally
 - Updated `CloudNodePalette.tsx` to use library component (582 → 390 lines)
-- Typecheck passes in floimg; floimg-cloud needs npm release
+- PR review caught OSS boundary violation: renamed `locked` → `disabled`, `upgradeMessage` → `alternateMessage`
+- Removed purple variant per brand guidelines
 
 ## Next Steps
 
 1. ~~Review NodePalette.tsx structure~~ ✓
 2. ~~Choose extension approach~~ ✓ (NodePaletteItem)
 3. ~~Add exports to library~~ ✓
-4. ~~Update CloudNodePalette~~ ✓ (code ready, awaits release)
-5. Create PR for floimg → merge → release
-6. Update floimg-cloud pnpm-lock → create PR
+4. ~~Update CloudNodePalette~~ ✓
+5. ~~Create PR for floimg → merge → release~~ ✓ (PR #129, v0.15.3)
+6. ~~Update floimg-cloud pnpm-lock → create PR~~ ✓ (PR #4)
 7. Verify visual parity after FSC deployment
