@@ -195,7 +195,7 @@ Natural language to workflow JSON using Gemini 3 Pro structured outputs.
 | @teamflojo/floimg-templates      | 0.2.1       | Workflow templates                 |
 | @teamflojo/floimg-studio-ui      | 0.5.0       | Studio React components            |
 | @teamflojo/floimg-studio-shared  | 0.5.0       | Studio shared types                |
-| @teamflojo/floimg-studio-backend | 0.1.0       | Studio backend server              |
+| @teamflojo/floimg-studio-backend | 0.4.0       | Studio backend server              |
 | @teamflojo/floimg-claude         | 0.2.1       | Claude Code plugin                 |
 
 ## FloImg Studio

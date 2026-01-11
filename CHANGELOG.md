@@ -58,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: export prompt enhancement utilities: `enhancePrompt()`, `detectPromptType()`, `isPromptDetailed()`
 - chore: improve TypeScript types with proper SDK type imports
 
-### @teamflojo/floimg-studio-ui (0.6.0)
+### @teamflojo/floimg-studio-ui (0.5.0)
 
 - feat: comprehensive visual identity refresh with custom theming system
 - feat: gradient backgrounds for toolbar and sidebars
