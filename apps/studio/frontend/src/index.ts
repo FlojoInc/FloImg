@@ -24,9 +24,17 @@ export { WorkflowLibrary } from "./components/WorkflowLibrary";
 export { AISettings } from "./components/AISettings";
 export { AIChat } from "./components/AIChat";
 export { UploadGallery } from "./components/UploadGallery";
+export { CommandPalette } from "./components/CommandPalette";
+export { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
+
+// Keyboard shortcuts
+export { useKeyboardShortcuts } from "./lib/keyboard/useKeyboardShortcuts";
+export { SHORTCUT_DEFINITIONS, CATEGORY_NAMES } from "./lib/keyboard/shortcuts";
+export type * from "./lib/keyboard/types";
 
 // State management
 export { useWorkflowStore } from "./stores/workflowStore";
+export { useSettingsStore } from "./stores/settingsStore";
 
 // Templates (OSS-compatible only - no cloud-only AI templates)
 export {
