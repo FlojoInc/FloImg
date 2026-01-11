@@ -202,7 +202,7 @@ floimg resize image.png 800x600 -o resized.png
   "mcpServers": {
     "floimg": {
       "command": "npx",
-      "args": ["-y", "@teamflojo/floimg-claude"]
+      "args": ["-y", "@teamflojo/floimg-mcp"]
     }
   }
 }
@@ -214,10 +214,11 @@ Then talk to Claude: _"Create a QR code for example.com"_
 
 ### Core
 
-| Package                                                                              | Description                  | npm                                                                                                                         |
-| ------------------------------------------------------------------------------------ | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| [`@teamflojo/floimg`](https://www.npmjs.com/package/@teamflojo/floimg)               | Core engine, CLI, MCP server | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg.svg)](https://www.npmjs.com/package/@teamflojo/floimg)               |
-| [`@teamflojo/floimg-claude`](https://www.npmjs.com/package/@teamflojo/floimg-claude) | Claude Code plugin           | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-claude.svg)](https://www.npmjs.com/package/@teamflojo/floimg-claude) |
+| Package                                                                              | Description         | npm                                                                                                                         |
+| ------------------------------------------------------------------------------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| [`@teamflojo/floimg`](https://www.npmjs.com/package/@teamflojo/floimg)               | Core engine and CLI | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg.svg)](https://www.npmjs.com/package/@teamflojo/floimg)               |
+| [`@teamflojo/floimg-mcp`](https://www.npmjs.com/package/@teamflojo/floimg-mcp)       | MCP server          | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-mcp.svg)](https://www.npmjs.com/package/@teamflojo/floimg-mcp)       |
+| [`@teamflojo/floimg-claude`](https://www.npmjs.com/package/@teamflojo/floimg-claude) | Claude Code plugin  | [![npm](https://img.shields.io/npm/v/@teamflojo/floimg-claude.svg)](https://www.npmjs.com/package/@teamflojo/floimg-claude) |
 
 ### Generators
 
@@ -308,7 +309,8 @@ This is a **monorepo** containing multiple npm packages:
 
 ```
 packages/
-├── floimg/           # Core engine, CLI, MCP server (@teamflojo/floimg)
+├── floimg/           # Core engine and CLI (@teamflojo/floimg)
+├── floimg-mcp/       # MCP server for AI agents (@teamflojo/floimg-mcp)
 ├── floimg-openai/    # DALL-E + GPT-4 Vision plugin
 ├── floimg-stability/ # Stability AI plugin
 ├── floimg-*/         # Other generator/transform plugins

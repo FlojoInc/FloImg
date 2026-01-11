@@ -10,10 +10,9 @@ import {
 import { readFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
-import createClient from "../index.js";
-import { loadConfig } from "../config/loader.js";
-import { FloimgError } from "../core/errors.js";
-import type { MimeType, ImageBlob } from "../core/types.js";
+import createClient, { FloimgError } from "@teamflojo/floimg";
+import { loadConfig } from "@teamflojo/floimg/config";
+import type { MimeType, ImageBlob } from "@teamflojo/floimg";
 
 /**
  * floimg MCP Server v0.1.0 - Smart Image Generation & Workflow Orchestration

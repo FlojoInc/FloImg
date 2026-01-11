@@ -5,6 +5,52 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### @teamflojo/floimg-mcp (0.1.0) - NEW PACKAGE
+
+- feat: extract MCP server into standalone package
+  - MCP server moved from `@teamflojo/floimg` core to dedicated package
+  - Follows established plugin pattern (`@teamflojo/floimg-*`)
+  - Reduces core bundle size by removing `@modelcontextprotocol/sdk` dependency
+
+### @teamflojo/floimg (0.13.0)
+
+- **BREAKING**: removed MCP server from core package
+  - MCP moved to `@teamflojo/floimg-mcp`
+  - Removed `floimg mcp` CLI command
+  - Removed `floimg-mcp` binary entry point
+  - Removed `@modelcontextprotocol/sdk` dependency
+
+#### Migration
+
+Before:
+
+```bash
+npx @teamflojo/floimg mcp
+# or
+floimg-mcp
+```
+
+After:
+
+```bash
+npx @teamflojo/floimg-mcp
+```
+
+Update `.mcp.json` configuration:
+
+```json
+{
+  "mcpServers": {
+    "floimg": {
+      "command": "npx",
+      "args": ["-y", "@teamflojo/floimg-mcp"]
+    }
+  }
+}
+```
+
 ## [v0.14.0] - 2026-01-10
 
 ### @teamflojo/floimg (0.12.0)

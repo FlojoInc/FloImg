@@ -7,7 +7,6 @@ import { saveCommand } from "./commands/save.js";
 import { runCommand } from "./commands/run.js";
 import { configCommand } from "./commands/config.js";
 import { pluginsCommand } from "./commands/plugins.js";
-import { mcpCommand } from "./commands/mcp.js";
 import { filterCommand, presetCommand } from "./commands/filter.js";
 import { textCommand } from "./commands/text.js";
 import { aiCommand } from "./commands/ai.js";
@@ -52,7 +51,6 @@ program.addCommand(saveCommand);
 program.addCommand(runCommand);
 program.addCommand(configCommand);
 program.addCommand(pluginsCommand);
-program.addCommand(mcpCommand);
 program.addCommand(filterCommand);
 program.addCommand(presetCommand);
 program.addCommand(textCommand);
@@ -174,7 +172,7 @@ program
     console.log("\n✨ Ready to use! Try:");
     console.log("  floimg plugins           # See available plugins");
     console.log("  floimg config init       # Interactive setup");
-    console.log("  floimg mcp install       # Set up MCP for Claude Code");
+    console.log("  npx @teamflojo/floimg-mcp  # Run MCP server for Claude Code");
     console.log(
       '  floimg generate --generator shapes --params \'{"type":"gradient"}\' --out test.svg'
     );

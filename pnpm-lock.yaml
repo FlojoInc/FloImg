@@ -218,9 +218,6 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.958.0
         version: 3.958.0
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.20.0
-        version: 1.25.1(hono@4.11.1)(zod@4.2.1)
       '@napi-rs/canvas':
         specifier: ^0.1.80
         version: 0.1.86
@@ -308,6 +305,22 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.19.3)(jsdom@25.0.1)
+
+  packages/floimg-mcp:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.20.0
+        version: 1.25.1(hono@4.11.1)(zod@4.2.1)
+    devDependencies:
+      '@teamflojo/floimg':
+        specifier: workspace:*
+        version: link:../floimg
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.19.3
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
 
   packages/floimg-mermaid:
     dependencies:

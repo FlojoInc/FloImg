@@ -122,7 +122,7 @@ Or manually add to your MCP config:
   "mcpServers": {
     "floimg": {
       "command": "npx",
-      "args": ["-y", "@teamflojo/floimg", "mcp"]
+      "args": ["-y", "@teamflojo/floimg-mcp"]
     }
   }
 }

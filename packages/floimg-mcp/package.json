@@ -1,0 +1,61 @@
+{
+  "name": "@teamflojo/floimg-mcp",
+  "version": "0.1.0",
+  "description": "Model Context Protocol server for floimg - AI image workflow automation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "floimg-mcp": "./dist/server.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "floimg",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "image-generation",
+    "llm",
+    "agent",
+    "claude",
+    "automation"
+  ],
+  "author": "Brett Cooke",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TeamFlojo/floimg.git",
+    "directory": "packages/floimg-mcp"
+  },
+  "peerDependencies": {
+    "@teamflojo/floimg": "^0.12.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@teamflojo/floimg": "workspace:*",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

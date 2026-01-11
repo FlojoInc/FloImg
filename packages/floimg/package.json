@@ -6,8 +6,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "floimg": "./dist/cli/index.js",
-    "floimg-mcp": "./dist/mcp/server.js"
+    "floimg": "./dist/cli/index.js"
   },
   "exports": {
     ".": {
@@ -48,9 +47,7 @@
     "agent",
     "image-processing",
     "automation",
-    "cloud-storage",
-    "mcp",
-    "model-context-protocol"
+    "cloud-storage"
   ],
   "author": "Brett Cooke",
   "license": "MIT",
@@ -65,7 +62,6 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.709.0",
     "@aws-sdk/s3-request-presigner": "^3.958.0",
-    "@modelcontextprotocol/sdk": "^1.20.0",
     "@napi-rs/canvas": "^0.1.80",
     "@resvg/resvg-js": "^2.6.2",
     "commander": "^12.1.0",
