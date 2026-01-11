@@ -2,7 +2,7 @@
 
 **Task**: [[T-2026-012-composable-node-palette]]
 **Created**: 2026-01-10
-**Status**: In Progress (awaiting FSC deployment)
+**Status**: Complete
 
 ## Overview
 
@@ -77,4 +77,4 @@ import { NodePaletteItem } from "@teamflojo/floimg-studio-ui";
 4. ~~Update CloudNodePalette~~ ✓
 5. ~~Create PR for floimg → merge → release~~ ✓ (PR #129, v0.15.3)
 6. ~~Update floimg-cloud pnpm-lock → create PR~~ ✓ (PR #4)
-7. Verify visual parity after FSC deployment
+7. ~~Verify visual parity after FSC deployment~~ ✓
