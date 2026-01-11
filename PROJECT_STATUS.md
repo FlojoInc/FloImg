@@ -1,19 +1,28 @@
 # PROJECT STATUS
 
-**Last Updated**: 2026-01-10
+**Last Updated**: 2026-01-11
 
 ## Current Focus
 
-No active tasks. See "Next Up" for prioritized backlog.
+**T-2026-013**: NodePalette UX Redesign (dark mode fixes, visual simplification)
 
 ## Next Up
 
-- **T-2026-012**: Composable NodePalette export for library/cloud consistency
 - **T-2025-008**: Shape Generator UX Overhaul
 - Undo/Redo (requires zundo middleware)
 - Additional FloImg Studio UX improvements
 
 ## Just Completed
+
+**T-2026-012: Composable NodePalette Export** (2026-01-11)
+
+Export composable NodePaletteItem from floimg-studio-ui with extension props for cloud features.
+
+- NodePaletteItem component with disabled, badge, alternateMessage props
+- OSS-neutral naming (disabled vs locked) per PR review
+- CSS classes for consistent theming between OSS and FSC
+- CloudNodePalette refactored to use library component (582 → 390 lines)
+- Released in floimg-studio-ui@0.5.2, v0.15.3
 
 **T-2026-011: Keyboard Shortcuts for FloImg Studio** (2026-01-10)
 

@@ -201,18 +201,26 @@
 }
 
 .floimg-sidebar__category {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: var(--studio-text-subtle);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #52525b; /* zinc-600 */
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .floimg-sidebar__category {
+    color: #a1a1aa; /* zinc-400 - much better contrast */
+  }
 }
 
 /* ===== PALETTE ITEMS ===== */
 
 .floimg-palette-item {
-  padding: 0.625rem 0.875rem;
+  position: relative;
+  padding: 0.625rem 0.875rem 0.625rem 1.5rem;
   border-radius: 10px;
   background: var(--studio-surface-elevated);
   border: 1px solid var(--studio-border);
@@ -220,6 +228,27 @@
   cursor: grab;
   transition: all 0.15s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+/* Grip dots - persistent drag affordance */
+.floimg-palette-item::before {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 10px;
+  background-image: radial-gradient(circle, #a1a1aa 1.5px, transparent 1.5px);
+  background-size: 4px 4px;
+  opacity: 0.6;
+}
+
+@media (prefers-color-scheme: dark) {
+  .floimg-palette-item::before {
+    background-image: radial-gradient(circle, #71717a 1.5px, transparent 1.5px);
+    opacity: 0.8;
+  }
 }
 
 .floimg-palette-item:hover {
@@ -252,9 +281,15 @@
 }
 
 .floimg-palette-item__desc {
-  font-size: 0.6875rem;
-  color: var(--studio-text-subtle);
-  line-height: 1.3;
+  font-size: 0.8125rem;
+  color: #71717a; /* zinc-500 - explicit fallback */
+  line-height: 1.4;
+}
+
+@media (prefers-color-scheme: dark) {
+  .floimg-palette-item__desc {
+    color: #a1a1aa; /* zinc-400 - better contrast on dark */
+  }
 }
 
 /* Color variants for palette items */
@@ -283,12 +318,19 @@
   --item-color: #6366f1;
 }
 
-.floimg-palette-item[class*="--"] {
-  border-left: 3px solid var(--item-color);
+/* Palette items use neutral colors for titles.
+ * Color variants (--item-color) are preserved for nodes on the canvas.
+ * Color indicates state/action (disabled, locked), not category.
+ */
+
+.floimg-palette-item__title {
+  color: #18181b; /* zinc-900 */
 }
 
-.floimg-palette-item[class*="--"] .floimg-palette-item__title {
-  color: var(--item-color);
+@media (prefers-color-scheme: dark) {
+  .floimg-palette-item__title {
+    color: #fafafa; /* zinc-50 */
+  }
 }
 
 @media (prefers-color-scheme: dark) {
