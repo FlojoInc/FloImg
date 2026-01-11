@@ -14,7 +14,6 @@ The core FloImg package provides the pipeline engine, built-in image transforms,
 - **Save Providers** — Filesystem and S3-compatible storage
 - **CLI** — Command-line interface with plugin auto-install
 - **Fluent API** — Chainable syntax for building pipelines
-- **MCP Server** — Model Context Protocol for AI agent integration
 
 ## Installation
 
@@ -120,18 +119,26 @@ See [QUICK_START.md](./QUICK_START.md) for full CLI documentation.
 
 ## MCP (AI Agents)
 
-Use FloImg with Claude and other AI agents via MCP:
+Use FloImg with Claude and other AI agents via MCP. Install the separate MCP package:
+
+```bash
+npm install -g @teamflojo/floimg-mcp
+```
+
+Configure your MCP client:
 
 ```json
 {
   "mcpServers": {
     "floimg": {
       "command": "npx",
-      "args": ["-y", "@teamflojo/floimg-claude"]
+      "args": ["-y", "@teamflojo/floimg-mcp"]
     }
   }
 }
 ```
+
+See [@teamflojo/floimg-mcp](https://www.npmjs.com/package/@teamflojo/floimg-mcp) for full documentation.
 
 ## Documentation
 
