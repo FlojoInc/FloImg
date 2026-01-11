@@ -5,6 +5,18 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.15.4] - 2026-01-11
+
+### @teamflojo/floimg-studio-ui (0.5.3)
+
+- fix: dark mode text visibility in NodePalette (description text was black/invisible)
+- fix: category label contrast in dark mode (zinc-400 for readability)
+- fix: remove colored left borders (was creating visual noise with 7 accent colors)
+- fix: make title text neutral (removed accent-colored titles)
+- feat: add grip dots for drag affordance (persistent visual cue that items are draggable)
+- fix: improve typography (description text 13px minimum)
+- fix: minimap dark mode (respects system color scheme)
+
 ## [v0.15.3] - 2026-01-11
 
 ### @teamflojo/floimg-studio-ui (0.5.2)
