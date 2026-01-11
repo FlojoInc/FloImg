@@ -1,6 +1,6 @@
 ---
 tags: [type/task]
-status: in-progress
+status: completed
 priority: p1
 created: 2026-01-10
 updated: 2026-01-10
@@ -14,10 +14,10 @@ github_issue:
 ## Task Details
 
 **Task ID**: T-2026-011
-**Status**: in-progress
+**Status**: completed
 **Priority**: p1
 **Created**: 2026-01-10
-**Completed**:
+**Completed**: 2026-01-10
 **GitHub Issue**:
 
 ## Description

@@ -1,6 +1,6 @@
 ---
 tags: [type/task, area/studio, area/ui]
-status: in-progress
+status: completed
 priority: p2
 created: 2026-01-09
 updated: 2026-01-09
@@ -14,10 +14,10 @@ epic:
 ## Task Details
 
 - **Task ID**: T-2026-010
-- **Status**: in-progress
+- **Status**: completed
 - **Priority**: p2
 - **Created**: 2026-01-09
-- **Completed**:
+- **Completed**: 2026-01-09
 
 ## Description
 
