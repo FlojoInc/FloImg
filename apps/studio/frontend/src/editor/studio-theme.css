@@ -282,9 +282,6 @@
 .floimg-palette-item--indigo {
   --item-color: #6366f1;
 }
-.floimg-palette-item--purple {
-  --item-color: #a855f7;
-}
 
 .floimg-palette-item[class*="--"] {
   border-left: 3px solid var(--item-color);
@@ -319,9 +316,6 @@
   .floimg-palette-item--indigo {
     --item-color: #818cf8;
   }
-  .floimg-palette-item--purple {
-    --item-color: #c084fc;
-  }
 }
 
 /* Palette item header (for items with badges) */
@@ -331,35 +325,35 @@
   justify-content: space-between;
 }
 
-/* Locked state - used by cloud for tier-locked nodes */
-.floimg-palette-item--locked {
+/* Disabled state - for unavailable nodes */
+.floimg-palette-item--disabled {
   cursor: pointer;
   opacity: 0.7;
 }
 
-.floimg-palette-item--locked:hover {
+.floimg-palette-item--disabled:hover {
   transform: none;
   opacity: 0.8;
 }
 
-.floimg-palette-item--locked:active {
+.floimg-palette-item--disabled:active {
   cursor: pointer;
   transform: none;
 }
 
-.floimg-palette-item--locked .floimg-palette-item__title {
+.floimg-palette-item--disabled .floimg-palette-item__title {
   color: var(--studio-text-subtle);
 }
 
-/* Upgrade message for locked nodes */
-.floimg-palette-item__upgrade-message {
+/* Alternate message shown when node is disabled */
+.floimg-palette-item__alternate-message {
   font-size: 0.6875rem;
   color: #f59e0b;
   margin-top: 0.125rem;
 }
 
 @media (prefers-color-scheme: dark) {
-  .floimg-palette-item__upgrade-message {
+  .floimg-palette-item__alternate-message {
     color: #fbbf24;
   }
 }

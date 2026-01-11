@@ -8,8 +8,7 @@ export type NodePaletteColorVariant =
   | "pink"
   | "cyan"
   | "orange"
-  | "emerald"
-  | "purple";
+  | "emerald";
 
 export interface NodePaletteItemProps {
   /** The node definition to render */
@@ -20,34 +19,34 @@ export interface NodePaletteItemProps {
   onDragStart: (e: React.DragEvent, definition: NodeDefinition) => void;
   /** Handler for double-click - adds node to canvas */
   onDoubleClick: (definition: NodeDefinition) => void;
-  /** Whether this node is locked (cloud-specific, optional) */
-  locked?: boolean;
-  /** Handler for when a locked node is clicked (cloud-specific, optional) */
-  onLockedClick?: (definition: NodeDefinition) => void;
-  /** Custom badge to render (e.g., lock icon, "Cloud" tag) */
+  /** Whether this node is disabled (prevents drag/add) */
+  disabled?: boolean;
+  /** Handler for when a disabled node is clicked */
+  onDisabledClick?: (definition: NodeDefinition) => void;
+  /** Custom badge to render (e.g., icon, tag) */
   badge?: ReactNode;
-  /** Custom upgrade message for locked nodes */
-  upgradeMessage?: string;
+  /** Message to display instead of description when disabled */
+  alternateMessage?: string;
 }
 
 /**
  * A single item in the node palette. Renders with themed CSS classes
- * for consistent styling between OSS and cloud versions.
+ * for consistent styling.
  *
- * Cloud-specific features (locking, upgrade prompts) are opt-in via props.
+ * Extension features (disabled state, badges) are opt-in via props.
  */
 export function NodePaletteItem({
   definition,
   colorVariant,
   onDragStart,
   onDoubleClick,
-  locked = false,
-  onLockedClick,
+  disabled = false,
+  onDisabledClick,
   badge,
-  upgradeMessage,
+  alternateMessage,
 }: NodePaletteItemProps) {
   const handleDragStart = (e: React.DragEvent) => {
-    if (locked) {
+    if (disabled) {
       e.preventDefault();
       return;
     }
@@ -55,47 +54,47 @@ export function NodePaletteItem({
   };
 
   const handleDoubleClick = () => {
-    if (locked && onLockedClick) {
-      onLockedClick(definition);
+    if (disabled && onDisabledClick) {
+      onDisabledClick(definition);
       return;
     }
-    if (!locked) {
+    if (!disabled) {
       onDoubleClick(definition);
     }
   };
 
   const handleClick = () => {
-    if (locked && onLockedClick) {
-      onLockedClick(definition);
+    if (disabled && onDisabledClick) {
+      onDisabledClick(definition);
     }
   };
 
-  // Base class + color variant + locked state
+  // Base class + color variant + disabled state
   const className = [
     "floimg-palette-item",
     `floimg-palette-item--${colorVariant}`,
-    locked && "floimg-palette-item--locked",
+    disabled && "floimg-palette-item--disabled",
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
     <div
-      draggable={!locked}
+      draggable={!disabled}
       onDragStart={handleDragStart}
       onDoubleClick={handleDoubleClick}
-      onClick={locked ? handleClick : undefined}
+      onClick={disabled ? handleClick : undefined}
       className={className}
     >
       <div className="floimg-palette-item__header">
         <div className="floimg-palette-item__title">{definition.label}</div>
         {badge}
       </div>
-      {definition.description && !locked && (
+      {definition.description && !disabled && (
         <div className="floimg-palette-item__desc">{definition.description}</div>
       )}
-      {locked && upgradeMessage && (
-        <div className="floimg-palette-item__upgrade-message">{upgradeMessage}</div>
+      {disabled && alternateMessage && (
+        <div className="floimg-palette-item__alternate-message">{alternateMessage}</div>
       )}
     </div>
   );
