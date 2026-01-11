@@ -205,8 +205,8 @@ No API key, no data leaves your machine.
 | OpenAI Vision (GPT-4V)   | Done    | `floimg/src/providers/ai/openai.ts` |
 | OpenAI Text (GPT-4)      | Done    | `floimg/src/providers/ai/openai.ts` |
 | floimg-ollama package    | Done    | `packages/floimg-ollama/`           |
-| analyze_image MCP tool   | Done    | `floimg/src/mcp/server.ts`          |
-| generate_text MCP tool   | Done    | `floimg/src/mcp/server.ts`          |
+| analyze_image MCP tool   | Done    | `floimg-mcp/src/server.ts`          |
+| generate_text MCP tool   | Done    | `floimg-mcp/src/server.ts`          |
 | floimg-studio VisionNode | Done    | `floimg-studio/packages/frontend/`  |
 | floimg-studio TextNode   | Done    | `floimg-studio/packages/frontend/`  |
 | floimg-studio AISettings | Done    | `floimg-studio/packages/frontend/`  |

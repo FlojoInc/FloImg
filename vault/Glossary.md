@@ -99,7 +99,7 @@ A sequence of operations: `generate → transform(s) → save`. The core abstrac
 
 ### MCP (Model Context Protocol)
 
-Protocol for exposing floimg as tools to LLM agents. The core package includes an MCP server.
+Protocol for exposing floimg as tools to LLM agents. Available via the `@teamflojo/floimg-mcp` package.
 
 ### Workflow Abstraction
 
@@ -109,12 +109,13 @@ The unified `generate → transform → save` pattern that works consistently ac
 
 ## Directory Structure
 
-| Path                 | Purpose                                            |
-| -------------------- | -------------------------------------------------- |
-| `packages/floimg/`   | Core library (generate, transform, save, CLI, MCP) |
-| `packages/floimg-*/` | Generator plugins                                  |
-| `apps/studio/`       | Visual workflow builder                            |
-| `vault/`             | Project documentation                              |
+| Path                   | Purpose                                       |
+| ---------------------- | --------------------------------------------- |
+| `packages/floimg/`     | Core library (generate, transform, save, CLI) |
+| `packages/floimg-mcp/` | MCP server for AI agents                      |
+| `packages/floimg-*/`   | Generator plugins                             |
+| `apps/studio/`         | Visual workflow builder                       |
+| `vault/`               | Project documentation                         |
 
 ---
 

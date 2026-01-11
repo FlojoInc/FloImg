@@ -224,7 +224,7 @@ Configuration in `.mcp.json`:
   "mcpServers": {
     "floimg": {
       "command": "npx",
-      "args": ["-y", "@teamflojo/floimg", "mcp"]
+      "args": ["-y", "@teamflojo/floimg-mcp"]
     }
   }
 }

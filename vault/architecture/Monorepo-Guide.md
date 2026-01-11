@@ -7,7 +7,8 @@ This repository uses a pnpm workspace monorepo structure to manage the core libr
 ```
 floimg/
 ├── packages/
-│   ├── floimg/              # Core engine, CLI, MCP server (@teamflojo/floimg)
+│   ├── floimg/              # Core engine, CLI (@teamflojo/floimg)
+│   ├── floimg-mcp/          # MCP server for AI agents (@teamflojo/floimg-mcp)
 │   ├── floimg-claude/       # Claude Code plugin (@teamflojo/floimg-claude)
 │   ├── floimg-openai/       # DALL-E + GPT-4 Vision (@teamflojo/floimg-openai)
 │   ├── floimg-stability/    # Stability AI (@teamflojo/floimg-stability)

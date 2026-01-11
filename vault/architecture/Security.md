@@ -37,7 +37,7 @@ Implementation: `packages/floimg/src/save/s3.ts`
 
 ## MCP Server Security
 
-The MCP server (`packages/floimg/src/mcp/server.ts`) runs as a subprocess spawned by Claude Code.
+The MCP server (`packages/floimg-mcp/src/server.ts`) runs as a subprocess spawned by Claude Code.
 
 ### Credential Isolation
 

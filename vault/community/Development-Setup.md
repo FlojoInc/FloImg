@@ -110,7 +110,8 @@ pnpm typecheck
 ```
 floimg/
 ├── packages/
-│   ├── floimg/              # Core library + CLI + MCP
+│   ├── floimg/              # Core library + CLI
+│   ├── floimg-mcp/          # MCP server for AI agents
 │   ├── floimg-openai/       # OpenAI DALL-E + Vision
 │   ├── floimg-stability/    # Stability AI
 │   ├── floimg-google/       # Google Imagen

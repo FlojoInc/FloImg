@@ -92,7 +92,8 @@ pnpm -r typecheck     # TypeScript validation
 
 ```
 packages/
-├── floimg/             # Core library (exports: lib, CLI, MCP)
+├── floimg/             # Core library (exports: lib, CLI)
+├── floimg-mcp/         # MCP server for AI agents
 ├── floimg-claude/      # Claude Code plugin
 ├── floimg-d3/          # D3 visualization plugin
 ├── floimg-mermaid/     # Mermaid diagram plugin
