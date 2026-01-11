@@ -4,7 +4,7 @@
 
 ## Current Focus
 
-**T-2026-013**: NodePalette UX Redesign (dark mode fixes, visual simplification)
+(No active task)
 
 ## Next Up
 
@@ -13,6 +13,19 @@
 - Additional FloImg Studio UX improvements
 
 ## Just Completed
+
+**T-2026-013: NodePalette UX Redesign** (2026-01-11)
+
+Dark mode fixes and visual simplification for professional developer-tool aesthetic.
+
+- Fixed dark mode text visibility (description text was black/invisible)
+- Fixed category label contrast in dark mode
+- Removed colored left borders (was creating visual noise with 7 accent colors)
+- Made title text neutral (removed accent-colored titles)
+- Added grip dots for persistent drag affordance
+- Fixed minimap dark mode
+- Improved typography (description text 13px minimum)
+- Released in floimg-studio-ui@0.5.3, v0.15.4
 
 **T-2026-012: Composable NodePalette Export** (2026-01-11)
 
@@ -203,7 +216,7 @@ Natural language to workflow JSON using Gemini 3 Pro structured outputs.
 | @teamflojo/floimg-d3             | 0.2.2       | D3 data visualizations             |
 | @teamflojo/floimg-screenshot     | 0.2.2       | Screenshot/Playwright              |
 | @teamflojo/floimg-templates      | 0.2.1       | Workflow templates                 |
-| @teamflojo/floimg-studio-ui      | 0.5.0       | Studio React components            |
+| @teamflojo/floimg-studio-ui      | 0.5.3       | Studio React components            |
 | @teamflojo/floimg-studio-shared  | 0.5.0       | Studio shared types                |
 | @teamflojo/floimg-studio-backend | 0.4.0       | Studio backend server              |
 | @teamflojo/floimg-claude         | 0.2.1       | Claude Code plugin                 |
