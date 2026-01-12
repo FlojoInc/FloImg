@@ -12,6 +12,8 @@ import { nanoid } from "nanoid";
 import { FloimgError } from "@teamflojo/floimg";
 
 // Helper to extract structured error info from any error
+// Note: ErrorCategory from @teamflojo/floimg and @teamflojo/floimg-studio-shared
+// are identical string literal unions, so TypeScript treats them as compatible
 function extractErrorInfo(error: unknown): {
   message: string;
   code?: string;
@@ -22,7 +24,7 @@ function extractErrorInfo(error: unknown): {
     return {
       message: error.message,
       code: error.code,
-      category: error.category as ErrorCategory,
+      category: error.category,
       retryable: error.retryable,
     };
   }
