@@ -15,6 +15,7 @@ import type {
   GeneratedWorkflowData,
   StudioNodeType,
   ExecutionSSEEvent,
+  ErrorCategory,
 } from "@teamflojo/floimg-studio-shared";
 import type { Template } from "@teamflojo/floimg-templates";
 import { exportYaml } from "../api/client";
@@ -63,6 +64,12 @@ interface ExecutionState {
   dataOutputs: Record<string, DataOutput>; // nodeId -> text/json output (for vision/text nodes)
   nodeStatus: Record<string, NodeExecutionStatus>; // per-node execution status
   error?: string;
+  /** Machine-readable error code (e.g., "GENERATION_ERROR", "NETWORK_ERROR") */
+  errorCode?: string;
+  /** Error category for handling strategies */
+  errorCategory?: ErrorCategory;
+  /** Whether the operation can be retried */
+  retryable?: boolean;
 }
 
 interface WorkflowStore {
@@ -559,6 +566,10 @@ export const useWorkflowStore = create<WorkflowStore>()(
                         status: "error",
                         nodeStatus: errorNodeStatus,
                         error: event.data.error,
+                        // Structured error metadata from backend
+                        errorCode: event.data.errorCode,
+                        errorCategory: event.data.errorCategory,
+                        retryable: event.data.retryable,
                       },
                     });
                     reject(new Error(event.data.error));
