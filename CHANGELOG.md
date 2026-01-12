@@ -5,6 +5,22 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.15.5] - 2026-01-11
+
+### @teamflojo/floimg (0.14.0)
+
+- feat: add structured error types with categories and utilities
+  - New error classes: `ValidationError`, `NetworkError`, `ProviderError`, `PipelineError`
+  - Error categories: `user_input`, `provider_error`, `provider_config`, `validation`, `execution`, `network`, `internal`
+  - `retryable` flag indicates if operation can be retried
+  - Utility functions: `isRetryable()`, `getErrorCategory()`, `wrapError()`
+  - Proper error chaining with `cause` property
+
+### @teamflojo/floimg-studio-shared (0.6.0)
+
+- feat: add `ErrorCategory` type for structured error handling
+- feat: extend `ExecutionSSEError` with `errorCode`, `errorCategory`, `retryable` fields
+
 ## [v0.15.4] - 2026-01-11
 
 ### @teamflojo/floimg-studio-ui (0.5.3)
