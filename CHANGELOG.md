@@ -605,7 +605,7 @@ await floimg.from("./input.png").transform("resize", { width: 800 }).to("./outpu
 #### Docker Support
 
 - Pre-built Docker images on GitHub Container Registry
-- `docker run ghcr.io/teamflojo/floimg-studio` for instant deployment
+- `docker run ghcr.io/flojoinc/floimg-studio` for instant deployment
 
 #### CI/CD
 
@@ -735,6 +735,6 @@ floimg follows [Semantic Versioning](https://semver.org/):
 
 ## Links
 
-- [GitHub Repository](https://github.com/TeamFlojo/floimg)
+- [GitHub Repository](https://github.com/FlojoInc/floimg)
 - [npm Package](https://www.npmjs.com/package/@teamflojo/floimg)
-- [Documentation](https://github.com/TeamFlojo/floimg#readme)
+- [Documentation](https://github.com/FlojoInc/floimg#readme)

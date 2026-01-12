@@ -28,13 +28,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TeamFlojo/floimg.git",
+    "url": "https://github.com/FlojoInc/floimg.git",
     "directory": "packages/floimg-claude"
   },
   "bugs": {
-    "url": "https://github.com/TeamFlojo/floimg/issues"
+    "url": "https://github.com/FlojoInc/floimg/issues"
   },
-  "homepage": "https://github.com/TeamFlojo/floimg#readme",
+  "homepage": "https://github.com/FlojoInc/floimg#readme",
   "peerDependencies": {
     "@teamflojo/floimg": "^0.8.0"
   },

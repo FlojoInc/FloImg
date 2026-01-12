@@ -163,7 +163,7 @@ Packages in `packages/*` are published to npm as `@teamflojo/*`.
 
 | Term                  | Meaning                                     | Example                         |
 | --------------------- | ------------------------------------------- | ------------------------------- |
-| **floimg monorepo**   | This git repository containing all packages | `github.com/TeamFlojo/floimg`   |
+| **floimg monorepo**   | This git repository containing all packages | `github.com/FlojoInc/floimg`    |
 | **@teamflojo/floimg** | The core library npm package                | `npm install @teamflojo/floimg` |
 
 **Git tags (vX.Y.Z) represent monorepo releases**, not individual package versions. Each package has its own independent semver in `package.json`. A release publishes whichever packages changed since last release.

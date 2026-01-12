@@ -73,7 +73,7 @@ services:
       - studio
 
   studio:
-    image: ghcr.io/teamflojo/floimg-studio:latest
+    image: ghcr.io/flojoinc/floimg-studio:latest
     expose:
       - "5173"
 ```
@@ -165,6 +165,6 @@ If you want multi-user auth without building it yourself, Studio Cloud is availa
 
 ## Need Help?
 
-- [GitHub Discussions](https://github.com/TeamFlojo/floimg/discussions) - Ask questions
+- [GitHub Discussions](https://github.com/FlojoInc/floimg/discussions) - Ask questions
 - [Discord](https://floimg.com/discord) - Chat with the community
 - [Enterprise Support](mailto:enterprise@floimg.com) - For organizations needing custom solutions

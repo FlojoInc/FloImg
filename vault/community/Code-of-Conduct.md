@@ -80,4 +80,4 @@ Community Impact Guidelines were inspired by [Mozilla's code of conduct enforcem
 
 ## Questions
 
-For questions about this Code of Conduct, open a [GitHub Discussion](https://github.com/TeamFlojo/floimg/discussions) or email support@goflojo.com.
+For questions about this Code of Conduct, open a [GitHub Discussion](https://github.com/FlojoInc/floimg/discussions) or email support@goflojo.com.

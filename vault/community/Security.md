@@ -133,12 +133,12 @@ We credit reporters in security advisories unless they prefer anonymity.
 
 Past security advisories are published on:
 
-- [GitHub Security Advisories](https://github.com/TeamFlojo/floimg/security/advisories)
+- [GitHub Security Advisories](https://github.com/FlojoInc/floimg/security/advisories)
 
 ## Contact
 
 - **Security issues**: security@goflojo.com
-- **General questions**: [GitHub Discussions](https://github.com/TeamFlojo/floimg/discussions)
+- **General questions**: [GitHub Discussions](https://github.com/FlojoInc/floimg/discussions)
 
 ## See Also
 

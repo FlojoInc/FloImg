@@ -195,7 +195,7 @@ Natural language to workflow JSON using Gemini 3 Pro structured outputs.
 - FloImg Studio packages published to npm
 - @teamflojo/floimg-studio-ui v0.1.2
 - @teamflojo/floimg-studio-shared v0.1.0
-- Docker image: ghcr.io/teamflojo/floimg-studio:0.5.0
+- Docker image: ghcr.io/flojoinc/floimg-studio:0.5.0
 
 **v0.3.2** - Core library with brand refresh (teal accent)
 
@@ -225,7 +225,7 @@ Natural language to workflow JSON using Gemini 3 Pro structured outputs.
 
 Visual workflow builder in `apps/studio/`:
 
-- **Self-hosted**: `docker run -p 5100:5100 ghcr.io/teamflojo/floimg-studio`
+- **Self-hosted**: `docker run -p 5100:5100 ghcr.io/flojoinc/floimg-studio`
 - **Cloud**: https://studio.floimg.com
 
 ## AI Transform Providers

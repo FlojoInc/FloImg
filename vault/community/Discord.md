@@ -17,12 +17,12 @@ Our [[Code-of-Conduct]] applies to all community spaces, including Discord. Be w
 
 ## Discord vs GitHub
 
-| Use Case            | Where                                                                 |
-| ------------------- | --------------------------------------------------------------------- |
-| Quick questions     | Discord                                                               |
-| Bug reports         | [GitHub Issues](https://github.com/TeamFlojo/floimg/issues)           |
-| Feature discussions | [GitHub Discussions](https://github.com/TeamFlojo/floimg/discussions) |
-| Security issues     | [[Security]]                                                          |
+| Use Case            | Where                                                                |
+| ------------------- | -------------------------------------------------------------------- |
+| Quick questions     | Discord                                                              |
+| Bug reports         | [GitHub Issues](https://github.com/FlojoInc/floimg/issues)           |
+| Feature discussions | [GitHub Discussions](https://github.com/FlojoInc/floimg/discussions) |
+| Security issues     | [[Security]]                                                         |
 
 Discord is for real-time chat. GitHub Issues and Discussions are better for async, searchable, and tracked conversations.
 

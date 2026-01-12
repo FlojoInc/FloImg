@@ -1,7 +1,7 @@
 # FloImg Studio Dockerfile
 # Build from monorepo root: docker build -f apps/studio/Dockerfile -t floimg-studio .
 #
-# Pre-built images available at: ghcr.io/teamflojo/floimg-studio
+# Pre-built images available at: ghcr.io/flojoinc/floimg-studio
 
 # Stage 1: Build
 FROM node:22-alpine AS builder

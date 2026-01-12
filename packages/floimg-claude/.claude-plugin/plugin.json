@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "author": {
     "name": "Brett Cooke",
-    "url": "https://github.com/TeamFlojo"
+    "url": "https://github.com/FlojoInc"
   },
-  "homepage": "https://github.com/TeamFlojo/floimg",
-  "repository": "https://github.com/TeamFlojo/floimg",
+  "homepage": "https://github.com/FlojoInc/floimg",
+  "repository": "https://github.com/FlojoInc/floimg",
   "license": "MIT",
   "keywords": ["image", "chart", "diagram", "qr", "screenshot", "mermaid", "dall-e", "quickchart"],
   "commands": ["./commands/"],

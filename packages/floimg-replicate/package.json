@@ -39,7 +39,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TeamFlojo/floimg.git",
+    "url": "https://github.com/FlojoInc/floimg.git",
     "directory": "packages/floimg-replicate"
   },
   "peerDependencies": {

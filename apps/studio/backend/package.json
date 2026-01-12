@@ -9,7 +9,7 @@
   "main": "./dist/index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/teamflojo/floimg.git",
+    "url": "git+https://github.com/FlojoInc/floimg.git",
     "directory": "apps/studio/backend"
   },
   "scripts": {

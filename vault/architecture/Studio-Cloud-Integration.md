@@ -38,7 +38,7 @@ FloImg Studio is designed for self-hosting. It lives in the floimg monorepo:
 
 ```bash
 # Clone and run
-git clone https://github.com/teamflojo/floimg
+git clone https://github.com/FlojoInc/floimg
 cd floimg
 pnpm install
 pnpm dev:studio   # Starts frontend (5173) + backend (5100)

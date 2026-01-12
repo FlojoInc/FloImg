@@ -8,11 +8,11 @@
   "homepage": "https://floimg.com/studio",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/teamflojo/floimg.git",
+    "url": "git+https://github.com/FlojoInc/floimg.git",
     "directory": "apps/studio/frontend"
   },
   "bugs": {
-    "url": "https://github.com/teamflojo/floimg/issues"
+    "url": "https://github.com/FlojoInc/floimg/issues"
   },
   "keywords": [
     "floimg",

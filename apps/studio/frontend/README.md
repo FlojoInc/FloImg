@@ -104,7 +104,7 @@ import {
 For a complete self-hosted solution, use the Docker image instead:
 
 ```bash
-docker run -d -p 5100:5100 ghcr.io/teamflojo/floimg-studio
+docker run -d -p 5100:5100 ghcr.io/flojoinc/floimg-studio
 ```
 
 ## Related Packages

@@ -229,8 +229,8 @@ Use deterministic when you need precision. Use AI transforms when you need creat
 
 - [floimg Website](https://floimg.com)
 - [floimg Documentation](https://floimg.com/docs)
-- [GitHub Repository](https://github.com/TeamFlojo/floimg)
-- [Report Issues](https://github.com/TeamFlojo/floimg/issues)
+- [GitHub Repository](https://github.com/FlojoInc/floimg)
+- [Report Issues](https://github.com/FlojoInc/floimg/issues)
 
 ## License
 

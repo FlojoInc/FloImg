@@ -53,12 +53,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TeamFlojo/floimg.git"
+    "url": "https://github.com/FlojoInc/floimg.git"
   },
   "bugs": {
-    "url": "https://github.com/TeamFlojo/floimg/issues"
+    "url": "https://github.com/FlojoInc/floimg/issues"
   },
-  "homepage": "https://github.com/TeamFlojo/floimg#readme",
+  "homepage": "https://github.com/FlojoInc/floimg#readme",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.709.0",
     "@aws-sdk/s3-request-presigner": "^3.958.0",

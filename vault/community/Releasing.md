@@ -21,7 +21,7 @@ git push origin vX.Y.Z
 The `v*` tag triggers `.github/workflows/release.yml` which automatically:
 
 1. **Publishes to npm** - All @teamflojo/\* packages
-2. **Builds Docker image** - Pushes to ghcr.io/teamflojo/floimg-studio
+2. **Builds Docker image** - Pushes to ghcr.io/flojoinc/floimg-studio
 3. **Creates GitHub Release** - With auto-generated changelog
 
 ## Version Bumps

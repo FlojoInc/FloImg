@@ -275,7 +275,7 @@ FloImg Studio is a visual workflow builder for FloImg. Design image pipelines wi
 ### Self-Host
 
 ```bash
-docker run -d -p 5100:5100 -e OPENAI_API_KEY=sk-... ghcr.io/teamflojo/floimg-studio
+docker run -d -p 5100:5100 -e OPENAI_API_KEY=sk-... ghcr.io/flojoinc/floimg-studio
 ```
 
 Access at `http://localhost:5100`. See [apps/studio/DEPLOYMENT.md](./apps/studio/DEPLOYMENT.md) for more options.
@@ -364,17 +364,17 @@ See the [Contributing Guide](./vault/community/Contributing.md) for details.
 **Join our community:**
 
 - [Discord](https://discord.gg/ahb9FSGUzb) - Chat with the community
-- [GitHub Discussions](https://github.com/TeamFlojo/floimg/discussions) - Ask questions, share ideas
+- [GitHub Discussions](https://github.com/FlojoInc/floimg/discussions) - Ask questions, share ideas
 
 ## Contributors
 
-<a href="https://github.com/teamflojo/floimg/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=teamflojo/floimg" />
+<a href="https://github.com/flojoinc/floimg/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=flojoinc/floimg" />
 </a>
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=teamflojo/floimg&type=Date)](https://star-history.com/#teamflojo/floimg&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=flojoinc/floimg&type=Date)](https://star-history.com/#flojoinc/floimg&Date)
 
 ## License
 

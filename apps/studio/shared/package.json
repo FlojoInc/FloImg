@@ -8,7 +8,7 @@
   "homepage": "https://floimg.com/studio",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/teamflojo/floimg.git",
+    "url": "git+https://github.com/FlojoInc/floimg.git",
     "directory": "apps/studio/shared"
   },
   "main": "./dist/index.js",

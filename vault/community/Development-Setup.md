@@ -25,7 +25,7 @@ git clone https://github.com/YOUR-USERNAME/floimg.git
 cd floimg
 
 # Add upstream remote
-git remote add upstream https://github.com/TeamFlojo/floimg.git
+git remote add upstream https://github.com/FlojoInc/floimg.git
 ```
 
 ### 2. Install pnpm

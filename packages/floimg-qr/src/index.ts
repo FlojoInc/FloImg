@@ -100,7 +100,7 @@ export const qrSchema: GeneratorSchema = {
  * const qrCode = await floimg.generate({
  *   generator: 'qr',
  *   params: {
- *     text: 'https://github.com/TeamFlojo/floimg',
+ *     text: 'https://github.com/FlojoInc/floimg',
  *     errorCorrectionLevel: 'H',
  *     width: 300
  *   }

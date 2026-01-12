@@ -100,8 +100,8 @@ jobs:
           file: ./apps/studio/Dockerfile
           push: true
           tags: |
-            ghcr.io/teamflojo/floimg-studio:latest
-            ghcr.io/teamflojo/floimg-studio:${{ steps.version.outputs.VERSION }}
+            ghcr.io/flojoinc/floimg-studio:latest
+            ghcr.io/flojoinc/floimg-studio:${{ steps.version.outputs.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

@@ -52,4 +52,4 @@ Add OpenAI transforms, create Replicate package, and add comprehensive community
 
 ## PR
 
-https://github.com/TeamFlojo/floimg/pull/17 (merged)
+https://github.com/FlojoInc/floimg/pull/17 (merged)

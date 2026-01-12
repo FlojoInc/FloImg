@@ -11,7 +11,7 @@ Pre-built images are available on GitHub Container Registry:
 ```bash
 docker run -d -p 5100:5100 \
   -e OPENAI_API_KEY=sk-... \
-  ghcr.io/teamflojo/floimg-studio
+  ghcr.io/flojoinc/floimg-studio
 ```
 
 Access at `http://localhost:5100`
@@ -22,7 +22,7 @@ Access at `http://localhost:5100`
 version: "3.8"
 services:
   floimg-studio:
-    image: ghcr.io/teamflojo/floimg-studio:latest
+    image: ghcr.io/flojoinc/floimg-studio:latest
     ports:
       - "5100:5100"
     environment:
@@ -34,7 +34,7 @@ services:
 ### Build from Source
 
 ```bash
-git clone https://github.com/teamflojo/floimg.git
+git clone https://github.com/FlojoInc/floimg.git
 cd floimg
 pnpm install
 pnpm -r build
@@ -45,7 +45,7 @@ pnpm start
 Or build your own Docker image:
 
 ```bash
-git clone https://github.com/teamflojo/floimg.git
+git clone https://github.com/FlojoInc/floimg.git
 cd floimg
 docker build -f apps/studio/Dockerfile -t floimg-studio .
 docker run -d -p 5100:5100 -e OPENAI_API_KEY=sk-... floimg-studio
@@ -104,9 +104,9 @@ curl http://localhost:5100/api/health
 ## Updating
 
 ```bash
-docker pull ghcr.io/teamflojo/floimg-studio:latest
+docker pull ghcr.io/flojoinc/floimg-studio:latest
 docker stop floimg-studio && docker rm floimg-studio
-docker run -d --name floimg-studio -p 5100:5100 --env-file .env ghcr.io/teamflojo/floimg-studio
+docker run -d --name floimg-studio -p 5100:5100 --env-file .env ghcr.io/flojoinc/floimg-studio
 ```
 
 ## npm Packages

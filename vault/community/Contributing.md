@@ -24,7 +24,7 @@ We welcome contributions of all kinds—code, documentation, examples, bug repor
 
 Before starting work:
 
-1. Check [existing issues](https://github.com/TeamFlojo/floimg/issues) to avoid duplicates
+1. Check [existing issues](https://github.com/FlojoInc/floimg/issues) to avoid duplicates
 2. For bugs, create an issue describing the problem
 3. For features, open a discussion first for larger changes
 4. Comment on the issue to indicate you're working on it
@@ -34,7 +34,7 @@ Before starting work:
 See [[Development-Setup]] for detailed instructions.
 
 ```bash
-git clone https://github.com/TeamFlojo/floimg.git
+git clone https://github.com/FlojoInc/floimg.git
 cd floimg
 pnpm install
 pnpm -r build
@@ -138,8 +138,8 @@ vault/
 ## Getting Help
 
 - **Discord**: Join our [Discord community](https://discord.gg/ahb9FSGUzb) for real-time help and discussion
-- **Questions**: Open a [GitHub Discussion](https://github.com/TeamFlojo/floimg/discussions)
-- **Bugs**: Create an [Issue](https://github.com/TeamFlojo/floimg/issues)
+- **Questions**: Open a [GitHub Discussion](https://github.com/FlojoInc/floimg/discussions)
+- **Bugs**: Create an [Issue](https://github.com/FlojoInc/floimg/issues)
 - **Security**: See [[Security]] for responsible disclosure
 
 ## Recognition
