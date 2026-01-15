@@ -101,7 +101,8 @@ interface DataOutput {
 export interface ExecutionCallbacks {
   onStep?: (result: ExecutionStepResult) => void;
   onComplete?: (imageIds: string[]) => void;
-  onError?: (error: string) => void;
+  /** Called when execution fails. nodeId is the node being executed when the error occurred. */
+  onError?: (error: string, nodeId?: string) => void;
 }
 
 // AI provider configuration from frontend
@@ -227,6 +228,9 @@ export async function executeWorkflow(
   const images = new Map<string, Buffer>();
   const nodeIdByImageId = new Map<string, string>();
   const dataOutputs = new Map<string, DataOutput>();
+
+  // Track current node being executed (for error reporting)
+  let currentNodeId: string | undefined;
 
   // Get the shared floimg client
   const client = getClient();
@@ -690,6 +694,9 @@ export async function executeWorkflow(
         }
         continue; // Skip this step
       }
+
+      // Track current node for error reporting
+      currentNodeId = stepNodeId;
 
       // Notify step is running
       if (stepNodeId) {
@@ -1179,7 +1186,7 @@ export async function executeWorkflow(
 
     return { imageIds, images, nodeIdByImageId, dataOutputs, usageEvents };
   } catch (error) {
-    callbacks?.onError?.(error instanceof Error ? error.message : String(error));
+    callbacks?.onError?.(error instanceof Error ? error.message : String(error), currentNodeId);
     throw error;
   }
 }

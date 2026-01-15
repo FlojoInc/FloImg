@@ -58,6 +58,31 @@ function PreviewToggle({ nodeId, color }: { nodeId: string; color: string }) {
   );
 }
 
+// Error badge shown on nodes that failed during execution
+function ErrorBadge({ nodeId }: { nodeId: string }) {
+  const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[nodeId]);
+  const errorNodeId = useWorkflowStore((s) => s.execution.errorNodeId);
+  const error = useWorkflowStore((s) => s.execution.error);
+
+  // Only show badge if this node is in error state
+  if (nodeStatus !== "error") return null;
+
+  // Get error message - only show if this is the node that caused the error
+  const errorMessage = errorNodeId === nodeId ? error : "Execution failed";
+
+  return (
+    <div className="floimg-node__error-badge" title={errorMessage || "Execution failed"}>
+      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+        <path
+          fillRule="evenodd"
+          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </div>
+  );
+}
+
 // Generator Node (source nodes - have output only)
 // AI generators may also have a text input handle and/or references input handle
 export const GeneratorNode = memo(function GeneratorNode({
@@ -106,6 +131,7 @@ export const GeneratorNode = memo(function GeneratorNode({
           <img src={preview} alt="Preview" className="w-full h-20 object-contain rounded-md" />
         </div>
       )}
+      <ErrorBadge nodeId={id} />
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-blue-500/10">
           <div className="w-2 h-2 rounded-full bg-blue-500" />
@@ -209,6 +235,7 @@ export const TransformNode = memo(function TransformNode({
           <img src={preview} alt="Preview" className="w-full h-20 object-contain rounded-md" />
         </div>
       )}
+      <ErrorBadge nodeId={id} />
       <div className="floimg-node__header">
         <div className={`floimg-node__icon ${isAI ? "bg-indigo-500/10" : "bg-teal-500/10"}`}>
           {isAI ? (
@@ -283,6 +310,7 @@ export const SaveNode = memo(function SaveNode({ id, data, selected }: NodeProps
         position={Position.Left}
         className="!w-3 !h-3 !bg-emerald-500 !border-2 !border-white dark:!border-zinc-800"
       />
+      <ErrorBadge nodeId={id} />
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-emerald-500/10">
           <svg
@@ -402,6 +430,7 @@ export const InputNode = memo(function InputNode({ id, data, selected }: NodePro
         className="hidden"
         onChange={handleInputChange}
       />
+      <ErrorBadge nodeId={id} />
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-amber-500/10">
           <svg
@@ -494,6 +523,7 @@ export const VisionNode = memo(function VisionNode({
           )}
         </div>
       )}
+      <ErrorBadge nodeId={id} />
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-cyan-500/10">
           <svg className="w-2.5 h-2.5 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
@@ -614,6 +644,7 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
           )}
         </div>
       )}
+      <ErrorBadge nodeId={id} />
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-pink-500/10">
           <svg className="w-2.5 h-2.5 text-pink-500" fill="currentColor" viewBox="0 0 20 20">
@@ -719,6 +750,7 @@ export const FanOutNode = memo(function FanOutNode({
         className="!w-3 !h-3 !bg-orange-500 !border-2 !border-white dark:!border-zinc-800"
         style={{ top: "50%" }}
       />
+      <ErrorBadge nodeId={id} />
 
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-orange-500/10">
@@ -799,6 +831,7 @@ export const CollectNode = memo(function CollectNode({
           title={`Input ${i}`}
         />
       ))}
+      <ErrorBadge nodeId={id} />
 
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-orange-500/10">
@@ -873,6 +906,7 @@ export const RouterNode = memo(function RouterNode({
         style={{ top: "65%" }}
         title="Selection (from vision/text)"
       />
+      <ErrorBadge nodeId={id} />
 
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-amber-500/10">

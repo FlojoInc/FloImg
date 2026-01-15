@@ -64,6 +64,8 @@ interface ExecutionState {
   dataOutputs: Record<string, DataOutput>; // nodeId -> text/json output (for vision/text nodes)
   nodeStatus: Record<string, NodeExecutionStatus>; // per-node execution status
   error?: string;
+  /** ID of the node that caused the error (for error highlighting) */
+  errorNodeId?: string;
   /** Machine-readable error code (e.g., "GENERATION_ERROR", "NETWORK_ERROR") */
   errorCode?: string;
   /** Error category for handling strategies */
@@ -476,6 +478,12 @@ export const useWorkflowStore = create<WorkflowStore>()(
               previews: {},
               dataOutputs: {},
               nodeStatus: initialNodeStatus,
+              // Clear previous error state
+              error: undefined,
+              errorNodeId: undefined,
+              errorCode: undefined,
+              errorCategory: undefined,
+              retryable: undefined,
             },
           });
 
@@ -566,6 +574,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
                         status: "error",
                         nodeStatus: errorNodeStatus,
                         error: event.data.error,
+                        errorNodeId: event.data.nodeId,
                         // Structured error metadata from backend
                         errorCode: event.data.errorCode,
                         errorCategory: event.data.errorCategory,

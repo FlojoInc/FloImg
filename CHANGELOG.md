@@ -15,6 +15,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides clear error messages identifying which inputs failed
   - Added test coverage for composite error handling
 
+### @teamflojo/floimg-studio-ui (0.5.4)
+
+- feat: visual error highlighting for failed workflow nodes
+  - Red border/glow effect on nodes in error state
+  - Error badge with tooltip showing error message
+  - Error state clears automatically on re-execution
+  - Dark mode support for error styling
+
+### @teamflojo/floimg-studio-backend (0.4.1)
+
+- feat: include nodeId in execution error events
+  - Track current node during execution for error attribution
+  - Pass nodeId to SSE error events for frontend highlighting
+
 ## [v0.15.5] - 2026-01-11
 
 ### @teamflojo/floimg (0.14.0)

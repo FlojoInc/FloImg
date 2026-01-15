@@ -232,10 +232,10 @@ export async function executeRoutes(fastify: FastifyInstance) {
               data: { imageIds, imageUrls },
             });
           },
-          onError: (error: string) => {
+          onError: (error: string, nodeId?: string) => {
             sendSSE(reply.raw, {
               type: "execution.error",
-              data: { error },
+              data: { error, nodeId },
             });
           },
         },
