@@ -5,6 +5,16 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.15.6] - 2026-01-15
+
+### @teamflojo/floimg (0.14.1)
+
+- fix: handle undefined inputs in composite transform without crashing
+  - Validates base image before processing
+  - Validates all overlays and fails fast if any are invalid (consistent with other transforms)
+  - Provides clear error messages identifying which inputs failed
+  - Added test coverage for composite error handling
+
 ## [v0.15.5] - 2026-01-11
 
 ### @teamflojo/floimg (0.14.0)

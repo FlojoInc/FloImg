@@ -1,6 +1,6 @@
 ---
 tags: [type/bug]
-status: backlog
+status: resolved
 priority: p2
 created: 2026-01-15
 updated: 2026-01-15
@@ -9,14 +9,16 @@ updated: 2026-01-15
 # Bug: Composite Node Crashes on Undefined Input
 
 ## Bug Details
+
 - **Bug ID**: BUG-2026-002
-- **Status**: backlog
+- **Status**: resolved
 - **Priority**: p2
 - **Created**: 2026-01-15
 
 ## Problem
 
 When an upstream node fails (returns undefined), the composite node crashes with:
+
 ```
 Cannot read properties of undefined (reading 'bytes')
 ```
@@ -24,9 +26,10 @@ Cannot read properties of undefined (reading 'bytes')
 ## Expected Behavior
 
 The composite node should gracefully handle undefined inputs:
-1. Skip undefined images instead of crashing
-2. Provide a clear error message indicating which input failed
-3. Allow partial success if some inputs are valid
+
+1. Fail fast with clear error message (consistent with other transforms)
+2. Identify which specific input(s) failed
+3. Never crash with cryptic "undefined" errors
 
 ## Root Cause
 
@@ -39,20 +42,22 @@ The composite transform assumes all input images are valid and tries to access `
 3. Execute workflow
 4. Composite crashes instead of handling the failure gracefully
 
-## Fix
+## Resolution
 
-Add null/undefined checks in the composite transform:
-```typescript
-if (!image || !image.bytes) {
-  // Log warning and skip, or throw descriptive error
-}
-```
+Added validation in `packages/floimg/src/providers/transform/sharp.ts`:
+
+- Base image validation: throws clear error if base is missing
+- Overlay validation: fails fast if ANY overlay is invalid (consistent with other transforms)
+- Descriptive errors: identifies which overlay indices are invalid
+- Empty overlays array returns base unchanged
+
+This follows the **fail-fast** pattern used by all other transforms, ensuring end-to-end consistency across SDK/Studio/CLI/MCP.
 
 ## Acceptance Criteria
 
-- [ ] Composite handles undefined inputs without crashing
-- [ ] Error message identifies which input was undefined
-- [ ] Consider: should partial success be allowed?
+- [x] Composite handles undefined inputs without crashing
+- [x] Error message identifies which input was undefined
+- [x] Behavior is consistent with other transforms (fail-fast)
 
 ## Related
 

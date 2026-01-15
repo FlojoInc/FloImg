@@ -306,4 +306,69 @@ describe("Transform Operations - v0.3.0", () => {
       expect(final.bytes).toBeInstanceOf(Buffer);
     });
   });
+
+  describe("Composite Operations", () => {
+    it("should composite valid overlays onto base", async () => {
+      const result = await client.transform({
+        blob: testBlob,
+        op: "composite",
+        params: {
+          overlays: [{ blob: testBlob, left: 0, top: 0 }],
+        },
+      });
+
+      expect(result).toBeDefined();
+      expect(result.bytes).toBeInstanceOf(Buffer);
+    });
+
+    it("should throw error when base image is undefined", async () => {
+      await expect(
+        client.transform({
+          blob: undefined as unknown as ImageBlob,
+          op: "composite",
+          params: {
+            overlays: [{ blob: testBlob, left: 0, top: 0 }],
+          },
+        })
+      ).rejects.toThrow("Base image is required for composite operation");
+    });
+
+    it("should throw error when overlay is undefined", async () => {
+      await expect(
+        client.transform({
+          blob: testBlob,
+          op: "composite",
+          params: {
+            overlays: [{ blob: undefined as unknown as ImageBlob, left: 0, top: 0 }],
+          },
+        })
+      ).rejects.toThrow("Overlay image(s) at index 0 missing or invalid");
+    });
+
+    it("should identify multiple invalid overlays in error", async () => {
+      await expect(
+        client.transform({
+          blob: testBlob,
+          op: "composite",
+          params: {
+            overlays: [
+              { blob: undefined as unknown as ImageBlob, left: 0, top: 0 },
+              { blob: testBlob, left: 10, top: 10 },
+              { blob: undefined as unknown as ImageBlob, left: 20, top: 20 },
+            ],
+          },
+        })
+      ).rejects.toThrow("Overlay image(s) at index 0, 2 missing or invalid");
+    });
+
+    it("should return base unchanged when no overlays provided", async () => {
+      const result = await client.transform({
+        blob: testBlob,
+        op: "composite",
+        params: { overlays: [] },
+      });
+
+      expect(result).toBe(testBlob);
+    });
+  });
 });
