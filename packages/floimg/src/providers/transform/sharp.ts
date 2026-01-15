@@ -592,9 +592,36 @@ export class SharpTransformProvider implements TransformProvider {
     overlays: Array<{ blob: ImageBlob; left: number; top: number }>
   ): Promise<ImageBlob> {
     try {
+      // Validate base image
+      if (!base?.bytes) {
+        throw new TransformError("Composite failed: base image is missing or invalid");
+      }
+
+      // Filter out invalid overlays, tracking which ones failed
+      const invalidIndices: number[] = [];
+      const validOverlays = overlays.filter((overlay, index) => {
+        if (!overlay?.blob?.bytes) {
+          invalidIndices.push(index);
+          return false;
+        }
+        return true;
+      });
+
+      // If all overlays are invalid, throw descriptive error
+      if (validOverlays.length === 0 && overlays.length > 0) {
+        throw new TransformError(
+          `Composite failed: all ${overlays.length} overlay image(s) are missing or invalid (indices: ${invalidIndices.join(", ")})`
+        );
+      }
+
+      // If no overlays at all, just return the base
+      if (validOverlays.length === 0) {
+        return base;
+      }
+
       let baseInstance = sharp(base.bytes);
 
-      const compositeInputs = overlays.map((overlay) => ({
+      const compositeInputs = validOverlays.map((overlay) => ({
         input: overlay.blob.bytes,
         left: overlay.left,
         top: overlay.top,
@@ -611,6 +638,9 @@ export class SharpTransformProvider implements TransformProvider {
         source: base.source,
       };
     } catch (error) {
+      if (error instanceof TransformError) {
+        throw error;
+      }
       throw new TransformError(
         `Failed to composite images: ${error instanceof Error ? error.message : String(error)}`
       );
