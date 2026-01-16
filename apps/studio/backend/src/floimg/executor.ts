@@ -101,8 +101,8 @@ interface DataOutput {
 export interface ExecutionCallbacks {
   onStep?: (result: ExecutionStepResult) => void;
   onComplete?: (imageIds: string[]) => void;
-  /** Called when execution fails. nodeId is the node being executed when the error occurred. */
-  onError?: (error: string, nodeId?: string) => void;
+  /** Called when execution fails. id is the step identifier when the error occurred. */
+  onError?: (error: string, id?: string) => void;
 }
 
 // AI provider configuration from frontend
@@ -183,10 +183,109 @@ export interface ExecutionOptions {
 export interface ExecutionResult {
   imageIds: string[];
   images: Map<string, Buffer>;
-  nodeIdByImageId: Map<string, string>;
+  idByImageId: Map<string, string>;
   dataOutputs: Map<string, DataOutput>;
   /** Usage events collected from AI providers during execution */
   usageEvents: UsageEvent[];
+}
+
+/**
+ * Result from executing a Pipeline directly (simpler than ExecutionResult)
+ * Used by external API callers who send Pipeline format
+ */
+export interface PipelineExecutionResult {
+  imageIds: string[];
+  images: Map<string, Buffer>;
+  dataOutputs: Map<string, { dataType: "text" | "json"; content: string; parsed?: unknown }>;
+  usageEvents: UsageEvent[];
+}
+
+/**
+ * Options for direct pipeline execution
+ */
+export interface PipelineExecutionOptions {
+  /** AI provider configurations (API keys, base URLs) */
+  aiProviders?: AIProviderConfig;
+  /** Cloud config for FloImg Cloud save functionality */
+  cloudConfig?: CloudConfig;
+}
+
+/**
+ * Execute a Pipeline directly (for API callers using the canonical format)
+ *
+ * This is the preferred path for external API users. Unlike executeWorkflow(),
+ * this function accepts the canonical Pipeline format directly and doesn't
+ * require conversion from the visual editor's nodes/edges format.
+ *
+ * @param pipeline - The Pipeline to execute (canonical format)
+ * @param options - Execution options (AI providers, cloud config)
+ * @returns Execution result with images and data outputs
+ */
+export async function executePipeline(
+  pipeline: Pipeline,
+  options?: PipelineExecutionOptions
+): Promise<PipelineExecutionResult> {
+  const { cloudConfig } = options || {};
+  const imageIds: string[] = [];
+  const images = new Map<string, Buffer>();
+  const dataOutputs = new Map<
+    string,
+    { dataType: "text" | "json"; content: string; parsed?: unknown }
+  >();
+
+  // Get the shared floimg client
+  const client = getClient();
+
+  // Dynamically register CloudSaveProvider when running in cloud context
+  if (cloudConfig?.enabled) {
+    const { CloudSaveProvider } = await import("./providers/CloudSaveProvider.js");
+    const provider = new CloudSaveProvider(
+      cloudConfig.userId,
+      cloudConfig.apiBaseUrl,
+      cloudConfig.authToken
+    );
+    client.registerSaveProvider(provider);
+  }
+
+  // Clear any previously collected usage events before this execution
+  clearCollectedUsageEvents();
+
+  // Execute the pipeline directly
+  const results = await client.run(pipeline);
+
+  // Process results
+  for (const result of results) {
+    if (isImageBlob(result.value)) {
+      const imageId = nanoid();
+      const buffer = Buffer.from(result.value.bytes);
+      imageIds.push(imageId);
+      images.set(imageId, buffer);
+
+      // Save image to disk
+      const ext = MIME_TO_EXT[result.value.mime] || "png";
+      const filename = `${imageId}.${ext}`;
+      const filepath = join(OUTPUT_DIR, filename);
+      await mkdir(dirname(filepath), { recursive: true });
+      await writeFile(filepath, buffer);
+    } else if (isDataBlob(result.value)) {
+      // Store data outputs using the output variable name
+      dataOutputs.set(result.out, {
+        dataType: result.value.type,
+        content: result.value.content,
+        parsed: result.value.parsed,
+      });
+    }
+  }
+
+  // Get usage events collected during execution
+  const usageEvents = getCollectedUsageEvents();
+
+  return {
+    imageIds,
+    images,
+    dataOutputs,
+    usageEvents,
+  };
 }
 
 /**
@@ -226,11 +325,11 @@ export async function executeWorkflow(
   const { templateId, callbacks, cloudConfig } = options || {};
   const imageIds: string[] = [];
   const images = new Map<string, Buffer>();
-  const nodeIdByImageId = new Map<string, string>();
+  const idByImageId = new Map<string, string>();
   const dataOutputs = new Map<string, DataOutput>();
 
   // Track current node being executed (for error reporting)
-  let currentNodeId: string | undefined;
+  let currentStepId: string | undefined;
 
   // Get the shared floimg client
   const client = getClient();
@@ -262,7 +361,7 @@ export async function executeWorkflow(
 
       callbacks?.onStep?.({
         stepIndex: 0,
-        nodeId: inputNode.id,
+        id: inputNode.id,
         status: "running",
       });
     }
@@ -286,7 +385,7 @@ export async function executeWorkflow(
 
         callbacks?.onStep?.({
           stepIndex: 0,
-          nodeId: inputNode.id,
+          id: inputNode.id,
           status: "completed",
         });
       }
@@ -362,7 +461,7 @@ export async function executeWorkflow(
           if (textNodeId) {
             callbacks?.onStep?.({
               stepIndex: 0,
-              nodeId: textNodeId,
+              id: textNodeId,
               status: "running",
             });
           }
@@ -392,7 +491,7 @@ export async function executeWorkflow(
 
               callbacks?.onStep?.({
                 stepIndex: 0,
-                nodeId: textNodeId,
+                id: textNodeId,
                 status: "completed",
                 dataType: result.value.type,
                 content: result.value.content,
@@ -665,7 +764,7 @@ export async function executeWorkflow(
       step: Pipeline["steps"][number];
       value: unknown;
       out: string;
-      nodeId?: string;
+      id?: string;
     };
     const results: StepResult[] = [];
 
@@ -687,7 +786,7 @@ export async function executeWorkflow(
         if (stepNodeId) {
           callbacks?.onStep?.({
             stepIndex: i,
-            nodeId: stepNodeId,
+            id: stepNodeId,
             status: "skipped",
             skipReason: "Upstream step failed or was blocked by content moderation",
           });
@@ -696,13 +795,13 @@ export async function executeWorkflow(
       }
 
       // Track current node for error reporting
-      currentNodeId = stepNodeId;
+      currentStepId = stepNodeId;
 
       // Notify step is running
       if (stepNodeId) {
         callbacks?.onStep?.({
           stepIndex: i,
-          nodeId: stepNodeId,
+          id: stepNodeId,
           status: "running",
         });
       }
@@ -741,7 +840,7 @@ export async function executeWorkflow(
         for (let branchIdx = 0; branchIdx < branchCount; branchIdx++) {
           callbacks?.onStep?.({
             stepIndex: i,
-            nodeId: stepNodeId!,
+            id: stepNodeId!,
             status: "completed",
             branchId: fanoutStep.out[branchIdx],
             branchIndex: branchIdx,
@@ -753,7 +852,7 @@ export async function executeWorkflow(
           step,
           value: fanoutResults.map((r) => r.value),
           out: fanoutStep.out[0],
-          nodeId: stepNodeId,
+          id: stepNodeId,
         });
         continue;
       }
@@ -782,7 +881,7 @@ export async function executeWorkflow(
 
         callbacks?.onStep?.({
           stepIndex: i,
-          nodeId: stepNodeId!,
+          id: stepNodeId!,
           status: "completed",
         });
 
@@ -790,7 +889,7 @@ export async function executeWorkflow(
           step,
           value: collectResults[0]?.value,
           out: collectStep.out,
-          nodeId: stepNodeId,
+          id: stepNodeId,
         });
         continue;
       }
@@ -854,7 +953,7 @@ export async function executeWorkflow(
 
               imageIds.push(imageId);
               images.set(imageId, blob.bytes);
-              nodeIdByImageId.set(imageId, node.id);
+              idByImageId.set(imageId, node.id);
 
               // Build preview and fire completed callback
               const previewMime = blob.mime || "image/png";
@@ -862,13 +961,13 @@ export async function executeWorkflow(
 
               callbacks?.onStep?.({
                 stepIndex: i,
-                nodeId: stepNodeId,
+                id: stepNodeId,
                 status: "completed",
                 imageId,
                 preview,
               });
 
-              results.push({ step, value: winnerValue, out: routerStep.out, nodeId: stepNodeId });
+              results.push({ step, value: winnerValue, out: routerStep.out, id: stepNodeId });
               continue;
             }
           }
@@ -876,11 +975,11 @@ export async function executeWorkflow(
 
         callbacks?.onStep?.({
           stepIndex: i,
-          nodeId: stepNodeId!,
+          id: stepNodeId!,
           status: "completed",
         });
 
-        results.push({ step, value: winnerValue, out: routerStep.out, nodeId: stepNodeId });
+        results.push({ step, value: winnerValue, out: routerStep.out, id: stepNodeId });
         continue;
       }
 
@@ -939,7 +1038,7 @@ export async function executeWorkflow(
 
                 callbacks?.onStep?.({
                   stepIndex: i,
-                  nodeId: stepNodeId,
+                  id: stepNodeId,
                   status: "completed",
                   dataType: singleResult.value.type,
                   content: singleResult.value.content,
@@ -951,7 +1050,7 @@ export async function executeWorkflow(
                 step,
                 value: singleResult.value,
                 out: stepOut || "",
-                nodeId: stepNodeId,
+                id: stepNodeId,
               });
             }
             continue;
@@ -1039,7 +1138,7 @@ export async function executeWorkflow(
                 const moderationResult = await moderateImage(blob.bytes, blob.mime);
                 if (moderationResult.flagged) {
                   await logModerationIncident("generated", moderationResult, {
-                    nodeId: node.id,
+                    id: node.id,
                     nodeType: node.type,
                   });
                   // Track this output var as failed so dependent steps can be skipped
@@ -1048,7 +1147,7 @@ export async function executeWorkflow(
                   }
                   callbacks?.onStep?.({
                     stepIndex: i,
-                    nodeId: stepNodeId,
+                    id: stepNodeId,
                     status: "error",
                     error: `Content policy violation: Image flagged for ${moderationResult.flaggedCategories.join(", ")}`,
                   });
@@ -1073,7 +1172,7 @@ export async function executeWorkflow(
                       flaggedCategories: ["moderation_service_error"],
                     },
                     {
-                      nodeId: node.id,
+                      id: node.id,
                       nodeType: node.type,
                       error: String(moderationError),
                     }
@@ -1114,7 +1213,7 @@ export async function executeWorkflow(
 
             imageIds.push(imageId);
             images.set(imageId, blob.bytes);
-            nodeIdByImageId.set(imageId, node.id);
+            idByImageId.set(imageId, node.id);
 
             // Build preview and fire completed callback immediately
             const previewMime = blob.mime || "image/png";
@@ -1122,7 +1221,7 @@ export async function executeWorkflow(
 
             callbacks?.onStep?.({
               stepIndex: i,
-              nodeId: stepNodeId,
+              id: stepNodeId,
               status: "completed",
               imageId,
               preview,
@@ -1151,7 +1250,7 @@ export async function executeWorkflow(
 
           callbacks?.onStep?.({
             stepIndex: i,
-            nodeId: stepNodeId,
+            id: stepNodeId,
             status: "completed",
             dataType: dataBlob.type,
             content: dataBlob.content,
@@ -1159,22 +1258,22 @@ export async function executeWorkflow(
           });
         }
 
-        results.push({ step, value: singleResult.value, out: stepOut || "", nodeId: stepNodeId });
+        results.push({ step, value: singleResult.value, out: stepOut || "", id: stepNodeId });
       }
     }
 
     // Step 7: Handle save steps (images and data outputs were already processed in the loop above)
     for (let i = 0; i < results.length; i++) {
       const result = results[i];
-      const nodeId = result.nodeId;
+      const stepId = result.id;
 
-      if (!nodeId) continue;
+      if (!stepId) continue;
 
       // Handle save steps (no output to track, just fire callback)
       if (result.step.kind === "save") {
         callbacks?.onStep?.({
           stepIndex: i,
-          nodeId,
+          id: stepId,
           status: "completed",
         });
       }
@@ -1184,9 +1283,9 @@ export async function executeWorkflow(
     // Collect usage events from all AI operations in this execution
     const usageEvents = getCollectedUsageEvents();
 
-    return { imageIds, images, nodeIdByImageId, dataOutputs, usageEvents };
+    return { imageIds, images, idByImageId, dataOutputs, usageEvents };
   } catch (error) {
-    callbacks?.onError?.(error instanceof Error ? error.message : String(error), currentNodeId);
+    callbacks?.onError?.(error instanceof Error ? error.message : String(error), currentStepId);
     throw error;
   }
 }

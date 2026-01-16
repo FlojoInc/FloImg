@@ -1,19 +1,16 @@
 import type { FastifyInstance } from "fastify";
 import type {
-  StudioNode,
-  StudioEdge,
-  ExecutionStepResult,
   ExecutionSSEEvent,
   ErrorCategory,
+  Pipeline,
+  PipelineStep,
 } from "@teamflojo/floimg-studio-shared";
-import { executeWorkflow, toPipeline } from "../floimg/executor.js";
+import { executePipeline } from "../floimg/executor.js";
+import { loadUpload } from "./uploads.js";
 import { stringify as yamlStringify } from "yaml";
-import { nanoid } from "nanoid";
-import { FloimgError } from "@teamflojo/floimg";
+import { FloimgError, type ImageBlob } from "@teamflojo/floimg";
 
 // Helper to extract structured error info from any error
-// Note: ErrorCategory from @teamflojo/floimg and @teamflojo/floimg-studio-shared
-// are identical string literal unions, so TypeScript treats them as compatible
 function extractErrorInfo(error: unknown): {
   message: string;
   code?: string;
@@ -38,11 +35,12 @@ function sendSSE(raw: { write: (data: string) => boolean }, event: ExecutionSSEE
   raw.write(`data: ${JSON.stringify(event)}\n\n`);
 }
 
-// AI provider configuration from frontend
+// AI provider configuration
 interface AIProviderConfig {
   openai?: { apiKey: string };
   anthropic?: { apiKey: string };
   gemini?: { apiKey: string };
+  grok?: { apiKey: string };
   openrouter?: { apiKey: string };
   ollama?: { baseUrl: string };
   lmstudio?: { baseUrl: string };
@@ -56,111 +54,182 @@ interface CloudConfig {
   authToken: string;
 }
 
+/**
+ * Execute request body - Pipeline format only
+ *
+ * This is the canonical format used across SDK, CLI, YAML, and API.
+ * The visual editor converts nodes/edges to this format before sending.
+ */
 interface ExecuteBody {
-  nodes: StudioNode[];
-  edges: StudioEdge[];
+  /** Pipeline steps to execute */
+  steps: PipelineStep[];
+  /** Optional pipeline name */
+  name?: string;
+  /**
+   * Maps variable names to upload IDs for input resolution.
+   * The frontend converts input node uploadIds to this format.
+   * Example: { "v0": "upload-abc123" }
+   */
+  inputUploads?: Record<string, string>;
+  /** AI provider configurations (API keys, base URLs) */
   aiProviders?: AIProviderConfig;
+  /** Cloud config for FloImg Cloud save functionality */
   cloudConfig?: CloudConfig;
 }
 
-// In-memory store for execution results (for PoC)
-const executionResults = new Map<
-  string,
-  {
-    status: "running" | "completed" | "error";
-    imageIds: string[];
-    error?: string;
-  }
->();
+/**
+ * Map provider names to AI provider config keys
+ */
+const PROVIDER_TO_AI_CONFIG: Record<string, keyof AIProviderConfig> = {
+  "gemini-generate": "gemini",
+  "openai-images": "openai",
+  "stability-ai": "openai",
+  "gemini-transform": "gemini",
+  "openai-transform": "openai",
+  "gemini-text": "gemini",
+  "grok-text": "grok",
+  "openai-text": "openai",
+  "gemini-vision": "gemini",
+  "grok-vision": "grok",
+  "openai-vision": "openai",
+};
 
-export async function executeRoutes(fastify: FastifyInstance) {
-  // Execute workflow
-  fastify.post<{ Body: ExecuteBody }>("/execute", async (request, reply) => {
-    const { nodes, edges } = request.body;
+/**
+ * Inject API keys into pipeline steps based on provider configuration
+ */
+function injectApiKeys(steps: PipelineStep[], aiProviders?: AIProviderConfig): PipelineStep[] {
+  if (!aiProviders) return steps;
 
-    if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
-      reply.code(400);
-      return { error: "Workflow must have at least one node" };
+  return steps.map((step) => {
+    // Only inject API keys for steps that use providers
+    if (step.kind === "generate") {
+      const configKey = PROVIDER_TO_AI_CONFIG[step.generator];
+      if (!configKey) return step;
+
+      const config = aiProviders[configKey];
+      if (!config || !("apiKey" in config)) return step;
+
+      // Only inject if not already specified
+      if (step.params?.apiKey) return step;
+
+      return {
+        ...step,
+        params: { ...step.params, apiKey: config.apiKey },
+      };
     }
 
-    const executionId = nanoid();
+    if (step.kind === "transform" || step.kind === "vision" || step.kind === "text") {
+      if (!step.provider) return step;
 
-    // Store initial status
-    executionResults.set(executionId, {
-      status: "running",
-      imageIds: [],
-    });
+      const configKey = PROVIDER_TO_AI_CONFIG[step.provider];
+      if (!configKey) return step;
 
-    // Execute asynchronously
-    executeWorkflow(nodes, edges, {
-      callbacks: {
-        onStep: (result: ExecutionStepResult) => {
-          fastify.log.info(`Step ${result.stepIndex}: ${result.status}`);
-        },
-        onComplete: (imageIds: string[]) => {
-          executionResults.set(executionId, {
-            status: "completed",
-            imageIds,
-          });
-        },
-        onError: (error: string) => {
-          executionResults.set(executionId, {
-            status: "error",
-            imageIds: [],
-            error,
-          });
-        },
-      },
-    }).catch((err: unknown) => {
-      fastify.log.error(err);
-    });
+      const config = aiProviders[configKey];
+      if (!config || !("apiKey" in config)) return step;
 
-    return { executionId };
+      // Only inject if not already specified
+      if (step.params?.apiKey) return step;
+
+      return {
+        ...step,
+        params: { ...step.params, apiKey: config.apiKey },
+      };
+    }
+
+    return step;
   });
+}
 
-  // Execute workflow synchronously (for simpler PoC testing)
+/**
+ * Resolve input uploads to ImageBlobs for pipeline execution
+ */
+async function resolveInputUploads(
+  inputUploads: Record<string, string>
+): Promise<Record<string, ImageBlob>> {
+  const initialVariables: Record<string, ImageBlob> = {};
+
+  for (const [varName, uploadId] of Object.entries(inputUploads)) {
+    const upload = await loadUpload(uploadId);
+    if (!upload) {
+      throw new Error(`Upload not found: ${uploadId}`);
+    }
+    initialVariables[varName] = {
+      bytes: upload.bytes,
+      mime: upload.mime as ImageBlob["mime"],
+    };
+  }
+
+  return initialVariables;
+}
+
+/**
+ * Get step identifiers (variable names) from pipeline
+ */
+function getStepIds(steps: PipelineStep[]): string[] {
+  return steps
+    .map((step) => {
+      if (step.kind === "fan-out") {
+        return step.out; // Array of branch var names
+      }
+      if (step.kind === "save") {
+        return undefined; // Save steps don't have output
+      }
+      return step.out;
+    })
+    .flat()
+    .filter((id): id is string => id !== undefined);
+}
+
+export async function executeRoutes(fastify: FastifyInstance) {
+  /**
+   * POST /api/execute/sync - Execute pipeline synchronously
+   *
+   * Accepts the canonical Pipeline format used across all FloImg interfaces.
+   * Returns when execution is complete with all results.
+   */
   fastify.post<{ Body: ExecuteBody }>("/execute/sync", async (request, reply) => {
-    const { nodes, edges, aiProviders, cloudConfig } = request.body;
+    const { steps, name, inputUploads, aiProviders, cloudConfig } = request.body;
 
-    if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
+    if (!steps || !Array.isArray(steps) || steps.length === 0) {
       reply.code(400);
-      return { error: "Workflow must have at least one node" };
+      return { error: "Pipeline must have at least one step" };
     }
 
     try {
-      const result = await executeWorkflow(nodes, edges, { aiProviders, cloudConfig });
+      // Resolve input uploads to ImageBlobs
+      const initialVariables = inputUploads ? await resolveInputUploads(inputUploads) : {};
 
-      // Build previews map: nodeId -> base64 data URL
+      // Inject API keys into steps
+      const stepsWithKeys = injectApiKeys(steps, aiProviders);
+
+      // Build pipeline
+      const pipeline: Pipeline = {
+        name: name || "API Workflow",
+        steps: stepsWithKeys,
+      };
+
+      // Execute
+      const result = await executePipeline({ ...pipeline, initialVariables }, { cloudConfig });
+
+      // Build previews map: stepId -> base64 data URL
       const previews: Record<string, string> = {};
       for (const [imageId, buffer] of result.images) {
-        const nodeId = result.nodeIdByImageId.get(imageId);
-        if (nodeId && buffer) {
-          // Detect mime type from buffer or default to png
-          let mime = "image/png";
-          if (buffer[0] === 0x3c)
-            mime = "image/svg+xml"; // SVG starts with <
-          else if (buffer[0] === 0xff) mime = "image/jpeg";
-
-          const base64 = buffer.toString("base64");
-          previews[nodeId] = `data:${mime};base64,${base64}`;
-        }
+        let mime = "image/png";
+        if (buffer[0] === 0x3c) mime = "image/svg+xml";
+        else if (buffer[0] === 0xff) mime = "image/jpeg";
+        const base64 = buffer.toString("base64");
+        previews[imageId] = `data:${mime};base64,${base64}`;
       }
 
-      // Build dataOutputs map: nodeId -> { dataType, content, parsed }
+      // Build dataOutputs (keyed by variable name)
       const dataOutputs: Record<
         string,
-        { dataType: "text" | "json"; content: string; parsed?: Record<string, unknown> }
+        { dataType: "text" | "json"; content: string; parsed?: unknown }
       > = {};
-      for (const [nodeId, output] of result.dataOutputs) {
-        dataOutputs[nodeId] = {
-          dataType: output.dataType,
-          content: output.content,
-          parsed: output.parsed,
-        };
+      for (const [varName, output] of result.dataOutputs) {
+        dataOutputs[varName] = output;
       }
 
-      // Build imageUrls: direct URLs for accessing saved images
-      // In OSS, these are local API URLs. In FSC, Cloud API overwrites with presigned URLs.
       const imageUrls = result.imageIds.map((id) => `/api/images/${id}/blob`);
 
       return {
@@ -184,13 +253,18 @@ export async function executeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Execute workflow with SSE streaming for real-time progress
+  /**
+   * POST /api/execute/stream - Execute pipeline with SSE streaming
+   *
+   * Accepts the canonical Pipeline format. Streams progress events
+   * as the pipeline executes.
+   */
   fastify.post<{ Body: ExecuteBody }>("/execute/stream", async (request, reply) => {
-    const { nodes, edges, aiProviders, cloudConfig } = request.body;
+    const { steps, name, inputUploads, aiProviders, cloudConfig } = request.body;
 
-    if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
+    if (!steps || !Array.isArray(steps) || steps.length === 0) {
       reply.code(400);
-      return { error: "Workflow must have at least one node" };
+      return { error: "Pipeline must have at least one step" };
     }
 
     // Set SSE headers
@@ -200,49 +274,41 @@ export async function executeRoutes(fastify: FastifyInstance) {
       Connection: "keep-alive",
     });
 
-    const nodeIds = nodes.map((n) => n.id);
-
-    // Send started event
-    sendSSE(reply.raw, {
-      type: "execution.started",
-      data: {
-        totalSteps: nodes.length,
-        nodeIds,
-      },
-    });
-
     try {
-      await executeWorkflow(nodes, edges, {
-        aiProviders,
-        cloudConfig,
-        callbacks: {
-          onStep: (stepResult: ExecutionStepResult) => {
-            // Step events include preview for images, content for text/vision
-            sendSSE(reply.raw, {
-              type: "execution.step",
-              data: stepResult,
-            });
-          },
-          onComplete: (imageIds: string[]) => {
-            // Build image URLs
-            const imageUrls = imageIds.map((id) => `/api/images/${id}/blob`);
+      // Resolve input uploads
+      const initialVariables = inputUploads ? await resolveInputUploads(inputUploads) : {};
 
-            sendSSE(reply.raw, {
-              type: "execution.completed",
-              data: { imageIds, imageUrls },
-            });
-          },
-          onError: (error: string, nodeId?: string) => {
-            sendSSE(reply.raw, {
-              type: "execution.error",
-              data: { error, nodeId },
-            });
-          },
+      // Inject API keys
+      const stepsWithKeys = injectApiKeys(steps, aiProviders);
+
+      // Build pipeline
+      const pipeline: Pipeline = {
+        name: name || "API Workflow",
+        steps: stepsWithKeys,
+      };
+
+      // Get step identifiers
+      const ids = getStepIds(stepsWithKeys);
+
+      // Send started event
+      sendSSE(reply.raw, {
+        type: "execution.started",
+        data: {
+          totalSteps: steps.length,
+          ids,
         },
       });
 
-      // All step events were sent via callbacks during execution
-      // Completion event was sent via onComplete callback
+      // Execute
+      const result = await executePipeline({ ...pipeline, initialVariables }, { cloudConfig });
+
+      const imageUrls = result.imageIds.map((id) => `/api/images/${id}/blob`);
+
+      // Send completed event
+      sendSSE(reply.raw, {
+        type: "execution.completed",
+        data: { imageIds: result.imageIds, imageUrls },
+      });
     } catch (error) {
       const errorInfo = extractErrorInfo(error);
       sendSSE(reply.raw, {
@@ -259,22 +325,19 @@ export async function executeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Get execution status
-  fastify.get<{ Params: { id: string } }>("/executions/:id", async (request, reply) => {
-    const result = executionResults.get(request.params.id);
-    if (!result) {
-      reply.code(404);
-      return { error: "Execution not found" };
+  /**
+   * POST /api/export/yaml - Export pipeline as YAML
+   *
+   * Accepts a Pipeline and returns YAML representation.
+   */
+  fastify.post<{ Body: { steps: PipelineStep[]; name?: string } }>(
+    "/export/yaml",
+    async (request) => {
+      const { steps, name } = request.body;
+      const pipeline = { name: name || "Workflow", steps };
+      return {
+        yaml: yamlStringify(pipeline),
+      };
     }
-    return result;
-  });
-
-  // Export workflow as YAML
-  fastify.post<{ Body: ExecuteBody }>("/export/yaml", async (request) => {
-    const { nodes, edges } = request.body;
-    const { pipeline } = toPipeline(nodes, edges);
-    return {
-      yaml: yamlStringify(pipeline),
-    };
-  });
+  );
 }

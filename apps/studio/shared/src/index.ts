@@ -207,7 +207,11 @@ export type ExecutionStatus = "pending" | "running" | "completed" | "error" | "c
 // Step result during execution
 export interface ExecutionStepResult {
   stepIndex: number;
-  nodeId: string;
+  /**
+   * Step identifier - the `out` variable name from the Pipeline step.
+   * This is the universal identifier used across the system.
+   */
+  id: string;
   /** Step status: "skipped" indicates step was not executed due to upstream dependency failure */
   status: "running" | "completed" | "error" | "skipped";
   // Image output (for generator, transform, input nodes)
@@ -247,7 +251,8 @@ export interface GeneratedImage {
   workflowId?: string;
   executionId: string;
   stepIndex: number;
-  nodeId: string;
+  /** Step identifier - the `out` variable name from the Pipeline step */
+  stepId: string;
   mime: string;
   width?: number;
   height?: number;
@@ -583,7 +588,11 @@ export interface ExecutionSSEStarted {
   type: "execution.started";
   data: {
     totalSteps: number;
-    nodeIds: string[];
+    /**
+     * Step identifiers - the `out` variable names from Pipeline steps.
+     * These serve as the universal identifier for steps across the system.
+     */
+    ids: string[];
   };
 }
 
@@ -604,7 +613,8 @@ export interface ExecutionSSEError {
   type: "execution.error";
   data: {
     error: string;
-    nodeId?: string;
+    /** Step identifier where the error occurred (the `out` variable name) */
+    id?: string;
     /** Machine-readable error code (e.g., "GENERATION_ERROR", "NETWORK_ERROR") */
     errorCode?: string;
     /** Error category for handling strategies */
@@ -677,3 +687,377 @@ export type GenerationSSEEvent =
   | GenerationSSEProgress
   | GenerationSSECompleted
   | GenerationSSEError;
+
+// ============================================
+// Pipeline Conversion
+// ============================================
+
+/**
+ * Pipeline step types (canonical format from @teamflojo/floimg)
+ * These match the SDK's PipelineStep type exactly for End-to-End Consistency
+ */
+export type PipelineStep =
+  | {
+      kind: "generate";
+      generator: string;
+      params?: Record<string, unknown>;
+      out: string;
+    }
+  | {
+      kind: "transform";
+      op: string;
+      in: string;
+      params: Record<string, unknown>;
+      out: string;
+      provider?: string;
+    }
+  | {
+      kind: "save";
+      in: string;
+      destination: string;
+      provider?: string;
+      out?: string;
+    }
+  | {
+      kind: "vision";
+      provider: string;
+      in: string;
+      params?: Record<string, unknown>;
+      out: string;
+    }
+  | {
+      kind: "text";
+      provider: string;
+      in?: string;
+      params?: Record<string, unknown>;
+      out: string;
+    }
+  | {
+      kind: "fan-out";
+      in: string;
+      mode: "count" | "array";
+      count?: number;
+      arrayProperty?: string;
+      out: string[];
+    }
+  | {
+      kind: "collect";
+      in: string[];
+      waitMode: "all" | "available";
+      minRequired?: number;
+      out: string;
+    }
+  | {
+      kind: "router";
+      in: string;
+      selectionIn: string;
+      selectionType: "index" | "property";
+      selectionProperty: string;
+      out: string;
+    };
+
+/**
+ * Pipeline definition (canonical format)
+ */
+export interface Pipeline {
+  name: string;
+  steps: PipelineStep[];
+}
+
+/**
+ * Result of converting nodes/edges to Pipeline
+ */
+export interface PipelineConversionResult {
+  pipeline: Pipeline;
+  /** Maps node ID to variable name (for resolving node-specific data like uploads) */
+  nodeToVar: Map<string, string>;
+}
+
+/**
+ * Build dependency graph from nodes and edges
+ */
+function buildDependencyGraph(nodes: StudioNode[], edges: StudioEdge[]): Map<string, Set<string>> {
+  const dependencies = new Map<string, Set<string>>();
+
+  for (const node of nodes) {
+    dependencies.set(node.id, new Set());
+  }
+
+  for (const edge of edges) {
+    dependencies.get(edge.target)?.add(edge.source);
+  }
+
+  return dependencies;
+}
+
+/**
+ * Convert visual editor workflow (nodes + edges) to Pipeline format
+ *
+ * This is a pure conversion function - no API key injection or runtime concerns.
+ * The resulting Pipeline can be sent to the backend for execution.
+ *
+ * Variable names (the `out` field) serve as step identifiers throughout
+ * the system - they're used in SSE events, data flow, and results.
+ *
+ * @param nodes - Workflow nodes from the visual editor
+ * @param edges - Connections between nodes
+ * @returns Pipeline and node-to-variable mapping
+ */
+export function nodesToPipeline(
+  nodes: StudioNode[],
+  edges: StudioEdge[]
+): PipelineConversionResult {
+  // Build a map of fan-out node IDs to their output counts
+  const fanoutNodes = new Map<string, { count: number; mode: "array" | "count" }>();
+  for (const node of nodes) {
+    if (node.type === "fanout") {
+      const data = node.data as FanOutNodeData;
+      fanoutNodes.set(node.id, {
+        count: data.count || 3,
+        mode: data.mode || "count",
+      });
+    }
+  }
+
+  // Topological sort for execution order
+  const dependencies = buildDependencyGraph(nodes, edges);
+  const completed = new Set<string>();
+  const sorted: StudioNode[] = [];
+
+  while (sorted.length < nodes.length) {
+    const ready = nodes.filter((n) => {
+      if (completed.has(n.id)) return false;
+      const deps = dependencies.get(n.id) || new Set();
+      for (const dep of deps) {
+        if (!completed.has(dep)) return false;
+      }
+      return true;
+    });
+
+    if (ready.length === 0) break;
+
+    for (const node of ready) {
+      sorted.push(node);
+      completed.add(node.id);
+    }
+  }
+
+  const nodeToVar = new Map<string, string>();
+  const steps: PipelineStep[] = [];
+
+  for (let i = 0; i < sorted.length; i++) {
+    const node = sorted[i];
+    // Use node ID as variable name - ensures consistency between visual editor and Pipeline
+    const varName = node.id;
+    nodeToVar.set(node.id, varName);
+
+    // Input nodes don't create pipeline steps - data injected via initialVariables
+    if (node.type === "input") {
+      continue;
+    }
+
+    if (node.type === "generator") {
+      const data = node.data as GeneratorNodeData;
+      const params = { ...data.params };
+
+      // Find text input edge (for AI generators with dynamic prompts)
+      const textEdge = edges.find((e) => e.target === node.id && e.targetHandle === "text");
+      const textSourceVar = textEdge ? nodeToVar.get(textEdge.source) : undefined;
+      const textSourceHandle = textEdge?.sourceHandle;
+
+      // Check if text input comes from a fan-out branch
+      const fanoutBranchMatch = textSourceHandle?.match(/^out\[(\d+)\]$/);
+      const isFanoutBranch = fanoutBranchMatch && textEdge && fanoutNodes.has(textEdge.source);
+
+      if (isFanoutBranch && textEdge) {
+        const branchIndex = parseInt(fanoutBranchMatch![1], 10);
+        const fanoutVar = nodeToVar.get(textEdge.source);
+        params._promptFromVar = `${fanoutVar}_${branchIndex}`;
+      } else if (textSourceVar) {
+        params._promptFromVar = textSourceVar;
+        if (textSourceHandle?.startsWith("output.")) {
+          params._promptFromProperty = textSourceHandle.slice(7);
+        }
+      }
+
+      // Find reference image edges
+      const referenceEdges = edges.filter(
+        (e) => e.target === node.id && e.targetHandle === "references"
+      );
+      if (referenceEdges.length > 0) {
+        const refVars = referenceEdges
+          .map((e) => nodeToVar.get(e.source))
+          .filter((v): v is string => v !== undefined);
+        if (refVars.length > 0) {
+          params._referenceImageVars = refVars;
+        }
+      }
+
+      steps.push({
+        kind: "generate",
+        generator: data.generatorName,
+        params,
+        out: varName,
+      });
+    } else if (node.type === "transform") {
+      const data = node.data as TransformNodeData;
+      const imageEdge = edges.find(
+        (e) => e.target === node.id && (e.targetHandle === "image" || !e.targetHandle)
+      );
+      const inputVar = imageEdge ? nodeToVar.get(imageEdge.source) : undefined;
+
+      if (!inputVar) {
+        throw new Error(`Transform node requires an input image connection`);
+      }
+
+      const textEdge = edges.find((e) => e.target === node.id && e.targetHandle === "text");
+      const textSourceVar = textEdge ? nodeToVar.get(textEdge.source) : undefined;
+      const textSourceHandle = textEdge?.sourceHandle;
+
+      const params = { ...data.params };
+
+      if (textSourceVar) {
+        params._promptFromVar = textSourceVar;
+        if (textSourceHandle?.startsWith("output.")) {
+          params._promptFromProperty = textSourceHandle.slice(7);
+        }
+      }
+
+      const referenceEdges = edges.filter(
+        (e) => e.target === node.id && e.targetHandle === "references"
+      );
+      if (referenceEdges.length > 0) {
+        const refVars = referenceEdges
+          .map((e) => nodeToVar.get(e.source))
+          .filter((v): v is string => v !== undefined);
+        if (refVars.length > 0) {
+          params._referenceImageVars = refVars;
+        }
+      }
+
+      steps.push({
+        kind: "transform",
+        op: data.operation,
+        in: inputVar,
+        params,
+        out: varName,
+        ...(data.providerName && { provider: data.providerName }),
+      });
+    } else if (node.type === "save") {
+      const data = node.data as SaveNodeData;
+      const inputEdge = edges.find((e) => e.target === node.id);
+      const inputVar = inputEdge ? nodeToVar.get(inputEdge.source) : undefined;
+
+      if (!inputVar) {
+        throw new Error(`Save node requires an input connection`);
+      }
+
+      steps.push({
+        kind: "save",
+        in: inputVar,
+        destination: data.destination,
+        provider: data.provider,
+      });
+    } else if (node.type === "vision") {
+      const data = node.data as VisionNodeData;
+      const inputEdge = edges.find(
+        (e) => e.target === node.id && (e.targetHandle === "image" || !e.targetHandle)
+      );
+      const inputVar = inputEdge ? nodeToVar.get(inputEdge.source) : undefined;
+
+      if (!inputVar) {
+        throw new Error(`Vision node requires an input image connection`);
+      }
+
+      const contextEdge = edges.find((e) => e.target === node.id && e.targetHandle === "context");
+      const contextSourceVar = contextEdge ? nodeToVar.get(contextEdge.source) : undefined;
+
+      const params = { ...data.params };
+      if (contextSourceVar) {
+        params._contextFromVar = contextSourceVar;
+      }
+
+      steps.push({
+        kind: "vision",
+        provider: data.providerName,
+        in: inputVar,
+        params,
+        out: varName,
+      });
+    } else if (node.type === "text") {
+      const data = node.data as TextNodeData;
+      const inputEdge = edges.find((e) => e.target === node.id);
+      const inputVar = inputEdge ? nodeToVar.get(inputEdge.source) : undefined;
+
+      steps.push({
+        kind: "text",
+        provider: data.providerName,
+        in: inputVar,
+        params: { ...data.params },
+        out: varName,
+      });
+    } else if (node.type === "fanout") {
+      const data = node.data as FanOutNodeData;
+      const inputEdge = edges.find((e) => e.target === node.id);
+      const inputVar = inputEdge ? nodeToVar.get(inputEdge.source) : undefined;
+
+      const branchCount = data.count || 3;
+      const branchVars = Array.from({ length: branchCount }, (_, i) => `${varName}_${i}`);
+
+      steps.push({
+        kind: "fan-out",
+        in: inputVar || "",
+        mode: data.mode || "count",
+        count: branchCount,
+        arrayProperty: data.arrayProperty,
+        out: branchVars,
+      });
+    } else if (node.type === "collect") {
+      const data = node.data as CollectNodeData;
+      const inputEdges = edges.filter((e) => e.target === node.id);
+      const inputVars = inputEdges
+        .map((e) => nodeToVar.get(e.source))
+        .filter((v): v is string => v !== undefined);
+
+      const waitMode = data.waitMode || "all";
+      steps.push({
+        kind: "collect",
+        in: inputVars,
+        waitMode,
+        ...(waitMode === "available" && { minRequired: Math.max(1, data.expectedInputs || 1) }),
+        out: varName,
+      });
+    } else if (node.type === "router") {
+      const data = node.data as RouterNodeData;
+      const candidatesEdge = edges.find(
+        (e) => e.target === node.id && e.targetHandle === "candidates"
+      );
+      const selectionEdge = edges.find(
+        (e) => e.target === node.id && e.targetHandle === "selection"
+      );
+
+      const candidatesVar = candidatesEdge ? nodeToVar.get(candidatesEdge.source) : undefined;
+      const selectionVar = selectionEdge ? nodeToVar.get(selectionEdge.source) : undefined;
+
+      const selectionType =
+        data.selectionType === "value" ? "property" : data.selectionType || "index";
+
+      steps.push({
+        kind: "router",
+        in: candidatesVar || "",
+        selectionIn: selectionVar || "",
+        selectionType: selectionType as "index" | "property",
+        selectionProperty: data.selectionProperty || "winner",
+        out: varName,
+      });
+    }
+  }
+
+  return {
+    pipeline: {
+      name: "Studio Workflow",
+      steps,
+    },
+    nodeToVar,
+  };
+}

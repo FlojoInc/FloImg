@@ -17,6 +17,7 @@ import type {
   ExecutionSSEEvent,
   ErrorCategory,
 } from "@teamflojo/floimg-studio-shared";
+import { nodesToPipeline } from "@teamflojo/floimg-studio-shared";
 import type { Template } from "@teamflojo/floimg-templates";
 import { exportYaml } from "../api/client";
 import { createSSEConnection, type SSEConnection } from "../api/sse";
@@ -448,7 +449,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
           // Convert React Flow nodes to StudioNodes
           const studioNodes = nodes.map((n) => ({
             id: n.id,
-            type: n.type as "generator" | "transform" | "save",
+            type: n.type as StudioNodeType,
             position: n.position,
             data: n.data,
           }));
@@ -460,6 +461,21 @@ export const useWorkflowStore = create<WorkflowStore>()(
             sourceHandle: e.sourceHandle ?? undefined,
             targetHandle: e.targetHandle ?? undefined,
           }));
+
+          // Convert to Pipeline format (canonical format used by SDK/CLI/API)
+          const { pipeline, nodeToVar } = nodesToPipeline(studioNodes, studioEdges);
+
+          // Extract input uploads - map variable names to upload IDs
+          const inputUploads: Record<string, string> = {};
+          for (const node of studioNodes) {
+            if (node.type === "input") {
+              const data = node.data as InputNodeData;
+              const varName = nodeToVar.get(node.id);
+              if (data.uploadId && varName) {
+                inputUploads[varName] = data.uploadId;
+              }
+            }
+          }
 
           // Get AI provider settings
           const aiProviders = useSettingsStore.getState().getConfiguredProviders();
@@ -491,7 +507,12 @@ export const useWorkflowStore = create<WorkflowStore>()(
           return new Promise<void>((resolve, reject) => {
             activeExecutionConnection = createSSEConnection<ExecutionSSEEvent>(
               "/api/execute/stream",
-              { nodes: studioNodes, edges: studioEdges, aiProviders },
+              {
+                steps: pipeline.steps,
+                name: pipeline.name,
+                inputUploads,
+                aiProviders,
+              },
               {
                 onMessage: (event) => {
                   const state = get();
@@ -506,12 +527,12 @@ export const useWorkflowStore = create<WorkflowStore>()(
                     // Update the specific node's status
                     const newNodeStatus = {
                       ...state.execution.nodeStatus,
-                      [step.nodeId]: step.status as NodeExecutionStatus,
+                      [step.id]: step.status as NodeExecutionStatus,
                     };
 
                     // Update previews if this step has one
                     const newPreviews = step.preview
-                      ? { ...state.execution.previews, [step.nodeId]: step.preview }
+                      ? { ...state.execution.previews, [step.id]: step.preview }
                       : state.execution.previews;
 
                     // Update dataOutputs if this is a text/vision node
@@ -519,7 +540,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
                       step.dataType && step.content
                         ? {
                             ...state.execution.dataOutputs,
-                            [step.nodeId]: {
+                            [step.id]: {
                               dataType: step.dataType,
                               content: step.content,
                               parsed: step.parsed,
@@ -564,8 +585,8 @@ export const useWorkflowStore = create<WorkflowStore>()(
                   if (event.type === "execution.error") {
                     // Mark nodes as error
                     const errorNodeStatus = { ...state.execution.nodeStatus };
-                    if (event.data.nodeId) {
-                      errorNodeStatus[event.data.nodeId] = "error";
+                    if (event.data.id) {
+                      errorNodeStatus[event.data.id] = "error";
                     }
 
                     set({
@@ -574,7 +595,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
                         status: "error",
                         nodeStatus: errorNodeStatus,
                         error: event.data.error,
-                        errorNodeId: event.data.nodeId,
+                        errorNodeId: event.data.id,
                         // Structured error metadata from backend
                         errorCode: event.data.errorCode,
                         errorCategory: event.data.errorCategory,
