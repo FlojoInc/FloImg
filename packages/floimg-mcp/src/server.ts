@@ -934,22 +934,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error("'steps' must be a non-empty array");
         }
 
-        let currentImageId: string | undefined;
-        const results: any[] = [];
+        // Convert MCP-friendly format to canonical Pipeline format
+        // MCP format: [{ generate: {...} }, { transform: {...} }]
+        // Canonical: [{ kind: "generate", ... }, { kind: "transform", ... }]
+        const canonicalSteps: any[] = [];
+        let varCounter = 0;
 
         for (let i = 0; i < steps.length; i++) {
           const step = steps[i];
           const stepType = Object.keys(step)[0]; // 'generate', 'transform', or 'save'
           const stepParams = step[stepType];
+          const varName = `v${varCounter}`;
+          const prevVar = varCounter > 0 ? `v${varCounter - 1}` : undefined;
 
-          console.error(`[floimg-mcp] Pipeline step ${i + 1}/${steps.length}: ${stepType}`);
+          console.error(`[floimg-mcp] Converting step ${i + 1}/${steps.length}: ${stepType}`);
 
           if (stepType === "generate") {
-            // Generate step
             const { intent, params = {} } = stepParams;
             const generator = selectGenerator(intent, params);
 
-            // Auto-fill params for simple cases (same logic as generate_image tool)
+            // Auto-fill params for simple cases
             const finalParams = { ...params };
             if (generator === "openai" && !finalParams.prompt) {
               finalParams.prompt = intent;
@@ -960,9 +964,67 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               if (urlMatch) finalParams.text = urlMatch[0];
             }
 
-            const blob = await client.generate({ generator, params: finalParams });
+            canonicalSteps.push({
+              kind: "generate",
+              generator,
+              params: finalParams,
+              out: varName,
+            });
+            varCounter++;
+          } else if (stepType === "transform") {
+            if (!prevVar) {
+              throw new Error(
+                `Pipeline step ${i + 1}: transform requires a previous generate step`
+              );
+            }
 
-            // Save to session
+            const { operation, params = {}, to, provider } = stepParams;
+            canonicalSteps.push({
+              kind: "transform",
+              op: operation,
+              in: prevVar,
+              params: to ? { ...params, to } : params,
+              out: varName,
+              ...(provider && { provider }), // Preserve provider for AI transforms (e.g., stability)
+            });
+            varCounter++;
+          } else if (stepType === "save") {
+            if (!prevVar) {
+              throw new Error(
+                `Pipeline step ${i + 1}: save requires a previous generate/transform step`
+              );
+            }
+
+            const { destination, provider } = stepParams;
+            canonicalSteps.push({
+              kind: "save",
+              in: prevVar,
+              destination,
+              provider: provider || "fs",
+            });
+            // Save doesn't increment varCounter (no output)
+          } else {
+            throw new Error(
+              `Unknown pipeline step type: ${stepType}. Use 'generate', 'transform', or 'save'.`
+            );
+          }
+        }
+
+        // Execute using core pipeline runner
+        console.error(`[floimg-mcp] Executing pipeline with ${canonicalSteps.length} steps`);
+        const pipelineResults = await client.run({
+          name: "MCP Pipeline",
+          steps: canonicalSteps,
+        });
+
+        // Process results and save images to session
+        const results: any[] = [];
+        let finalImageId: string | undefined;
+
+        for (const result of pipelineResults) {
+          if (result.value && "bytes" in result.value && "mime" in result.value) {
+            // Image result - save to session
+            const blob = result.value as ImageBlob;
             const imageId = generateImageId();
             const ext = getExtension(blob.mime);
             const sessionPath = join(SESSION_WORKSPACE, `${imageId}.${ext}`);
@@ -971,85 +1033,45 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             imageRegistry.set(imageId, {
               path: sessionPath,
               mime: blob.mime,
-              metadata: { width: blob.width, height: blob.height, source: blob.source },
+              metadata: { width: blob.width, height: blob.height },
             });
 
-            currentImageId = imageId;
-            results.push({ step: i + 1, type: "generate", imageId, generator });
-          } else if (stepType === "transform") {
-            // Transform step - uses current image
-            if (!currentImageId) {
-              throw new Error(
-                `Pipeline step ${i + 1}: transform requires a previous generate step`
-              );
-            }
-
-            const { operation, params = {}, to } = stepParams;
-            const inputBlob = await loadImage(currentImageId);
-
-            let resultBlob: ImageBlob;
-            if (operation === "convert") {
-              resultBlob = await client.transform({
-                blob: inputBlob,
-                op: "convert",
-                to: to as MimeType,
-                params,
-              });
-            } else if (operation === "resize") {
-              resultBlob = await client.transform({
-                blob: inputBlob,
-                op: "resize",
-                params,
-              });
-            } else {
-              resultBlob = await client.transform({
-                blob: inputBlob,
-                op: operation as any,
-                params,
-              });
-            }
-
-            // Save to session
-            const newImageId = generateImageId();
-            const ext = getExtension(resultBlob.mime);
-            const sessionPath = join(SESSION_WORKSPACE, `${newImageId}.${ext}`);
-            await client.save(resultBlob, sessionPath);
-
-            imageRegistry.set(newImageId, {
-              path: sessionPath,
-              mime: resultBlob.mime,
-              metadata: { width: resultBlob.width, height: resultBlob.height },
-            });
-
-            currentImageId = newImageId;
-            results.push({ step: i + 1, type: "transform", operation, imageId: newImageId });
-          } else if (stepType === "save") {
-            // Save step - saves current image
-            if (!currentImageId) {
-              throw new Error(
-                `Pipeline step ${i + 1}: save requires a previous generate/transform step`
-              );
-            }
-
-            const { destination, provider } = stepParams;
-            const inputBlob = await loadImage(currentImageId);
-
-            const result = await client.save(
-              inputBlob,
-              provider ? { path: destination, provider } : destination
-            );
-
+            finalImageId = imageId;
             results.push({
-              step: i + 1,
-              type: "save",
-              location: result.location,
-              provider: result.provider,
-              size: result.size,
+              variable: result.out,
+              type: "image",
+              imageId,
+              mime: blob.mime,
+              width: blob.width,
+              height: blob.height,
             });
-          } else {
-            throw new Error(
-              `Unknown pipeline step type: ${stepType}. Use 'generate', 'transform', or 'save'.`
-            );
+          } else if (result.value && "location" in result.value) {
+            // Save result
+            const saveResult = result.value as { location: string; provider: string; size: number };
+            results.push({
+              variable: result.out || "save",
+              type: "save",
+              location: saveResult.location,
+              provider: saveResult.provider,
+              size: saveResult.size,
+            });
+          } else if (result.value && "type" in result.value && "content" in result.value) {
+            // DataBlob result from vision/text steps
+            const dataResult = result.value as {
+              type: "text" | "json";
+              content: string;
+              parsed?: unknown;
+            };
+            const dataEntry: Record<string, unknown> = {
+              variable: result.out,
+              type: "data",
+              dataType: dataResult.type,
+              content: dataResult.content,
+            };
+            if (dataResult.parsed !== undefined) {
+              dataEntry.parsed = dataResult.parsed;
+            }
+            results.push(dataEntry);
           }
         }
 
@@ -1062,7 +1084,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                   success: true,
                   pipeline: {
                     totalSteps: steps.length,
-                    finalImageId: currentImageId,
+                    finalImageId,
                     results,
                   },
                 },
