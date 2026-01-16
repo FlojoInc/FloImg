@@ -201,6 +201,14 @@ export interface PipelineExecutionResult {
 }
 
 /**
+ * Callbacks for pipeline execution progress
+ */
+export interface PipelineExecutionCallbacks {
+  /** Called when a step starts or completes */
+  onStep?: (result: ExecutionStepResult) => void;
+}
+
+/**
  * Options for direct pipeline execution
  */
 export interface PipelineExecutionOptions {
@@ -208,6 +216,8 @@ export interface PipelineExecutionOptions {
   aiProviders?: AIProviderConfig;
   /** Cloud config for FloImg Cloud save functionality */
   cloudConfig?: CloudConfig;
+  /** Callbacks for execution progress */
+  callbacks?: PipelineExecutionCallbacks;
 }
 
 /**
@@ -218,14 +228,14 @@ export interface PipelineExecutionOptions {
  * require conversion from the visual editor's nodes/edges format.
  *
  * @param pipeline - The Pipeline to execute (canonical format)
- * @param options - Execution options (AI providers, cloud config)
+ * @param options - Execution options (AI providers, cloud config, callbacks)
  * @returns Execution result with images and data outputs
  */
 export async function executePipeline(
   pipeline: Pipeline,
   options?: PipelineExecutionOptions
 ): Promise<PipelineExecutionResult> {
-  const { cloudConfig } = options || {};
+  const { cloudConfig, callbacks } = options || {};
   const imageIds: string[] = [];
   const images = new Map<string, Buffer>();
   const dataOutputs = new Map<
@@ -250,30 +260,106 @@ export async function executePipeline(
   // Clear any previously collected usage events before this execution
   clearCollectedUsageEvents();
 
-  // Execute the pipeline directly
-  const results = await client.run(pipeline);
+  // Build intermediate variable storage for step-by-step execution
+  // This can hold both ImageBlob and DataBlob values during execution
+  const stepVariables: Record<string, ImageBlob | unknown> = { ...pipeline.initialVariables };
 
-  // Process results
-  for (const result of results) {
-    if (isImageBlob(result.value)) {
-      const imageId = nanoid();
-      const buffer = Buffer.from(result.value.bytes);
-      imageIds.push(imageId);
-      images.set(imageId, buffer);
+  // Execute steps one-by-one to provide real-time progress
+  for (let i = 0; i < pipeline.steps.length; i++) {
+    const step = pipeline.steps[i];
+    // Get step identifier (the 'out' variable name)
+    const stepId = getStepId(step);
 
-      // Save image to disk
-      const ext = MIME_TO_EXT[result.value.mime] || "png";
-      const filename = `${imageId}.${ext}`;
-      const filepath = join(OUTPUT_DIR, filename);
-      await mkdir(dirname(filepath), { recursive: true });
-      await writeFile(filepath, buffer);
-    } else if (isDataBlob(result.value)) {
-      // Store data outputs using the output variable name
-      dataOutputs.set(result.out, {
-        dataType: result.value.type,
-        content: result.value.content,
-        parsed: result.value.parsed,
+    // Notify step is starting
+    if (stepId && callbacks?.onStep) {
+      callbacks.onStep({
+        stepIndex: i,
+        id: stepId,
+        status: "running",
       });
+    }
+
+    // Create a single-step pipeline with current variables
+    // Filter to only ImageBlob values for the pipeline (client.run expects ImageBlob only)
+    const imageVariables: Record<string, ImageBlob> = {};
+    for (const [key, value] of Object.entries(stepVariables)) {
+      if (isImageBlob(value)) {
+        imageVariables[key] = value;
+      }
+    }
+    const singlePipeline: Pipeline = {
+      name: "Single Step",
+      steps: [step],
+      initialVariables: imageVariables,
+    };
+
+    // Execute the single step
+    const stepResults = await client.run(singlePipeline);
+
+    // Process step results
+    for (const result of stepResults) {
+      if (isImageBlob(result.value)) {
+        // Store for dependent steps
+        if (result.out) {
+          stepVariables[result.out] = result.value;
+        }
+
+        const imageId = nanoid();
+        const buffer = Buffer.from(result.value.bytes);
+        imageIds.push(imageId);
+        images.set(imageId, buffer);
+
+        // Save image to disk
+        const ext = MIME_TO_EXT[result.value.mime] || "png";
+        const filename = `${imageId}.${ext}`;
+        const filepath = join(OUTPUT_DIR, filename);
+        await mkdir(dirname(filepath), { recursive: true });
+        await writeFile(filepath, buffer);
+
+        // Notify step completed with image preview
+        if (stepId && callbacks?.onStep) {
+          const previewMime = result.value.mime || "image/png";
+          const preview = `data:${previewMime};base64,${buffer.toString("base64")}`;
+          callbacks.onStep({
+            stepIndex: i,
+            id: stepId,
+            status: "completed",
+            imageId,
+            preview,
+          });
+        }
+      } else if (isDataBlob(result.value)) {
+        // Store for dependent steps (text/vision output)
+        if (result.out) {
+          stepVariables[result.out] = result.value as unknown as ImageBlob;
+        }
+
+        // Store data outputs
+        dataOutputs.set(result.out, {
+          dataType: result.value.type,
+          content: result.value.content,
+          parsed: result.value.parsed,
+        });
+
+        // Notify step completed with data output
+        if (stepId && callbacks?.onStep) {
+          callbacks.onStep({
+            stepIndex: i,
+            id: stepId,
+            status: "completed",
+            dataType: result.value.type,
+            content: result.value.content,
+            parsed: result.value.parsed,
+          });
+        }
+      } else if (stepId && callbacks?.onStep) {
+        // Step completed without specific output (e.g., save step)
+        callbacks.onStep({
+          stepIndex: i,
+          id: stepId,
+          status: "completed",
+        });
+      }
     }
   }
 
@@ -286,6 +372,20 @@ export async function executePipeline(
     dataOutputs,
     usageEvents,
   };
+}
+
+/**
+ * Get step identifier from a pipeline step
+ * Returns the 'out' variable name, or first output for fan-out steps
+ */
+function getStepId(step: Pipeline["steps"][number]): string | undefined {
+  if (step.kind === "fan-out") {
+    return step.out[0]; // Return first branch variable
+  }
+  if (step.kind === "save") {
+    return undefined; // Save steps don't have output
+  }
+  return step.out;
 }
 
 /**

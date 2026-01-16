@@ -4,6 +4,7 @@ import type {
   ErrorCategory,
   Pipeline,
   PipelineStep,
+  ExecutionStepResult,
 } from "@teamflojo/floimg-studio-shared";
 import { executePipeline } from "../floimg/executor.js";
 import { loadUpload } from "./uploads.js";
@@ -299,8 +300,21 @@ export async function executeRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Execute
-      const result = await executePipeline({ ...pipeline, initialVariables }, { cloudConfig });
+      // Execute with step callbacks for real-time progress
+      const result = await executePipeline(
+        { ...pipeline, initialVariables },
+        {
+          cloudConfig,
+          callbacks: {
+            onStep: (stepResult: ExecutionStepResult) => {
+              sendSSE(reply.raw, {
+                type: "execution.step",
+                data: stepResult,
+              });
+            },
+          },
+        }
+      );
 
       const imageUrls = result.imageIds.map((id) => `/api/images/${id}/blob`);
 
