@@ -166,7 +166,7 @@ Packages in `packages/*` are published to npm as `@teamflojo/*`.
 | **floimg monorepo**   | This git repository containing all packages | `github.com/FlojoInc/floimg`    |
 | **@teamflojo/floimg** | The core library npm package                | `npm install @teamflojo/floimg` |
 
-**Git tags (vX.Y.Z) represent monorepo releases**, not individual package versions. Each package has its own independent semver in `package.json`. A release publishes whichever packages changed since last release.
+**Git tags (vX.Y.Z) represent monorepo releases**, not individual package versions. The root `package.json` version is kept in sync with git tags as a "monorepo release identifier". Each package has its own independent semver. See `vault/architecture/Versioning.md` for full details.
 
 ### When to Release
 
@@ -229,26 +229,25 @@ Format rules:
 **CRITICAL**: Use `vX.Y.Z` tags (not `@teamflojo/pkg@X.Y.Z`). The `v*` tag triggers the release workflow.
 
 ```bash
-# 1. VERIFY: Check current highest version BEFORE doing anything
-git tag --sort=-v:refname | head -1        # Shows highest git tag
-npm view @teamflojo/floimg version         # Shows npm latest
-# New version MUST be higher than both!
+# 1. Update CHANGELOG.md with new section header [vX.Y.Z]
+# 2. Bump version in changed package.json files
+# 3. Run release script (validates and updates root package.json)
+./scripts/release.sh X.Y.Z
 
-# 2. Update CHANGELOG.md with all changes (REQUIRED before tagging)
-# 3. Bump version in package.json(s) to NEW version
-# 4. Commit
-git commit -m "chore: release vX.Y.Z"
-
-# 5. Create version tag (must be HIGHER than step 1)
+# 4. Follow script instructions to commit, tag, push
+git commit -am "chore: release vX.Y.Z"
 git tag vX.Y.Z
-
-# 6. Push (PR for public repo)
 git push origin main --tags
 
-# 7. Verify BOTH:
-#    - GitHub Releases page shows vX.Y.Z
-#    - npm shows new version
+# 5. Verify GitHub Releases and npm
 ```
+
+The release script validates:
+
+- Version format is valid semver
+- Version is higher than current highest tag
+- CHANGELOG.md has an entry for the version
+- You're on main branch with no uncommitted changes
 
 The `v*` tag triggers `.github/workflows/release.yml` which:
 
