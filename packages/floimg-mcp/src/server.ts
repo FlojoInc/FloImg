@@ -978,13 +978,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               );
             }
 
-            const { operation, params = {}, to } = stepParams;
+            const { operation, params = {}, to, provider } = stepParams;
             canonicalSteps.push({
               kind: "transform",
               op: operation,
               in: prevVar,
               params: to ? { ...params, to } : params,
               out: varName,
+              ...(provider && { provider }), // Preserve provider for AI transforms (e.g., stability)
             });
             varCounter++;
           } else if (stepType === "save") {
@@ -1054,6 +1055,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               provider: saveResult.provider,
               size: saveResult.size,
             });
+          } else if (result.value && "type" in result.value && "content" in result.value) {
+            // DataBlob result from vision/text steps
+            const dataResult = result.value as {
+              type: "text" | "json";
+              content: string;
+              parsed?: unknown;
+            };
+            const dataEntry: Record<string, unknown> = {
+              variable: result.out,
+              type: "data",
+              dataType: dataResult.type,
+              content: dataResult.content,
+            };
+            if (dataResult.parsed !== undefined) {
+              dataEntry.parsed = dataResult.parsed;
+            }
+            results.push(dataEntry);
           }
         }
 
