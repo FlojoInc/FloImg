@@ -5,6 +5,23 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.15.7] - 2026-01-16
+
+### @teamflojo/floimg-studio-shared (0.7.0)
+
+- feat: add `nodesToPipeline()` function for converting visual workflows to Pipeline format
+- feat: add `Pipeline`, `PipelineStep`, and `PipelineConversionResult` types
+- feat: 21 interface consistency tests for nodesToPipeline conversion
+- refactor: unified step identifiers - node IDs used as variable names throughout
+
+### @teamflojo/floimg-mcp (0.1.1)
+
+- refactor: use canonical Pipeline format internally for execution
+  - Converts LLM-friendly step format to canonical Pipeline
+  - Uses `client.run(pipeline)` for consistent execution
+  - Added proper DataBlob result handling for vision/text steps
+  - Preserves provider field for AI transforms
+
 ## [v0.15.6] - 2026-01-15
 
 ### @teamflojo/floimg (0.14.1)
