@@ -142,7 +142,7 @@ export function Toolbar({
             {brandingSlot}
             {!hideAttribution && (
               <a
-                href="https://flojo.io"
+                href="https://goflojo.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300"
