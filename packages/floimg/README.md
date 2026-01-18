@@ -149,4 +149,4 @@ See [@teamflojo/floimg-mcp](https://www.npmjs.com/package/@teamflojo/floimg-mcp)
 
 ## License
 
-MIT — Maintained by [Flojo, Inc](https://flojo.io)
+MIT — Maintained by [Flojo, Inc](https://goflojo.com)

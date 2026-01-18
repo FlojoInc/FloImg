@@ -378,4 +378,4 @@ See the [Contributing Guide](./vault/community/Contributing.md) for details.
 
 ## License
 
-MIT - Maintained by [Flojo, Inc](https://flojo.io)
+MIT - Maintained by [Flojo, Inc](https://goflojo.com)
