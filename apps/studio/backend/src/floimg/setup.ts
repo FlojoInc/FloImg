@@ -8,7 +8,12 @@
  * - Collects usage events from AI providers for cost tracking
  */
 
-import { createClient, type ClientCapabilities, type UsageEvent } from "@teamflojo/floimg";
+import {
+  createClient,
+  type ClientCapabilities,
+  type UsageEvent,
+  type FloimgConfig,
+} from "@teamflojo/floimg";
 import qr from "@teamflojo/floimg-qr";
 import mermaid from "@teamflojo/floimg-mermaid";
 import quickchart from "@teamflojo/floimg-quickchart";
@@ -24,6 +29,55 @@ import { grokText, grokVision } from "@teamflojo/floimg-xai";
 import { replicateTransform } from "@teamflojo/floimg-replicate";
 
 type FloimgClient = ReturnType<typeof createClient>;
+
+// ============================================================================
+// Save Provider Configuration
+// ============================================================================
+
+/**
+ * Build save provider configuration from environment variables.
+ *
+ * Environment variables:
+ * - FLOIMG_SAVE_FS_BASE_DIR: Base directory for filesystem saves (default: ./output)
+ * - FLOIMG_SAVE_S3_BUCKET: S3 bucket name (enables S3 provider)
+ * - FLOIMG_SAVE_S3_REGION: S3 region (required with bucket)
+ * - FLOIMG_SAVE_S3_ENDPOINT: S3 endpoint URL (for MinIO, R2, Backblaze, etc.)
+ * - FLOIMG_SAVE_S3_ACCESS_KEY_ID: S3 access key
+ * - FLOIMG_SAVE_S3_SECRET_ACCESS_KEY: S3 secret key
+ *
+ * The SDK automatically registers FsSaveProvider by default.
+ * S3SaveProvider is registered when bucket and region are provided.
+ */
+function buildSaveConfig(): FloimgConfig["save"] {
+  const save: FloimgConfig["save"] = {};
+
+  // Filesystem save config (always available)
+  if (process.env.FLOIMG_SAVE_FS_BASE_DIR) {
+    save.fs = {
+      baseDir: process.env.FLOIMG_SAVE_FS_BASE_DIR,
+    };
+  }
+
+  // S3 save config (enabled when bucket + region are set)
+  const s3Bucket = process.env.FLOIMG_SAVE_S3_BUCKET;
+  const s3Region = process.env.FLOIMG_SAVE_S3_REGION;
+  if (s3Bucket && s3Region) {
+    save.s3 = {
+      bucket: s3Bucket,
+      region: s3Region,
+      endpoint: process.env.FLOIMG_SAVE_S3_ENDPOINT,
+    };
+
+    // Add credentials if provided
+    const accessKeyId = process.env.FLOIMG_SAVE_S3_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.FLOIMG_SAVE_S3_SECRET_ACCESS_KEY;
+    if (accessKeyId && secretAccessKey) {
+      save.s3.credentials = { accessKeyId, secretAccessKey };
+    }
+  }
+
+  return save;
+}
 
 // ============================================================================
 // Usage Event Collection
@@ -81,9 +135,23 @@ export function initializeClient(config: { verbose?: boolean } = {}): FloimgClie
     return client;
   }
 
+  // Build save configuration from environment variables
+  const saveConfig = buildSaveConfig();
+
   client = createClient({
     verbose: config.verbose ?? process.env.NODE_ENV !== "production",
+    save: saveConfig,
   });
+
+  // Log save provider configuration
+  const saveProviders: string[] = ["fs"]; // Always available
+  if (saveConfig?.s3?.bucket) {
+    saveProviders.push("s3");
+    console.log(
+      `[floimg] S3 save provider configured: bucket=${saveConfig.s3.bucket}, region=${saveConfig.s3.region}` +
+        (saveConfig.s3.endpoint ? `, endpoint=${saveConfig.s3.endpoint}` : "")
+    );
+  }
 
   // Register generator plugins
   client.registerGenerator(qr());
@@ -138,7 +206,11 @@ export function initializeClient(config: { verbose?: boolean } = {}): FloimgClie
   capabilities = client.getCapabilities();
 
   console.log(
-    `[floimg] Client initialized with ${capabilities.generators.length} generators, ${capabilities.transforms.length} transforms, ${capabilities.textProviders.length} text providers, ${capabilities.visionProviders.length} vision providers`
+    `[floimg] Client initialized with ${capabilities.generators.length} generators, ` +
+      `${capabilities.transforms.length} transforms, ` +
+      `${capabilities.textProviders.length} text providers, ` +
+      `${capabilities.visionProviders.length} vision providers, ` +
+      `${saveProviders.length} save providers (${saveProviders.join(", ")})`
   );
 
   return client;

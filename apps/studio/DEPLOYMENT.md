@@ -69,14 +69,36 @@ docker run -d -p 5100:5100 -e OPENAI_API_KEY=sk-... floimg-studio
 
 ### Storage (Optional)
 
-For persistent image storage, configure S3-compatible storage:
+FloImg Studio supports pluggable storage backends. By default, images are saved to the filesystem (zero config). For cloud or network storage, configure an S3-compatible backend.
+
+#### Filesystem (Default)
+
+Works out of the box. Optionally configure a custom base directory:
 
 ```bash
-S3_BUCKET=my-bucket
-S3_REGION=auto
-S3_ENDPOINT=https://...
-S3_ACCESS_KEY=...
-S3_SECRET_KEY=...
+FLOIMG_SAVE_FS_BASE_DIR=/data/images
+```
+
+#### S3-Compatible Storage
+
+Works with AWS S3, MinIO, Cloudflare R2, Backblaze B2, etc:
+
+```bash
+FLOIMG_SAVE_S3_BUCKET=my-bucket
+FLOIMG_SAVE_S3_REGION=us-east-1
+FLOIMG_SAVE_S3_ENDPOINT=https://s3.amazonaws.com  # Optional, for non-AWS
+FLOIMG_SAVE_S3_ACCESS_KEY_ID=AKIA...
+FLOIMG_SAVE_S3_SECRET_ACCESS_KEY=...
+```
+
+**MinIO example** (local development or self-hosted):
+
+```bash
+FLOIMG_SAVE_S3_BUCKET=floimg
+FLOIMG_SAVE_S3_REGION=us-east-1
+FLOIMG_SAVE_S3_ENDPOINT=http://localhost:9000
+FLOIMG_SAVE_S3_ACCESS_KEY_ID=minioadmin
+FLOIMG_SAVE_S3_SECRET_ACCESS_KEY=minioadmin
 ```
 
 ## Architecture

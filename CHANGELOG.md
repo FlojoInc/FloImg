@@ -5,6 +5,23 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.16.0] - 2026-01-17
+
+### @teamflojo/floimg (0.15.0)
+
+- feat: add `FLOIMG_SAVE_*` environment variables for storage configuration
+  - `FLOIMG_SAVE_FS_BASE_DIR` for custom filesystem output directory
+  - `FLOIMG_SAVE_S3_BUCKET`, `FLOIMG_SAVE_S3_REGION`, `FLOIMG_SAVE_S3_ENDPOINT` for S3-compatible storage
+  - `FLOIMG_SAVE_S3_ACCESS_KEY_ID`, `FLOIMG_SAVE_S3_SECRET_ACCESS_KEY` for credentials
+  - Backward compatible with `AWS_*`, `S3_*`, `TIGRIS_*` env vars
+
+### @teamflojo/floimg-studio-backend (0.5.0)
+
+- feat: support pluggable storage backends via environment variables
+  - Filesystem storage works out of the box (zero config)
+  - S3-compatible storage (MinIO, R2, Backblaze, etc.) configurable via env vars
+  - Updated DEPLOYMENT.md with storage configuration examples
+
 ## [v0.15.7] - 2026-01-16
 
 ### @teamflojo/floimg-studio-shared (0.7.0)

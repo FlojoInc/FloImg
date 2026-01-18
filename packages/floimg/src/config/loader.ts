@@ -103,33 +103,68 @@ async function loadConfigFile(path: string): Promise<FloimgConfig> {
 }
 
 /**
- * Load configuration from environment variables
- * Supports multiple S3-compatible services via environment variables
+ * Load configuration from environment variables.
+ *
+ * Supports multiple naming conventions for S3-compatible storage:
+ * - FLOIMG_SAVE_S3_* - Explicit FloImg-specific naming (recommended)
+ * - AWS_*, S3_* - Standard AWS naming (compatible with existing tools)
+ * - TIGRIS_* - Tigris-specific naming
+ *
+ * Priority: FLOIMG_SAVE_S3 > TIGRIS > AWS/S3
+ *
+ * Filesystem storage:
+ * - FLOIMG_SAVE_FS_BASE_DIR - Custom base directory for filesystem saves
  */
 function loadEnvConfig(): FloimgConfig {
   const config: FloimgConfig = {};
 
+  // Initialize save config
+  const saveConfig: FloimgConfig["save"] = {};
+
+  // Filesystem configuration
+  if (process.env.FLOIMG_SAVE_FS_BASE_DIR) {
+    saveConfig.fs = {
+      baseDir: process.env.FLOIMG_SAVE_FS_BASE_DIR,
+    };
+  }
+
   // S3-compatible storage configuration
-  // Support standard AWS env vars, plus Tigris-specific ones
+  // Check all naming conventions (FLOIMG_SAVE_* has priority)
   const hasS3Config =
-    process.env.S3_BUCKET ||
-    process.env.AWS_REGION ||
-    process.env.TIGRIS_BUCKET_NAME ||
-    process.env.TIGRIS_ACCESS_KEY_ID;
+    process.env.FLOIMG_SAVE_S3_BUCKET || process.env.S3_BUCKET || process.env.TIGRIS_BUCKET_NAME;
 
   if (hasS3Config) {
-    const bucket = process.env.TIGRIS_BUCKET_NAME || process.env.S3_BUCKET;
-    const region = process.env.TIGRIS_REGION || process.env.AWS_REGION || "auto";
-    const accessKeyId = process.env.TIGRIS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+    // Bucket (required for S3)
+    const bucket =
+      process.env.FLOIMG_SAVE_S3_BUCKET || process.env.TIGRIS_BUCKET_NAME || process.env.S3_BUCKET;
+
+    // Region
+    const region =
+      process.env.FLOIMG_SAVE_S3_REGION ||
+      process.env.TIGRIS_REGION ||
+      process.env.AWS_REGION ||
+      "auto";
+
+    // Credentials
+    const accessKeyId =
+      process.env.FLOIMG_SAVE_S3_ACCESS_KEY_ID ||
+      process.env.TIGRIS_ACCESS_KEY_ID ||
+      process.env.AWS_ACCESS_KEY_ID;
+
     const secretAccessKey =
-      process.env.TIGRIS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+      process.env.FLOIMG_SAVE_S3_SECRET_ACCESS_KEY ||
+      process.env.TIGRIS_SECRET_ACCESS_KEY ||
+      process.env.AWS_SECRET_ACCESS_KEY;
+
+    // Endpoint (for non-AWS services like MinIO, R2, etc.)
     const endpoint =
+      process.env.FLOIMG_SAVE_S3_ENDPOINT ||
       process.env.S3_ENDPOINT ||
       (process.env.TIGRIS_BUCKET_NAME ? "https://fly.storage.tigris.dev" : undefined);
 
-    config.save = {
-      default: "s3",
-      s3: {
+    if (bucket) {
+      saveConfig.default = "s3";
+      saveConfig.s3 = {
         bucket,
         region,
         ...(endpoint && { endpoint }),
@@ -140,8 +175,13 @@ function loadEnvConfig(): FloimgConfig {
               secretAccessKey,
             },
           }),
-      },
-    };
+      };
+    }
+  }
+
+  // Only set config.save if we have any save configuration
+  if (Object.keys(saveConfig).length > 0) {
+    config.save = saveConfig;
   }
 
   // AI configuration
