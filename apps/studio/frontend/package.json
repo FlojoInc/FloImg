@@ -79,7 +79,7 @@
     "typescript": "^5.7.2",
     "vite": "^5.1.6",
     "vite-plugin-dts": "^3.7.3",
-    "vitest": "^4.0.16",
+    "vitest": "^4.0.17",
     "zustand": "^5.0.9"
   }
 }
