@@ -59,6 +59,7 @@ export interface InputNodeData {
   uploadId?: string; // Reference to uploaded image
   filename?: string; // Original filename for display
   mime?: string; // Content type
+  imageUrl?: string; // Remote image URL (for remix/fork flows)
 }
 
 // Vision node data (AI image analysis)

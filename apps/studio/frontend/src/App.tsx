@@ -76,6 +76,7 @@ function App() {
   const [showAIChat, setShowAIChat] = useState(false);
   const loadTemplate = useWorkflowStore((s) => s.loadTemplate);
   const loadGeneratedWorkflow = useWorkflowStore((s) => s.loadGeneratedWorkflow);
+  const loadRemixImage = useWorkflowStore((s) => s.loadRemixImage);
 
   // Output inspector state
   const inspectedNodeId = useWorkflowStore((s) => s.inspectedNodeId);
@@ -88,21 +89,24 @@ function App() {
   const inspectedNode = inspectedNodeId ? nodes.find((n) => n.id === inspectedNodeId) : null;
   const inspectedOutput = inspectedNodeId ? executionDataOutputs[inspectedNodeId] : null;
 
-  // Handle ?template=<id> URL parameter
+  // Handle URL parameters: ?template=<id>, ?remixImage=<url>
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const templateId = params.get("template");
+    const remixImageUrl = params.get("remixImage");
 
     if (templateId) {
       // resolveTemplate handles both canonical IDs and legacy IDs
       const template = resolveTemplate(templateId);
       if (template) {
         loadTemplate(template);
-        // Clean up URL without reload
         window.history.replaceState({}, "", window.location.pathname);
       }
+    } else if (remixImageUrl) {
+      loadRemixImage(remixImageUrl);
+      window.history.replaceState({}, "", window.location.pathname);
     }
-  }, [loadTemplate]);
+  }, [loadTemplate, loadRemixImage]);
 
   // Listen for workflow-loaded event (from Gallery)
   useEffect(() => {

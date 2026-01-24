@@ -93,6 +93,9 @@ interface WorkflowStore {
   hasUnsavedChanges: boolean;
   showLibrary: boolean;
 
+  // Remix/fork attribution
+  parentWorkflowId: string | null;
+
   // Workflow persistence methods
   saveWorkflow: (name?: string) => string;
   loadWorkflow: (id: string) => void;
@@ -146,6 +149,13 @@ interface WorkflowStore {
 
   // AI-generated workflow
   loadGeneratedWorkflow: (workflow: GeneratedWorkflowData) => void;
+
+  // Remix/fork loading
+  loadRemixImage: (imageUrl: string) => void;
+  loadFromWorkflowJson: (
+    json: { nodes: StudioNode[]; edges: StudioEdge[] },
+    metadata?: { name?: string; parentWorkflowId?: string }
+  ) => void;
 
   // Output inspector
   inspectedNodeId: string | null;
@@ -214,6 +224,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
         activeWorkflowName: "Untitled Workflow",
         hasUnsavedChanges: false,
         showLibrary: false,
+        parentWorkflowId: null,
 
         execution: {
           status: "idle",
@@ -281,6 +292,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
             selectedNodeId: null,
             currentTemplateId: null,
             previewVisible: {},
+            parentWorkflowId: null,
             execution: {
               status: "idle",
               imageIds: [],
@@ -725,6 +737,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
             activeWorkflowId: null,
             activeWorkflowName: name || "Imported Workflow",
             hasUnsavedChanges: true,
+            parentWorkflowId: null,
             execution: {
               status: "idle",
               imageIds: [],
@@ -753,6 +766,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
             activeWorkflowId: null,
             activeWorkflowName: "Untitled Workflow",
             hasUnsavedChanges: false,
+            parentWorkflowId: null,
             execution: {
               status: "idle",
               imageIds: [],
@@ -1137,6 +1151,95 @@ export const useWorkflowStore = create<WorkflowStore>()(
             activeWorkflowId: null,
             activeWorkflowName: "AI Generated Workflow",
             hasUnsavedChanges: true,
+            parentWorkflowId: null,
+            execution: {
+              status: "idle",
+              imageIds: [],
+              imageUrls: [],
+              previews: {},
+              dataOutputs: {},
+              nodeStatus: {},
+            },
+          });
+        },
+
+        loadRemixImage: (imageUrl: string) => {
+          const nodeId = generateNodeId();
+          const inputNode: Node<NodeData> = {
+            id: nodeId,
+            type: "input",
+            position: { x: 200, y: 200 },
+            data: {
+              imageUrl,
+              filename: imageUrl.split("/").pop() || "remix-image",
+            } as InputNodeData,
+          };
+
+          set({
+            nodes: [inputNode],
+            edges: [],
+            selectedNodeId: null,
+            currentTemplateId: null,
+            previewVisible: {},
+            activeWorkflowId: null,
+            activeWorkflowName: "Remixed Workflow",
+            hasUnsavedChanges: true,
+            parentWorkflowId: null,
+            execution: {
+              status: "idle",
+              imageIds: [],
+              imageUrls: [],
+              previews: {},
+              dataOutputs: {},
+              nodeStatus: {},
+            },
+          });
+        },
+
+        loadFromWorkflowJson: (json, metadata) => {
+          const idMap = new Map<string, string>();
+
+          const nodes: Node<NodeData>[] = json.nodes.map((studioNode) => {
+            const newId = generateNodeId();
+            idMap.set(studioNode.id, newId);
+
+            return {
+              id: newId,
+              type: studioNode.type,
+              position: studioNode.position,
+              data: enrichNodeData(studioNode),
+            };
+          });
+
+          const edges: Edge[] = json.edges.map((studioEdge) => {
+            const newSource = idMap.get(studioEdge.source) || studioEdge.source;
+            const newTarget = idMap.get(studioEdge.target) || studioEdge.target;
+            const handleSuffix = [studioEdge.sourceHandle, studioEdge.targetHandle]
+              .filter(Boolean)
+              .join("_");
+            const edgeId = handleSuffix
+              ? `edge_${newSource}_${newTarget}_${handleSuffix}`
+              : `edge_${newSource}_${newTarget}`;
+
+            return {
+              id: edgeId,
+              source: newSource,
+              target: newTarget,
+              sourceHandle: studioEdge.sourceHandle ?? undefined,
+              targetHandle: studioEdge.targetHandle ?? undefined,
+            };
+          });
+
+          set({
+            nodes,
+            edges,
+            selectedNodeId: null,
+            currentTemplateId: null,
+            previewVisible: {},
+            activeWorkflowId: null,
+            activeWorkflowName: metadata?.name || "Forked Workflow",
+            hasUnsavedChanges: true,
+            parentWorkflowId: metadata?.parentWorkflowId || null,
             execution: {
               status: "idle",
               imageIds: [],

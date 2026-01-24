@@ -20,6 +20,8 @@ export interface ToolbarProps {
   beforeActionsSlot?: ReactNode;
   /** Slot rendered after all action buttons (e.g., auth/user menu) */
   afterActionsSlot?: ReactNode;
+  /** Slot rendered below the toolbar for remix/fork attribution banners */
+  remixInfoSlot?: ReactNode;
   /** Hide the "by Flojo" attribution link */
   hideAttribution?: boolean;
   /** Hide the "My Workflows" library toggle button (for wrappers providing custom workflow management) */
@@ -30,6 +32,7 @@ export function Toolbar({
   brandingSlot,
   beforeActionsSlot,
   afterActionsSlot,
+  remixInfoSlot,
   hideAttribution = false,
   hideWorkflowLibrary = false,
 }: ToolbarProps = {}) {
@@ -281,6 +284,9 @@ export function Toolbar({
           {afterActionsSlot}
         </div>
       </div>
+
+      {/* Remix/fork attribution slot (injected by cloud wrapper) */}
+      {remixInfoSlot}
 
       {/* Execution result banner */}
       {execution.status === "completed" && execution.imageIds.length > 0 && (
