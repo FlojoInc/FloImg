@@ -41,16 +41,7 @@ export type * from "./lib/keyboard/types";
 export { useWorkflowStore } from "./stores/workflowStore";
 export { useSettingsStore } from "./stores/settingsStore";
 
-// Templates (OSS-compatible only - no cloud-only AI templates)
-export {
-  coreTemplates as templates,
-  getCoreCategories as getCategories,
-  getCoreTemplatesByCategory as getTemplatesByCategory,
-  getCoreTemplateById as getTemplateById,
-  searchCoreTemplates as searchTemplates,
-  resolveTemplate,
-  type Template,
-} from "@teamflojo/floimg-templates";
-
 // Re-export types from shared
+// Note: Template types are included via the shared re-export
+// Templates are fetched from API at runtime (single source of truth)
 export type * from "@teamflojo/floimg-studio-shared";

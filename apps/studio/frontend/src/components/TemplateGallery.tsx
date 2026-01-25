@@ -1,19 +1,72 @@
 import { useState, useMemo } from "react";
-import {
-  coreTemplates as templates,
-  getCoreCategories as getCategories,
-  type Template,
-} from "@teamflojo/floimg-templates";
+import { useQuery } from "@tanstack/react-query";
+import type { Template } from "@teamflojo/floimg-studio-shared";
+import seedTemplates from "../data/seed-templates.json";
+
+// Default API URL - can be overridden via props or environment variable
+const DEFAULT_API_URL = import.meta.env.VITE_FLOIMG_API_URL || "https://api.floimg.com";
 
 interface TemplateGalleryProps {
   onSelect: (templateId: string) => void;
+  apiUrl?: string;
 }
 
-export function TemplateGallery({ onSelect }: TemplateGalleryProps) {
+/**
+ * Fetch templates from API with fallback chain:
+ * 1. Try API fetch first
+ * 2. Fall back to localStorage cache (persisted from previous fetch)
+ * 3. Fall back to seed data bundled in the app (cold start, air-gapped)
+ */
+async function fetchTemplates(apiUrl: string): Promise<Template[]> {
+  const cacheKey = "floimg-templates-cache";
+
+  try {
+    const res = await fetch(`${apiUrl}/api/templates`);
+    if (res.ok) {
+      const data = await res.json();
+      const templates = data.templates as Template[];
+      // Cache successful response for offline fallback
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(templates));
+      } catch {
+        // localStorage might be full or unavailable
+      }
+      return templates;
+    }
+    throw new Error(`API returned ${res.status}`);
+  } catch {
+    // Try localStorage cache
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        return JSON.parse(cached) as Template[];
+      }
+    } catch {
+      // localStorage not available
+    }
+    // Fall back to seed data
+    return seedTemplates as Template[];
+  }
+}
+
+export function TemplateGallery({ onSelect, apiUrl = DEFAULT_API_URL }: TemplateGalleryProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const categories = useMemo(() => getCategories(), []);
+  const { data: templates = seedTemplates as Template[], isLoading } = useQuery({
+    queryKey: ["templates", apiUrl],
+    queryFn: () => fetchTemplates(apiUrl),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes (formerly cacheTime)
+    placeholderData: seedTemplates as Template[],
+    retry: 1,
+  });
+
+  // Extract unique categories from templates
+  const categories = useMemo(() => {
+    const cats = new Set(templates.map((t) => t.category));
+    return Array.from(cats).sort();
+  }, [templates]);
 
   const filteredTemplates = useMemo(() => {
     let result = templates;
@@ -36,7 +89,7 @@ export function TemplateGallery({ onSelect }: TemplateGalleryProps) {
     }
 
     return result;
-  }, [selectedCategory, searchQuery]);
+  }, [templates, selectedCategory, searchQuery]);
 
   return (
     <div className="p-6">
@@ -84,6 +137,13 @@ export function TemplateGallery({ onSelect }: TemplateGalleryProps) {
         </div>
       </div>
 
+      {/* Loading state */}
+      {isLoading && templates.length === 0 && (
+        <div className="text-center py-12 text-gray-500 dark:text-zinc-400">
+          Loading templates...
+        </div>
+      )}
+
       {/* Template grid */}
       {filteredTemplates.length === 0 ? (
         <div className="text-center py-12 text-gray-500 dark:text-zinc-400">
@@ -110,7 +170,7 @@ interface TemplateCardProps {
 }
 
 function TemplateCard({ template, onSelect }: TemplateCardProps) {
-  const nodeCount = template.workflow.nodes.length;
+  const nodeCount = template.nodeCount || template.workflow.nodes.length;
   const edgeCount = template.workflow.edges.length;
 
   // Generator badge colors
@@ -119,6 +179,7 @@ function TemplateCard({ template, onSelect }: TemplateCardProps) {
     mermaid: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300",
     qr: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
     d3: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+    openai: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
   };
 
   return (
@@ -191,6 +252,19 @@ function TemplateCard({ template, onSelect }: TemplateCardProps) {
                 />
               </svg>
               {edgeCount} edge{edgeCount !== 1 ? "s" : ""}
+            </span>
+          )}
+          {template.requiresCloud && (
+            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
+                />
+              </svg>
+              Cloud
             </span>
           )}
         </div>

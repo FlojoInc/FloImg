@@ -59,7 +59,6 @@
   },
   "dependencies": {
     "@teamflojo/floimg-studio-shared": "workspace:*",
-    "@teamflojo/floimg-templates": "workspace:*",
     "react-hotkeys-hook": "^5.2.1"
   },
   "devDependencies": {

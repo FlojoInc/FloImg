@@ -145,9 +145,6 @@ importers:
       '@teamflojo/floimg-studio-shared':
         specifier: workspace:*
         version: link:../shared
-      '@teamflojo/floimg-templates':
-        specifier: workspace:*
-        version: link:../../../packages/floimg-templates
       react:
         specifier: ^18.0.0 || ^19.0.0
         version: 19.2.3
@@ -483,19 +480,6 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.19.3)(jsdom@25.0.1)
-
-  packages/floimg-templates:
-    dependencies:
-      '@teamflojo/floimg-studio-shared':
-        specifier: workspace:*
-        version: link:../../apps/studio/shared
-    devDependencies:
-      '@types/node':
-        specifier: ^22.10.2
-        version: 22.19.3
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.3
 
   packages/floimg-xai:
     dependencies:
