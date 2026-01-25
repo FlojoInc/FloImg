@@ -5,6 +5,27 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.18.0] - 2026-01-24
+
+### @teamflojo/floimg-studio-ui (0.7.0)
+
+- **BREAKING**: Removed `@teamflojo/floimg-templates` package dependency
+- **BREAKING**: Removed template re-exports (`templates`, `getCategories`, `getTemplateById`, `getTemplatesByCategory`, `searchTemplates`, `resolveTemplate`)
+- feat: `TemplateGallery` now fetches templates from API with offline fallback
+- feat: Templates cached in localStorage for offline access after first fetch
+- feat: Bundled seed templates for air-gapped/offline cold starts
+- feat: Added `apiUrl` prop to `TemplateGallery` for custom API endpoints
+
+### @teamflojo/floimg-studio-shared (0.9.0)
+
+- feat: Added `Template` and `TemplateCategory` types (migrated from floimg-templates)
+
+### @teamflojo/floimg-templates
+
+- **REMOVED**: This package has been deleted. Templates are now served from the API.
+- Migration: Use `fetch('https://api.floimg.com/api/templates')` to get templates
+- Migration: Import `Template` type from `@teamflojo/floimg-studio-shared` instead
+
 ## [v0.17.0] - 2026-01-24
 
 ### @teamflojo/floimg-studio-ui (0.6.0)

@@ -2,6 +2,9 @@
  * Shared types for floimg-studio
  */
 
+// Template types
+export type { Template, TemplateCategory } from "./types/template.js";
+
 // Node types in the visual editor
 export type StudioNodeType =
   | "generator"

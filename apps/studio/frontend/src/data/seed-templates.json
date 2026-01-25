@@ -1,0 +1,215 @@
+[
+  {
+    "id": "revenue-chart",
+    "name": "Revenue Dashboard",
+    "description": "Quarterly revenue chart with caption and web-optimized export",
+    "category": "Data Viz",
+    "generator": "quickchart",
+    "tags": ["bar", "revenue", "quarterly", "dashboard", "sales", "pipeline"],
+    "capabilities": { "claudeCodeReady": true, "pipeline": true },
+    "nodeCount": 4,
+    "workflow": {
+      "nodes": [
+        {
+          "id": "gen-1",
+          "type": "generator",
+          "position": { "x": 100, "y": 150 },
+          "data": {
+            "generatorName": "quickchart",
+            "params": {
+              "chart": {
+                "type": "bar",
+                "data": {
+                  "labels": ["Q1", "Q2", "Q3", "Q4"],
+                  "datasets": [{ "label": "Revenue ($K)", "data": [120, 190, 175, 240] }]
+                }
+              },
+              "width": 600,
+              "height": 400
+            }
+          }
+        },
+        {
+          "id": "transform-resize",
+          "type": "transform",
+          "position": { "x": 400, "y": 150 },
+          "data": {
+            "operation": "resize",
+            "params": { "width": 800, "height": 500, "fit": "inside" }
+          }
+        },
+        {
+          "id": "transform-caption",
+          "type": "transform",
+          "position": { "x": 700, "y": 150 },
+          "data": {
+            "operation": "addCaption",
+            "params": {
+              "text": "Source: Finance Dashboard",
+              "position": "bottom-right",
+              "fontSize": 12,
+              "color": "#6B7280",
+              "padding": 8
+            }
+          }
+        },
+        {
+          "id": "transform-webp",
+          "type": "transform",
+          "position": { "x": 1000, "y": 150 },
+          "data": { "operation": "convert", "params": { "to": "image/webp", "quality": 90 } }
+        }
+      ],
+      "edges": [
+        { "id": "e1", "source": "gen-1", "target": "transform-resize" },
+        { "id": "e2", "source": "transform-resize", "target": "transform-caption" },
+        { "id": "e3", "source": "transform-caption", "target": "transform-webp" }
+      ]
+    }
+  },
+  {
+    "id": "branded-qr",
+    "name": "Branded QR Code",
+    "description": "QR code with custom colors, rounded corners, and optimized for print or digital",
+    "category": "Utilities",
+    "generator": "qr",
+    "tags": ["qr", "branded", "link", "custom", "url", "pipeline"],
+    "capabilities": { "claudeCodeReady": true, "pipeline": true },
+    "nodeCount": 4,
+    "workflow": {
+      "nodes": [
+        {
+          "id": "gen-1",
+          "type": "generator",
+          "position": { "x": 100, "y": 150 },
+          "data": {
+            "generatorName": "qr",
+            "params": {
+              "text": "https://floimg.com",
+              "width": 400,
+              "margin": 2,
+              "color": { "dark": "#0d9488", "light": "#ffffff" },
+              "errorCorrectionLevel": "M"
+            }
+          }
+        },
+        {
+          "id": "transform-resize",
+          "type": "transform",
+          "position": { "x": 400, "y": 150 },
+          "data": {
+            "operation": "resize",
+            "params": { "width": 300, "height": 300, "fit": "contain" }
+          }
+        },
+        {
+          "id": "transform-corners",
+          "type": "transform",
+          "position": { "x": 700, "y": 150 },
+          "data": { "operation": "roundCorners", "params": { "radius": 16 } }
+        },
+        {
+          "id": "transform-convert",
+          "type": "transform",
+          "position": { "x": 1000, "y": 150 },
+          "data": { "operation": "convert", "params": { "to": "image/png" } }
+        }
+      ],
+      "edges": [
+        { "id": "e1", "source": "gen-1", "target": "transform-resize" },
+        { "id": "e2", "source": "transform-resize", "target": "transform-corners" },
+        { "id": "e3", "source": "transform-corners", "target": "transform-convert" }
+      ]
+    }
+  },
+  {
+    "id": "api-flow",
+    "name": "API Request Flow",
+    "description": "Sequence diagram ready for API documentation and README files",
+    "category": "Data Viz",
+    "generator": "mermaid",
+    "tags": ["sequence", "api", "authentication", "diagram", "flow", "pipeline", "docs"],
+    "capabilities": { "claudeCodeReady": true, "pipeline": true },
+    "nodeCount": 4,
+    "workflow": {
+      "nodes": [
+        {
+          "id": "gen-1",
+          "type": "generator",
+          "position": { "x": 100, "y": 150 },
+          "data": {
+            "generatorName": "mermaid",
+            "params": {
+              "code": "sequenceDiagram\n    participant Client\n    participant API\n    participant Auth\n    participant DB\n\n    Client->>API: POST /login\n    API->>Auth: Validate credentials\n    Auth->>DB: Query user\n    DB-->>Auth: User data\n    Auth-->>API: JWT token\n    API-->>Client: 200 OK + token",
+              "theme": "default"
+            }
+          }
+        },
+        {
+          "id": "transform-resize",
+          "type": "transform",
+          "position": { "x": 400, "y": 150 },
+          "data": { "operation": "resize", "params": { "width": 800, "fit": "inside" } }
+        },
+        {
+          "id": "transform-padding",
+          "type": "transform",
+          "position": { "x": 700, "y": 150 },
+          "data": {
+            "operation": "extend",
+            "params": { "top": 24, "bottom": 24, "left": 24, "right": 24, "background": "#ffffff" }
+          }
+        },
+        {
+          "id": "transform-png",
+          "type": "transform",
+          "position": { "x": 1000, "y": 150 },
+          "data": { "operation": "convert", "params": { "to": "image/png" } }
+        }
+      ],
+      "edges": [
+        { "id": "e1", "source": "gen-1", "target": "transform-resize" },
+        { "id": "e2", "source": "transform-resize", "target": "transform-padding" },
+        { "id": "e3", "source": "transform-padding", "target": "transform-png" }
+      ]
+    }
+  },
+  {
+    "id": "thumbnail-generator",
+    "name": "Thumbnail Generator",
+    "description": "Create multiple thumbnail sizes with automatic optimization",
+    "category": "Utilities",
+    "generator": "pipeline",
+    "tags": ["thumbnail", "resize", "optimize", "batch", "responsive"],
+    "capabilities": { "claudeCodeReady": true, "pipeline": true },
+    "nodeCount": 4,
+    "workflow": {
+      "nodes": [
+        { "id": "input-1", "type": "input", "position": { "x": 100, "y": 200 }, "data": {} },
+        {
+          "id": "transform-800",
+          "type": "transform",
+          "position": { "x": 400, "y": 100 },
+          "data": { "operation": "resize", "params": { "width": 800, "fit": "inside" } }
+        },
+        {
+          "id": "transform-400",
+          "type": "transform",
+          "position": { "x": 400, "y": 200 },
+          "data": { "operation": "resize", "params": { "width": 400, "fit": "inside" } }
+        },
+        {
+          "id": "transform-200",
+          "type": "transform",
+          "position": { "x": 400, "y": 300 },
+          "data": { "operation": "resize", "params": { "width": 200, "fit": "inside" } }
+        }
+      ],
+      "edges": [
+        { "id": "e1", "source": "input-1", "target": "transform-800" },
+        { "id": "e2", "source": "input-1", "target": "transform-400" },
+        { "id": "e3", "source": "input-1", "target": "transform-200" }
+      ]
+    }
+  }
+]

@@ -18,7 +18,7 @@ import type {
   ErrorCategory,
 } from "@teamflojo/floimg-studio-shared";
 import { nodesToPipeline } from "@teamflojo/floimg-studio-shared";
-import type { Template } from "@teamflojo/floimg-templates";
+import type { Template } from "@teamflojo/floimg-studio-shared";
 import { exportYaml } from "../api/client";
 import { createSSEConnection, type SSEConnection } from "../api/sse";
 

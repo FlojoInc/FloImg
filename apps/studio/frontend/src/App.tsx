@@ -16,8 +16,14 @@ import { ConfirmationDialog } from "./components/ConfirmationDialog";
 import { useKeyboardShortcuts } from "./lib/keyboard/useKeyboardShortcuts";
 import { useWorkflowStore } from "./stores/workflowStore";
 import { useSettingsStore } from "./stores/settingsStore";
-import { resolveTemplate } from "@teamflojo/floimg-templates";
-import type { NodeDefinition, GeneratedWorkflowData } from "@teamflojo/floimg-studio-shared";
+import type {
+  NodeDefinition,
+  GeneratedWorkflowData,
+  Template,
+} from "@teamflojo/floimg-studio-shared";
+
+// Default API URL for template fetching
+const API_URL = import.meta.env.VITE_FLOIMG_API_URL || "https://api.floimg.com";
 
 // KeyboardShortcutsProvider - registers global keyboard shortcuts
 // Must be inside ReactFlowProvider to access useReactFlow hook
@@ -96,12 +102,20 @@ function App() {
     const remixImageUrl = params.get("remixImage");
 
     if (templateId) {
-      // resolveTemplate handles both canonical IDs and legacy IDs
-      const template = resolveTemplate(templateId);
-      if (template) {
-        loadTemplate(template);
+      // Fetch template from API
+      (async () => {
+        try {
+          const res = await fetch(`${API_URL}/api/templates/${templateId}`);
+          if (res.ok) {
+            const data = await res.json();
+            const template = data.template as Template;
+            loadTemplate(template);
+          }
+        } catch {
+          // Silently fail - user stays on empty canvas
+        }
         window.history.replaceState({}, "", window.location.pathname);
-      }
+      })();
     } else if (remixImageUrl) {
       loadRemixImage(remixImageUrl);
       window.history.replaceState({}, "", window.location.pathname);
@@ -119,13 +133,19 @@ function App() {
     };
   }, []);
 
-  // Handler for template selection (from TemplateGallery)
+  // Handler for template selection - fetches from API
   const handleTemplateSelect = useCallback(
-    (templateId: string) => {
-      const template = resolveTemplate(templateId);
-      if (template) {
-        loadTemplate(template);
-        setActiveTab("editor");
+    async (templateId: string) => {
+      try {
+        const res = await fetch(`${API_URL}/api/templates/${templateId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const template = data.template as Template;
+          loadTemplate(template);
+          setActiveTab("editor");
+        }
+      } catch {
+        // Silently fail
       }
     },
     [loadTemplate]

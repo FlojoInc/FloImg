@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listImages, getImageUrl, getImageWorkflow, type ImageInfo } from "../api/client";
 import { useWorkflowStore } from "../stores/workflowStore";
-import type { Template } from "@teamflojo/floimg-templates";
+import type { Template } from "@teamflojo/floimg-studio-shared";
 
 export function Gallery() {
   const loadTemplate = useWorkflowStore((s) => s.loadTemplate);

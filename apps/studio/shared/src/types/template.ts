@@ -1,11 +1,11 @@
 /**
  * Template Types
  *
- * Extended template interface that serves as the single source of truth
- * for template definitions across all FloImg surfaces.
+ * Template interface for workflow templates stored in the database.
+ * This is the single source of truth for template definitions.
  */
 
-import type { StudioNode, StudioEdge } from "@teamflojo/floimg-studio-shared";
+import type { StudioNode, StudioEdge } from "../index.js";
 
 /**
  * Template categories organized by USE CASE, not generator type
@@ -13,7 +13,7 @@ import type { StudioNode, StudioEdge } from "@teamflojo/floimg-studio-shared";
 export type TemplateCategory = "AI Workflows" | "Data Viz" | "Marketing" | "Utilities";
 
 /**
- * Extended template interface with full metadata
+ * Template interface with full metadata
  *
  * Core fields are required for Studio functionality.
  * Extended fields support marketing, SEO, and access control.
@@ -23,7 +23,7 @@ export interface Template {
   // Core Fields (required for Studio)
   // ============================================
 
-  /** Unique identifier - canonical IDs from floimg-web */
+  /** Unique identifier - canonical IDs from database */
   id: string;
 
   /** Display name (e.g., "Revenue Dashboard") */
@@ -33,7 +33,7 @@ export interface Template {
   description: string;
 
   /** Category for filtering */
-  category: TemplateCategory;
+  category: TemplateCategory | string;
 
   /** Primary generator used (e.g., "quickchart", "mermaid", "openai") */
   generator: string;
@@ -79,6 +79,9 @@ export interface Template {
     width?: number;
     height?: number;
   };
+
+  /** Thumbnail URL (alternative to preview) */
+  thumbnailUrl?: string;
 
   /** Capabilities badges for marketing */
   capabilities?: {
@@ -127,10 +130,23 @@ export interface Template {
    * Can be explicitly set or computed from workflow.nodes.length
    */
   nodeCount?: number;
-}
 
-/**
- * Backwards-compatible alias for GalleryTemplate
- * @deprecated Use Template instead
- */
-export type GalleryTemplate = Template;
+  // ============================================
+  // Attribution
+  // ============================================
+
+  /** Fork count (how many times this template has been forked) */
+  forkCount?: number;
+
+  /** Author information */
+  author?: {
+    id: string;
+    name?: string | null;
+  } | null;
+
+  /** Whether this is a system template (from FloImg) */
+  isSystem?: boolean;
+
+  /** Creation timestamp */
+  createdAt?: Date | string;
+}
