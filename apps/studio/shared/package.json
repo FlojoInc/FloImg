@@ -1,6 +1,6 @@
 {
   "name": "@teamflojo/floimg-studio-shared",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Shared types and utilities for FloImg Studio",
   "type": "module",
   "license": "MIT",

@@ -23,7 +23,6 @@ COPY packages/floimg-stability/package.json ./packages/floimg-stability/
 COPY packages/floimg-google/package.json ./packages/floimg-google/
 COPY packages/floimg-replicate/package.json ./packages/floimg-replicate/
 COPY packages/floimg-xai/package.json ./packages/floimg-xai/
-COPY packages/floimg-templates/package.json ./packages/floimg-templates/
 COPY apps/studio/shared/package.json ./apps/studio/shared/
 COPY apps/studio/backend/package.json ./apps/studio/backend/
 COPY apps/studio/frontend/package.json ./apps/studio/frontend/
@@ -41,7 +40,6 @@ COPY packages/floimg-stability ./packages/floimg-stability
 COPY packages/floimg-google ./packages/floimg-google
 COPY packages/floimg-replicate ./packages/floimg-replicate
 COPY packages/floimg-xai ./packages/floimg-xai
-COPY packages/floimg-templates ./packages/floimg-templates
 COPY apps/studio ./apps/studio
 
 # Build packages in dependency order
@@ -55,7 +53,6 @@ RUN pnpm --filter @teamflojo/floimg-google build
 RUN pnpm --filter @teamflojo/floimg-replicate build
 RUN pnpm --filter @teamflojo/floimg-xai build
 RUN pnpm --filter @teamflojo/floimg-studio-shared build
-RUN pnpm --filter @teamflojo/floimg-templates build
 RUN pnpm --filter @teamflojo/floimg-studio-backend build
 RUN pnpm --filter @teamflojo/floimg-studio-ui build
 
