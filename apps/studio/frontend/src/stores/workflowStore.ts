@@ -172,6 +172,9 @@ interface WorkflowStore {
   unseenRunCount: number;
   hasUnseenErrors: boolean; // True if any unseen run has errors
   markRunsAsSeen: () => void;
+  // Pinned runs - favorite runs that persist at top of history
+  pinnedRunIds: string[];
+  togglePinRun: (runId: string) => void;
 
   // Export
   exportToYaml: () => Promise<string>;
@@ -294,9 +297,27 @@ export const useWorkflowStore = create<WorkflowStore>()(
         },
 
         clearHistory: () =>
-          set({ executionHistory: [], unseenRunCount: 0, hasUnseenErrors: false }),
+          set({
+            executionHistory: [],
+            unseenRunCount: 0,
+            hasUnseenErrors: false,
+            pinnedRunIds: [],
+          }),
 
         markRunsAsSeen: () => set({ unseenRunCount: 0, hasUnseenErrors: false }),
+
+        // Pinned runs - favorites that persist at top of history
+        pinnedRunIds: [],
+        togglePinRun: (runId) => {
+          set((state) => {
+            const isPinned = state.pinnedRunIds.includes(runId);
+            return {
+              pinnedRunIds: isPinned
+                ? state.pinnedRunIds.filter((id) => id !== runId)
+                : [...state.pinnedRunIds, runId],
+            };
+          });
+        },
 
         loadTemplate: (template) => {
           // Convert StudioNodes to React Flow nodes with new IDs
@@ -1413,9 +1434,10 @@ export const useWorkflowStore = create<WorkflowStore>()(
     },
     {
       name: "floimg-studio-workflows",
-      // Only persist savedWorkflows - current canvas state is ephemeral
+      // Only persist savedWorkflows and pinnedRunIds - current canvas state is ephemeral
       partialize: (state) => ({
         savedWorkflows: state.savedWorkflows,
+        pinnedRunIds: state.pinnedRunIds,
       }),
     }
   )
