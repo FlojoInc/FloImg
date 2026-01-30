@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### @teamflojo/floimg-studio-ui (0.8.0)
 
 - **BREAKING**: "Images" tab renamed to "History" tab
+- refactor: Remove "Generated images bar" from Toolbar
+  - Bar showed broken thumbnails for FSC guests (used network URLs)
+  - Node previews + History tab now provide complete execution feedback
+  - Design principle: Results appear in context, not summary overlays
 - feat: Add execution history tracking with data URLs
   - `ExecutionRun` interface for tracking past workflow runs
   - `executionHistory` array in store (limited to 20 runs)
