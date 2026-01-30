@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useWorkflowStore, type ExecutionRun } from "../stores/workflowStore";
 import { ExecutionResultsModal } from "./ExecutionResultsModal";
+import { CompareModal } from "./CompareModal";
 
 interface ExecutionHistoryProps {
   /** Whether this is a guest user (shows ephemeral notice) */
@@ -15,6 +16,33 @@ export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: Execut
   const executionHistory = useWorkflowStore((s) => s.executionHistory);
   const clearHistory = useWorkflowStore((s) => s.clearHistory);
   const [selectedRun, setSelectedRun] = useState<ExecutionRun | null>(null);
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+
+  // Get runs selected for comparison
+  const runsToCompare = useMemo(
+    () => executionHistory.filter((run) => selectedForCompare.includes(run.id)),
+    [executionHistory, selectedForCompare]
+  );
+
+  // Toggle run selection for compare
+  const toggleCompareSelection = (runId: string) => {
+    setSelectedForCompare((prev) => {
+      if (prev.includes(runId)) {
+        return prev.filter((id) => id !== runId);
+      }
+      // Max 4 runs for comparison
+      if (prev.length >= 4) return prev;
+      return [...prev, runId];
+    });
+  };
+
+  // Exit compare mode
+  const exitCompareMode = () => {
+    setCompareMode(false);
+    setSelectedForCompare([]);
+  };
 
   if (executionHistory.length === 0) {
     return (
@@ -70,14 +98,48 @@ export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: Execut
           <h2 className="text-lg font-semibold text-zinc-800 dark:text-white">
             History ({executionHistory.length})
           </h2>
-          <p className="text-xs text-zinc-500">Past workflow runs</p>
+          <p className="text-xs text-zinc-500">
+            {compareMode
+              ? `Select runs to compare (${selectedForCompare.length}/4)`
+              : "Past workflow runs"}
+          </p>
         </div>
-        <button
-          onClick={clearHistory}
-          className="text-sm text-zinc-500 hover:text-red-600 dark:hover:text-red-400"
-        >
-          Clear All
-        </button>
+        <div className="flex items-center gap-2">
+          {compareMode ? (
+            <>
+              <button
+                onClick={exitCompareMode}
+                className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowCompareModal(true)}
+                disabled={selectedForCompare.length < 2}
+                className="px-3 py-1.5 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Compare ({selectedForCompare.length})
+              </button>
+            </>
+          ) : (
+            <>
+              {executionHistory.length >= 2 && (
+                <button
+                  onClick={() => setCompareMode(true)}
+                  className="text-sm text-zinc-500 hover:text-teal-600 dark:hover:text-teal-400"
+                >
+                  Compare
+                </button>
+              )}
+              <button
+                onClick={clearHistory}
+                className="text-sm text-zinc-500 hover:text-red-600 dark:hover:text-red-400"
+              >
+                Clear All
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* History list */}
@@ -87,7 +149,10 @@ export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: Execut
             key={run.id}
             run={run}
             onShare={onShare}
-            onClick={() => setSelectedRun(run)}
+            onClick={() => !compareMode && setSelectedRun(run)}
+            compareMode={compareMode}
+            isSelected={selectedForCompare.includes(run.id)}
+            onToggleSelect={() => toggleCompareSelection(run.id)}
           />
         ))}
       </div>
@@ -95,6 +160,17 @@ export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: Execut
       {/* Results modal */}
       {selectedRun && (
         <ExecutionResultsModal run={selectedRun} onClose={() => setSelectedRun(null)} />
+      )}
+
+      {/* Compare modal */}
+      {showCompareModal && runsToCompare.length >= 2 && (
+        <CompareModal
+          runs={runsToCompare}
+          onClose={() => {
+            setShowCompareModal(false);
+            exitCompareMode();
+          }}
+        />
       )}
     </div>
   );
@@ -104,9 +180,19 @@ interface ExecutionRunCardProps {
   run: ExecutionRun;
   onShare?: (run: ExecutionRun) => void;
   onClick?: () => void;
+  compareMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }
 
-function ExecutionRunCard({ run, onShare, onClick }: ExecutionRunCardProps) {
+function ExecutionRunCard({
+  run,
+  onShare,
+  onClick,
+  compareMode = false,
+  isSelected = false,
+  onToggleSelect,
+}: ExecutionRunCardProps) {
   const isError = run.status === "error";
 
   // Format timestamp as localized time string (avoids impure Date.now() call)
@@ -122,18 +208,52 @@ function ExecutionRunCard({ run, onShare, onClick }: ExecutionRunCardProps) {
     return `${(ms / 1000).toFixed(1)}s`;
   };
 
+  const handleClick = () => {
+    if (compareMode && onToggleSelect) {
+      onToggleSelect();
+    } else if (onClick) {
+      onClick();
+    }
+  };
+
   return (
     <div
-      onClick={onClick}
+      onClick={handleClick}
       className={`rounded-lg border p-3 cursor-pointer transition-colors ${
-        isError
-          ? "border-red-500/20 bg-red-500/5 hover:bg-red-500/10"
-          : "border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10"
+        isSelected
+          ? "border-teal-500 bg-teal-500/10 ring-2 ring-teal-500/30"
+          : isError
+            ? "border-red-500/20 bg-red-500/5 hover:bg-red-500/10"
+            : "border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10"
       }`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
+          {/* Compare checkbox */}
+          {compareMode && (
+            <div
+              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                isSelected ? "bg-teal-600 border-teal-600" : "border-zinc-300 dark:border-zinc-600"
+              }`}
+            >
+              {isSelected && (
+                <svg
+                  className="w-3 h-3 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              )}
+            </div>
+          )}
           {/* Status icon */}
           {isError ? (
             <svg
