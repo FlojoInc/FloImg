@@ -3,6 +3,11 @@
 #
 # Pre-built images available at: ghcr.io/flojoinc/floimg-studio
 
+# Build arguments for deployment visibility
+ARG GIT_COMMIT=unknown
+ARG BUILD_TIME=unknown
+ARG APP_VERSION=unknown
+
 # Stage 1: Build
 FROM node:22-alpine AS builder
 
@@ -58,6 +63,16 @@ RUN pnpm --filter @teamflojo/floimg-studio-ui build
 
 # Stage 2: Production
 FROM node:22-alpine AS runner
+
+# Re-declare build args for this stage
+ARG GIT_COMMIT=unknown
+ARG BUILD_TIME=unknown
+ARG APP_VERSION=unknown
+
+# Set as environment variables for runtime access
+ENV GIT_COMMIT=$GIT_COMMIT
+ENV BUILD_TIME=$BUILD_TIME
+ENV APP_VERSION=$APP_VERSION
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
