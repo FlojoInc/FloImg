@@ -1434,9 +1434,10 @@ export const useWorkflowStore = create<WorkflowStore>()(
     },
     {
       name: "floimg-studio-workflows",
-      // Only persist savedWorkflows - current canvas state is ephemeral
+      // Only persist savedWorkflows and pinnedRunIds - current canvas state is ephemeral
       partialize: (state) => ({
         savedWorkflows: state.savedWorkflows,
+        pinnedRunIds: state.pinnedRunIds,
       }),
     }
   )
