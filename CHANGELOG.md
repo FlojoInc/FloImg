@@ -5,6 +5,25 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.19.0] - 2026-01-30
+
+### @teamflojo/floimg-studio-ui (0.8.0)
+
+- **BREAKING**: "Images" tab renamed to "History" tab
+- feat: Add execution history tracking with data URLs
+  - `ExecutionRun` interface for tracking past workflow runs
+  - `executionHistory` array in store (limited to 20 runs)
+  - `addExecutionRun()` and `clearHistory()` store actions
+  - Auto-capture runs on execution completion/error
+- feat: New `ExecutionHistory` component showing workflow run history
+  - Chronological list with status badges (completed/error)
+  - Thumbnail grid using data URLs (works for all user types)
+  - Duration and node count for each run
+  - Optional `isGuest` prop for ephemeral notice
+  - Optional `signUpUrl` prop for guest sign-up CTA
+  - Optional `onShare` callback for showcase integration
+- feat: Export `ExecutionRun`, `ExecutionRunOutput`, `SavedWorkflow` types
+
 ## [v0.18.1] - 2026-01-30
 
 ### @teamflojo/floimg-studio-backend (0.5.1)
