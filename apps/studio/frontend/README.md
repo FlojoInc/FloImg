@@ -37,25 +37,25 @@ import {
   NodePalette,
   NodeInspector,
   Toolbar,
-  Gallery,
+  ExecutionHistory,
 } from "@teamflojo/floimg-studio-ui";
 ```
 
 ### Available Components
 
-| Component         | Description                          |
-| ----------------- | ------------------------------------ |
-| `App`             | Complete FloImg Studio application   |
-| `WorkflowEditor`  | Main canvas with React Flow          |
-| `NodePalette`     | Draggable node palette               |
-| `NodeInspector`   | Parameter editing panel              |
-| `Toolbar`         | Top toolbar with actions             |
-| `Gallery`         | Generated images gallery             |
-| `TemplateGallery` | Workflow template browser            |
-| `WorkflowLibrary` | Saved workflows panel                |
-| `AISettings`      | AI provider configuration            |
-| `AIChat`          | Natural language workflow generation |
-| `UploadGallery`   | Uploaded images browser              |
+| Component          | Description                                |
+| ------------------ | ------------------------------------------ |
+| `App`              | Complete FloImg Studio application         |
+| `WorkflowEditor`   | Main canvas with React Flow                |
+| `NodePalette`      | Draggable node palette                     |
+| `NodeInspector`    | Parameter editing panel                    |
+| `Toolbar`          | Top toolbar with actions                   |
+| `ExecutionHistory` | Workflow execution history with thumbnails |
+| `TemplateGallery`  | Workflow template browser                  |
+| `WorkflowLibrary`  | Saved workflows panel                      |
+| `AISettings`       | AI provider configuration                  |
+| `AIChat`           | Natural language workflow generation       |
+| `UploadGallery`    | Uploaded images browser                    |
 
 ### Toolbar Props
 
@@ -86,17 +86,18 @@ function MyComponent() {
 }
 ```
 
-## Templates
+## Execution History
 
-Access built-in workflow templates:
+Track workflow execution runs with the store:
 
 ```tsx
-import {
-  templates,
-  getCategories,
-  getTemplatesByCategory,
-  searchTemplates,
-} from "@teamflojo/floimg-studio-ui";
+import { useWorkflowStore, type ExecutionRun } from "@teamflojo/floimg-studio-ui";
+
+function MyComponent() {
+  const executionHistory = useWorkflowStore((s) => s.executionHistory);
+  const clearHistory = useWorkflowStore((s) => s.clearHistory);
+  // ...
+}
 ```
 
 ## Self-Hosting

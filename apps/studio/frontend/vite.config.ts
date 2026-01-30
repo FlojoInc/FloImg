@@ -2,11 +2,19 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import dts from "vite-plugin-dts";
 import { resolve } from "path";
+import packageJson from "./package.json";
+
+// Common version injection for all build modes
+const versionDefines = {
+  __APP_VERSION__: JSON.stringify(packageJson.version),
+  __GIT_COMMIT__: JSON.stringify(process.env.GIT_COMMIT || "dev"),
+};
 
 export default defineConfig(({ mode }) => {
   // Library mode for npm publishing
   if (mode === "lib") {
     return {
+      define: versionDefines,
       plugins: [
         react(),
         dts({
@@ -50,6 +58,7 @@ export default defineConfig(({ mode }) => {
 
   // Default mode for development and app builds
   return {
+    define: versionDefines,
     plugins: [react()],
     server: {
       port: 5173,
