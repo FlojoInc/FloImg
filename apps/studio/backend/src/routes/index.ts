@@ -17,7 +17,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
   fastify.get("/api/version", async () => {
     return {
       service: "floimg-studio-oss",
-      version: process.env.npm_package_version || process.env.APP_VERSION || "unknown",
+      // Prefer APP_VERSION from Docker build, fall back to npm_package_version in dev
+      version: process.env.APP_VERSION || process.env.npm_package_version || "unknown",
       commit: process.env.GIT_COMMIT || "unknown",
       buildTime: process.env.BUILD_TIME || "unknown",
       nodeEnv: process.env.NODE_ENV || "development",
