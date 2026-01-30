@@ -1,6 +1,6 @@
 # PROJECT STATUS
 
-**Last Updated**: 2026-01-11
+**Last Updated**: 2026-01-30
 
 ## Current Focus
 
@@ -13,6 +13,29 @@
 - Additional FloImg Studio UX improvements
 
 ## Just Completed
+
+**EPIC-2026-018 Phase 3: History Power Features** (2026-01-30)
+
+Three power user features for execution history:
+
+- Compare mode - Side-by-side comparison of 2-4 runs (PR #186)
+- Pin favorites - Star runs to keep them accessible
+- Export history - Download runs as ZIP with images + metadata
+
+All features are 100% client-side (works for self-hosted and cloud).
+
+**EPIC-2026-018 Phase 2: Enhanced UX** (2026-01-30)
+
+- Execution Results Modal (PR #183)
+- History indicator badge on tab (PR #184)
+- Per-node execution timing display (PR #185)
+
+**EPIC-2026-018 Phase 1: Image Management UX Overhaul** (2026-01-30)
+
+- Replaced "Images" tab with "History" tab
+- Removed broken "Generated images bar"
+- Added ExecutionHistory component with data URLs
+- Design principle: Results appear in context, not summary overlays
 
 **T-2026-013: NodePalette UX Redesign** (2026-01-11)
 
