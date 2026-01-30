@@ -5,6 +5,35 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.20.0] - 2026-01-30
+
+### @teamflojo/floimg-studio-ui (0.9.0)
+
+- feat: Execution Results Modal for viewing run details
+  - Click history items to see full output details
+  - Re-run and share actions from modal
+- feat: History indicator badge on History tab
+  - Shows unseen run count
+  - Color-coded for errors (red) vs success (teal)
+  - Auto-resets on tab view
+- feat: Per-node execution timing display
+  - Live elapsed counter on running nodes
+  - Duration badge after completion
+  - Slow node highlighting (>5s yellow, >15s red)
+- feat: Compare mode for execution history
+  - Side-by-side comparison of 2-4 runs
+  - Output selector for multi-output workflows
+  - Timing comparison footer
+- feat: Pin favorite runs
+  - Star runs to keep them accessible
+  - Pinned section at top of history
+  - Persisted in localStorage
+- feat: Export history to ZIP
+  - Export all runs, pinned only, or individual runs
+  - ZIP includes images + metadata JSON
+  - 100% client-side (uses JSZip)
+- deps: Add jszip for client-side ZIP generation
+
 ## [v0.19.0] - 2026-01-30
 
 ### @teamflojo/floimg-studio-ui (0.8.0)
