@@ -166,6 +166,10 @@ interface WorkflowStore {
   executionHistory: ExecutionRun[];
   addExecutionRun: (run: ExecutionRun) => void;
   clearHistory: () => void;
+  // Unseen runs indicator - counts runs since last viewing History tab
+  unseenRunCount: number;
+  hasUnseenErrors: boolean; // True if any unseen run has errors
+  markRunsAsSeen: () => void;
 
   // Export
   exportToYaml: () => Promise<string>;
@@ -263,6 +267,9 @@ export const useWorkflowStore = create<WorkflowStore>()(
 
         // Execution history - limited to 20 runs for memory efficiency
         executionHistory: [],
+        // Unseen runs tracking
+        unseenRunCount: 0,
+        hasUnseenErrors: false,
 
         // Output inspector state
         inspectedNodeId: null,
@@ -275,11 +282,18 @@ export const useWorkflowStore = create<WorkflowStore>()(
             // Limit to 20 runs (newest at the beginning)
             const MAX_HISTORY = 20;
             const newHistory = [run, ...state.executionHistory].slice(0, MAX_HISTORY);
-            return { executionHistory: newHistory };
+            return {
+              executionHistory: newHistory,
+              unseenRunCount: state.unseenRunCount + 1,
+              hasUnseenErrors: state.hasUnseenErrors || run.status === "error",
+            };
           });
         },
 
-        clearHistory: () => set({ executionHistory: [] }),
+        clearHistory: () =>
+          set({ executionHistory: [], unseenRunCount: 0, hasUnseenErrors: false }),
+
+        markRunsAsSeen: () => set({ unseenRunCount: 0, hasUnseenErrors: false }),
 
         loadTemplate: (template) => {
           // Convert StudioNodes to React Flow nodes with new IDs
