@@ -230,8 +230,8 @@ export function NodePalette() {
   );
 
   return (
-    <div className="floimg-sidebar w-64 border-r border-gray-200 dark:border-zinc-700 overflow-y-auto">
-      <div className="p-4">
+    <div className="floimg-sidebar w-64 border-r border-gray-200 dark:border-zinc-700 overflow-y-auto flex flex-col">
+      <div className="p-4 flex-1">
         <h2 className="floimg-sidebar__header text-lg !normal-case !tracking-normal">Nodes</h2>
 
         {/* Input */}
@@ -366,6 +366,16 @@ export function NodePalette() {
             onDragStart={handleDragStart}
             onDoubleClick={handleDoubleClick}
           />
+        </div>
+      </div>
+
+      {/* Version indicator at bottom of sidebar */}
+      <div className="px-4 py-2 mt-auto border-t border-gray-200 dark:border-zinc-700">
+        <div className="text-xs text-gray-400 dark:text-zinc-500">
+          FloImg Studio v{__APP_VERSION__}
+          {__GIT_COMMIT__ !== "dev" && (
+            <span className="ml-1 opacity-60">({__GIT_COMMIT__.slice(0, 7)})</span>
+          )}
         </div>
       </div>
     </div>
