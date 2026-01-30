@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useWorkflowStore, type ExecutionRun } from "../stores/workflowStore";
 import { ExecutionResultsModal } from "./ExecutionResultsModal";
 import { CompareModal } from "./CompareModal";
+import { exportRuns, exportSingleRun } from "../utils/exportHistory";
 
 interface ExecutionHistoryProps {
   /** Whether this is a guest user (shows ephemeral notice) */
@@ -58,6 +59,26 @@ export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: Execut
   const exitCompareMode = () => {
     setCompareMode(false);
     setSelectedForCompare([]);
+  };
+
+  // Export handlers
+  const [isExporting, setIsExporting] = useState(false);
+  const handleExportAll = async () => {
+    setIsExporting(true);
+    try {
+      await exportRuns(executionHistory);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportPinned = async () => {
+    setIsExporting(true);
+    try {
+      await exportRuns(pinnedRuns);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (executionHistory.length === 0) {
@@ -147,6 +168,22 @@ export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: Execut
                   Compare
                 </button>
               )}
+              {pinnedRuns.length > 0 && (
+                <button
+                  onClick={handleExportPinned}
+                  disabled={isExporting}
+                  className="text-sm text-zinc-500 hover:text-teal-600 dark:hover:text-teal-400 disabled:opacity-50"
+                >
+                  {isExporting ? "Exporting..." : "Export Pinned"}
+                </button>
+              )}
+              <button
+                onClick={handleExportAll}
+                disabled={isExporting}
+                className="text-sm text-zinc-500 hover:text-teal-600 dark:hover:text-teal-400 disabled:opacity-50"
+              >
+                {isExporting ? "Exporting..." : "Export All"}
+              </button>
               <button
                 onClick={clearHistory}
                 className="text-sm text-zinc-500 hover:text-red-600 dark:hover:text-red-400"
@@ -181,6 +218,7 @@ export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: Execut
                 onToggleSelect={() => toggleCompareSelection(run.id)}
                 isPinned={true}
                 onTogglePin={() => togglePinRun(run.id)}
+                onExport={() => exportSingleRun(run)}
               />
             ))}
           </div>
@@ -200,6 +238,7 @@ export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: Execut
             onToggleSelect={() => toggleCompareSelection(run.id)}
             isPinned={false}
             onTogglePin={() => togglePinRun(run.id)}
+            onExport={() => exportSingleRun(run)}
           />
         ))}
       </div>
@@ -232,6 +271,7 @@ interface ExecutionRunCardProps {
   onToggleSelect?: () => void;
   isPinned?: boolean;
   onTogglePin?: () => void;
+  onExport?: () => void;
 }
 
 function ExecutionRunCard({
@@ -243,6 +283,7 @@ function ExecutionRunCard({
   onToggleSelect,
   isPinned = false,
   onTogglePin,
+  onExport,
 }: ExecutionRunCardProps) {
   const isError = run.status === "error";
 
@@ -373,6 +414,26 @@ function ExecutionRunCard({
         </span>
         <div className="flex items-center gap-2">
           <span>{run.nodeCount} nodes</span>
+          {/* Export button */}
+          {onExport && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onExport();
+              }}
+              className="p-1 rounded text-zinc-400 hover:text-teal-500 transition-colors"
+              title="Export"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+            </button>
+          )}
           {/* Pin button */}
           {onTogglePin && (
             <button
