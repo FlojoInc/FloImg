@@ -85,6 +85,8 @@ interface ExecutionState {
   previews: Record<string, string>; // nodeId -> data URL
   dataOutputs: Record<string, DataOutput>; // nodeId -> text/json output (for vision/text nodes)
   nodeStatus: Record<string, NodeExecutionStatus>; // per-node execution status
+  /** Per-node timing: startTime when running, duration when completed */
+  nodeTiming: Record<string, { startTime?: number; duration?: number }>;
   error?: string;
   /** ID of the node that caused the error (for error highlighting) */
   errorNodeId?: string;
@@ -263,6 +265,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
           previews: {},
           dataOutputs: {},
           nodeStatus: {},
+          nodeTiming: {},
         },
 
         // Execution history - limited to 20 runs for memory efficiency
@@ -336,6 +339,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
               previews: {},
               dataOutputs: {},
               nodeStatus: {},
+              nodeTiming: {},
             },
           });
         },
@@ -355,6 +359,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
               previews: {},
               dataOutputs: {},
               nodeStatus: {},
+              nodeTiming: {},
             },
           });
         },
@@ -564,6 +569,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
               previews: {},
               dataOutputs: {},
               nodeStatus: initialNodeStatus,
+              nodeTiming: {}, // Reset timing for new execution
               // Clear previous error state
               error: undefined,
               errorNodeId: undefined,
@@ -600,6 +606,21 @@ export const useWorkflowStore = create<WorkflowStore>()(
                       [step.id]: step.status as NodeExecutionStatus,
                     };
 
+                    // Update timing based on status
+                    const currentTiming = state.execution.nodeTiming[step.id] || {};
+                    let newTiming = { ...state.execution.nodeTiming };
+                    if (step.status === "running") {
+                      // Record start time when step begins
+                      newTiming[step.id] = { startTime: Date.now() };
+                    } else if (step.status === "completed" || step.status === "error") {
+                      // Calculate duration when step completes
+                      const startTime = currentTiming.startTime || Date.now();
+                      newTiming[step.id] = {
+                        ...currentTiming,
+                        duration: Date.now() - startTime,
+                      };
+                    }
+
                     // Update previews if this step has one
                     const newPreviews = step.preview
                       ? { ...state.execution.previews, [step.id]: step.preview }
@@ -622,6 +643,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
                       execution: {
                         ...state.execution,
                         nodeStatus: newNodeStatus,
+                        nodeTiming: newTiming,
                         previews: newPreviews,
                         dataOutputs: newDataOutputs,
                       },
@@ -803,6 +825,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
               previews: {},
               dataOutputs: {},
               nodeStatus: {},
+              nodeTiming: {},
             },
           });
         },
@@ -874,6 +897,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
               previews: {},
               dataOutputs: {},
               nodeStatus: {},
+              nodeTiming: {},
             },
           });
         },
@@ -903,6 +927,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
               previews: {},
               dataOutputs: {},
               nodeStatus: {},
+              nodeTiming: {},
             },
           });
         },
@@ -985,6 +1010,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
               previews: {},
               dataOutputs: {},
               nodeStatus: {},
+              nodeTiming: {},
             },
           });
         },
@@ -1012,6 +1038,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
                 previews: {},
                 dataOutputs: {},
                 nodeStatus: {},
+                nodeTiming: {},
               },
             });
           } else {
@@ -1288,6 +1315,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
               previews: {},
               dataOutputs: {},
               nodeStatus: {},
+              nodeTiming: {},
             },
           });
         },
@@ -1321,6 +1349,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
               previews: {},
               dataOutputs: {},
               nodeStatus: {},
+              nodeTiming: {},
             },
           });
         },
@@ -1376,6 +1405,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
               previews: {},
               dataOutputs: {},
               nodeStatus: {},
+              nodeTiming: {},
             },
           });
         },
