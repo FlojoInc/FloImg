@@ -91,6 +91,11 @@ function App() {
   const nodes = useWorkflowStore((s) => s.nodes);
   const selectedNodeId = useWorkflowStore((s) => s.selectedNodeId);
 
+  // Unseen runs indicator
+  const unseenRunCount = useWorkflowStore((s) => s.unseenRunCount);
+  const hasUnseenErrors = useWorkflowStore((s) => s.hasUnseenErrors);
+  const markRunsAsSeen = useWorkflowStore((s) => s.markRunsAsSeen);
+
   // Get inspected node info
   const inspectedNode = inspectedNodeId ? nodes.find((n) => n.id === inspectedNodeId) : null;
   const inspectedOutput = inspectedNodeId ? executionDataOutputs[inspectedNodeId] : null;
@@ -165,6 +170,12 @@ function App() {
     setShowAIChat((prev) => !prev);
   }, []);
 
+  // Handle History tab click - marks runs as seen
+  const handleHistoryTabClick = useCallback(() => {
+    setActiveTab("history");
+    markRunsAsSeen();
+  }, [markRunsAsSeen]);
+
   // New workflow confirmation dialog
   const showNewWorkflowConfirm = useSettingsStore((s) => s.showNewWorkflowConfirm);
   const confirmNewWorkflow = useSettingsStore((s) => s.confirmNewWorkflow);
@@ -235,10 +246,20 @@ function App() {
                 Editor
               </button>
               <button
-                onClick={() => setActiveTab("history")}
-                className={`floimg-tab ${activeTab === "history" ? "floimg-tab--active" : ""}`}
+                onClick={handleHistoryTabClick}
+                className={`floimg-tab ${activeTab === "history" ? "floimg-tab--active" : ""} relative`}
               >
                 History
+                {/* Unseen runs badge */}
+                {unseenRunCount > 0 && (
+                  <span
+                    className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center text-xs font-medium rounded-full px-1 ${
+                      hasUnseenErrors ? "bg-red-500 text-white" : "bg-emerald-500 text-white"
+                    }`}
+                  >
+                    {unseenRunCount > 9 ? "9+" : unseenRunCount}
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab("templates")}
