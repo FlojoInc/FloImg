@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useRef } from "react";
+import { memo, useCallback, useRef, useState, useEffect } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import type {
   GeneratorNodeData,
@@ -37,18 +37,20 @@ function formatDuration(ms: number): string {
 function TimingBadge({ nodeId }: { nodeId: string }) {
   const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[nodeId]);
   const nodeTiming = useWorkflowStore((s) => s.execution.nodeTiming[nodeId]);
-  const [elapsed, setElapsed] = React.useState(0);
+  const [elapsed, setElapsed] = useState(0);
 
   // Live counter for running nodes
-  React.useEffect(() => {
+  useEffect(() => {
     if (nodeStatus !== "running" || !nodeTiming?.startTime) {
-      setElapsed(0);
       return;
     }
 
     // Update elapsed time every 100ms while running
+    // Using setInterval instead of RAF for consistent 100ms updates
     const interval = setInterval(() => {
-      setElapsed(Date.now() - nodeTiming.startTime!);
+      const startTime = nodeTiming.startTime;
+      if (!startTime) return;
+      setElapsed(Date.now() - startTime);
     }, 100);
 
     return () => clearInterval(interval);
