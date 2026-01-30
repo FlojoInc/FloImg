@@ -102,6 +102,10 @@ jobs:
           tags: |
             ghcr.io/flojoinc/floimg-studio:latest
             ghcr.io/flojoinc/floimg-studio:${{ steps.version.outputs.VERSION }}
+          build-args: |
+            GIT_COMMIT=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp }}
+            APP_VERSION=${{ steps.version.outputs.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
