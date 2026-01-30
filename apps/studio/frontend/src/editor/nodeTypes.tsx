@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef } from "react";
+import React, { memo, useCallback, useRef } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import type {
   GeneratorNodeData,
@@ -21,6 +21,62 @@ function getExecutionClass(nodeStatus: string | undefined): string {
   if (nodeStatus === "completed") return "floimg-node--completed";
   if (nodeStatus === "error") return "floimg-node--error";
   return "";
+}
+
+// Format duration for display (e.g., "1.2s", "45s", "1m 23s")
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  const seconds = ms / 1000;
+  if (seconds < 60) return `${seconds.toFixed(1)}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.round(seconds % 60);
+  return `${minutes}m ${remainingSeconds}s`;
+}
+
+// Timing badge shown on nodes after execution
+function TimingBadge({ nodeId }: { nodeId: string }) {
+  const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[nodeId]);
+  const nodeTiming = useWorkflowStore((s) => s.execution.nodeTiming[nodeId]);
+  const [elapsed, setElapsed] = React.useState(0);
+
+  // Live counter for running nodes
+  React.useEffect(() => {
+    if (nodeStatus !== "running" || !nodeTiming?.startTime) {
+      setElapsed(0);
+      return;
+    }
+
+    // Update elapsed time every 100ms while running
+    const interval = setInterval(() => {
+      setElapsed(Date.now() - nodeTiming.startTime!);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [nodeStatus, nodeTiming?.startTime]);
+
+  // Show elapsed time while running
+  if (nodeStatus === "running" && nodeTiming?.startTime) {
+    return (
+      <div className="floimg-node__timing floimg-node__timing--running" title="Running...">
+        {formatDuration(elapsed)}
+      </div>
+    );
+  }
+
+  // Show duration after completion
+  if ((nodeStatus === "completed" || nodeStatus === "error") && nodeTiming?.duration) {
+    const isSlow = nodeTiming.duration > 5000;
+    return (
+      <div
+        className={`floimg-node__timing ${isSlow ? "floimg-node__timing--slow" : ""}`}
+        title={`Completed in ${formatDuration(nodeTiming.duration)}`}
+      >
+        {formatDuration(nodeTiming.duration)}
+      </div>
+    );
+  }
+
+  return null;
 }
 
 // Eye icon for preview toggle
@@ -132,6 +188,7 @@ export const GeneratorNode = memo(function GeneratorNode({
         </div>
       )}
       <ErrorBadge nodeId={id} />
+      <TimingBadge nodeId={id} />
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-blue-500/10">
           <div className="w-2 h-2 rounded-full bg-blue-500" />
@@ -236,6 +293,7 @@ export const TransformNode = memo(function TransformNode({
         </div>
       )}
       <ErrorBadge nodeId={id} />
+      <TimingBadge nodeId={id} />
       <div className="floimg-node__header">
         <div className={`floimg-node__icon ${isAI ? "bg-indigo-500/10" : "bg-teal-500/10"}`}>
           {isAI ? (
@@ -311,6 +369,7 @@ export const SaveNode = memo(function SaveNode({ id, data, selected }: NodeProps
         className="!w-3 !h-3 !bg-emerald-500 !border-2 !border-white dark:!border-zinc-800"
       />
       <ErrorBadge nodeId={id} />
+      <TimingBadge nodeId={id} />
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-emerald-500/10">
           <svg
@@ -431,6 +490,7 @@ export const InputNode = memo(function InputNode({ id, data, selected }: NodePro
         onChange={handleInputChange}
       />
       <ErrorBadge nodeId={id} />
+      <TimingBadge nodeId={id} />
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-amber-500/10">
           <svg
@@ -524,6 +584,7 @@ export const VisionNode = memo(function VisionNode({
         </div>
       )}
       <ErrorBadge nodeId={id} />
+      <TimingBadge nodeId={id} />
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-cyan-500/10">
           <svg className="w-2.5 h-2.5 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
@@ -645,6 +706,7 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
         </div>
       )}
       <ErrorBadge nodeId={id} />
+      <TimingBadge nodeId={id} />
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-pink-500/10">
           <svg className="w-2.5 h-2.5 text-pink-500" fill="currentColor" viewBox="0 0 20 20">
@@ -751,6 +813,7 @@ export const FanOutNode = memo(function FanOutNode({
         style={{ top: "50%" }}
       />
       <ErrorBadge nodeId={id} />
+      <TimingBadge nodeId={id} />
 
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-orange-500/10">
@@ -832,6 +895,7 @@ export const CollectNode = memo(function CollectNode({
         />
       ))}
       <ErrorBadge nodeId={id} />
+      <TimingBadge nodeId={id} />
 
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-orange-500/10">
@@ -907,6 +971,7 @@ export const RouterNode = memo(function RouterNode({
         title="Selection (from vision/text)"
       />
       <ErrorBadge nodeId={id} />
+      <TimingBadge nodeId={id} />
 
       <div className="floimg-node__header">
         <div className="floimg-node__icon bg-amber-500/10">

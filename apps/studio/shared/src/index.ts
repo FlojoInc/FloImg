@@ -236,6 +236,9 @@ export interface ExecutionStepResult {
   branchIndex?: number;
   /** Total number of branches in this fan-out */
   totalBranches?: number;
+  // Timing info
+  /** Execution duration in milliseconds (only set on completed/error status) */
+  duration?: number;
 }
 
 // Full execution result
