@@ -15,10 +15,26 @@ interface ExecutionHistoryProps {
 export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: ExecutionHistoryProps) {
   const executionHistory = useWorkflowStore((s) => s.executionHistory);
   const clearHistory = useWorkflowStore((s) => s.clearHistory);
+  const pinnedRunIds = useWorkflowStore((s) => s.pinnedRunIds);
+  const togglePinRun = useWorkflowStore((s) => s.togglePinRun);
   const [selectedRun, setSelectedRun] = useState<ExecutionRun | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
+
+  // Separate pinned and unpinned runs
+  const { pinnedRuns, unpinnedRuns } = useMemo(() => {
+    const pinned: ExecutionRun[] = [];
+    const unpinned: ExecutionRun[] = [];
+    for (const run of executionHistory) {
+      if (pinnedRunIds.includes(run.id)) {
+        pinned.push(run);
+      } else {
+        unpinned.push(run);
+      }
+    }
+    return { pinnedRuns: pinned, unpinnedRuns: unpinned };
+  }, [executionHistory, pinnedRunIds]);
 
   // Get runs selected for comparison
   const runsToCompare = useMemo(
@@ -142,9 +158,38 @@ export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: Execut
         </div>
       </div>
 
+      {/* Pinned runs section */}
+      {pinnedRuns.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Pinned ({pinnedRuns.length})
+            </span>
+          </div>
+          <div className="space-y-3">
+            {pinnedRuns.map((run) => (
+              <ExecutionRunCard
+                key={run.id}
+                run={run}
+                onShare={onShare}
+                onClick={() => !compareMode && setSelectedRun(run)}
+                compareMode={compareMode}
+                isSelected={selectedForCompare.includes(run.id)}
+                onToggleSelect={() => toggleCompareSelection(run.id)}
+                isPinned={true}
+                onTogglePin={() => togglePinRun(run.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* History list */}
       <div className="space-y-3">
-        {executionHistory.map((run) => (
+        {unpinnedRuns.map((run) => (
           <ExecutionRunCard
             key={run.id}
             run={run}
@@ -153,6 +198,8 @@ export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: Execut
             compareMode={compareMode}
             isSelected={selectedForCompare.includes(run.id)}
             onToggleSelect={() => toggleCompareSelection(run.id)}
+            isPinned={false}
+            onTogglePin={() => togglePinRun(run.id)}
           />
         ))}
       </div>
@@ -183,6 +230,8 @@ interface ExecutionRunCardProps {
   compareMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: () => void;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
 }
 
 function ExecutionRunCard({
@@ -192,6 +241,8 @@ function ExecutionRunCard({
   compareMode = false,
   isSelected = false,
   onToggleSelect,
+  isPinned = false,
+  onTogglePin,
 }: ExecutionRunCardProps) {
   const isError = run.status === "error";
 
@@ -322,6 +373,30 @@ function ExecutionRunCard({
         </span>
         <div className="flex items-center gap-2">
           <span>{run.nodeCount} nodes</span>
+          {/* Pin button */}
+          {onTogglePin && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePin();
+              }}
+              className={`p-1 rounded transition-colors ${
+                isPinned
+                  ? "text-amber-500 hover:text-amber-600"
+                  : "text-zinc-400 hover:text-amber-500"
+              }`}
+              title={isPinned ? "Unpin" : "Pin"}
+            >
+              <svg
+                className="w-4 h-4"
+                fill={isPinned ? "currentColor" : "none"}
+                stroke="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+            </button>
+          )}
           {/* Share button - only shown for successful runs when onShare is provided */}
           {onShare && !isError && run.outputs.length > 0 && (
             <button
