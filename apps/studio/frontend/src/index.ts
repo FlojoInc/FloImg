@@ -24,6 +24,7 @@ export {
 export { NodeInspector } from "./components/NodeInspector";
 export { Toolbar, type ToolbarProps } from "./components/Toolbar";
 export { ExecutionHistory } from "./components/ExecutionHistory";
+export { ExecutionResultsModal } from "./components/ExecutionResultsModal";
 export { TemplateGallery } from "./components/TemplateGallery";
 export { WorkflowLibrary } from "./components/WorkflowLibrary";
 export { AISettings } from "./components/AISettings";

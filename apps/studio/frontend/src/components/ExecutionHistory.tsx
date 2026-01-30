@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useWorkflowStore, type ExecutionRun } from "../stores/workflowStore";
+import { ExecutionResultsModal } from "./ExecutionResultsModal";
 
 interface ExecutionHistoryProps {
   /** Whether this is a guest user (shows ephemeral notice) */
@@ -13,6 +14,7 @@ interface ExecutionHistoryProps {
 export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: ExecutionHistoryProps) {
   const executionHistory = useWorkflowStore((s) => s.executionHistory);
   const clearHistory = useWorkflowStore((s) => s.clearHistory);
+  const [selectedRun, setSelectedRun] = useState<ExecutionRun | null>(null);
 
   if (executionHistory.length === 0) {
     return (
@@ -81,9 +83,19 @@ export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: Execut
       {/* History list */}
       <div className="space-y-3">
         {executionHistory.map((run) => (
-          <ExecutionRunCard key={run.id} run={run} onShare={onShare} />
+          <ExecutionRunCard
+            key={run.id}
+            run={run}
+            onShare={onShare}
+            onClick={() => setSelectedRun(run)}
+          />
         ))}
       </div>
+
+      {/* Results modal */}
+      {selectedRun && (
+        <ExecutionResultsModal run={selectedRun} onClose={() => setSelectedRun(null)} />
+      )}
     </div>
   );
 }
@@ -91,9 +103,10 @@ export function ExecutionHistory({ isGuest = false, signUpUrl, onShare }: Execut
 interface ExecutionRunCardProps {
   run: ExecutionRun;
   onShare?: (run: ExecutionRun) => void;
+  onClick?: () => void;
 }
 
-function ExecutionRunCard({ run, onShare }: ExecutionRunCardProps) {
+function ExecutionRunCard({ run, onShare, onClick }: ExecutionRunCardProps) {
   const isError = run.status === "error";
 
   // Format timestamp as localized time string (avoids impure Date.now() call)
@@ -111,8 +124,11 @@ function ExecutionRunCard({ run, onShare }: ExecutionRunCardProps) {
 
   return (
     <div
-      className={`rounded-lg border p-3 ${
-        isError ? "border-red-500/20 bg-red-500/5" : "border-emerald-500/20 bg-emerald-500/5"
+      onClick={onClick}
+      className={`rounded-lg border p-3 cursor-pointer transition-colors ${
+        isError
+          ? "border-red-500/20 bg-red-500/5 hover:bg-red-500/10"
+          : "border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10"
       }`}
     >
       {/* Header */}
@@ -189,7 +205,10 @@ function ExecutionRunCard({ run, onShare }: ExecutionRunCardProps) {
           {/* Share button - only shown for successful runs when onShare is provided */}
           {onShare && !isError && run.outputs.length > 0 && (
             <button
-              onClick={() => onShare(run)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onShare(run);
+              }}
               className="px-2 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700"
             >
               Share
