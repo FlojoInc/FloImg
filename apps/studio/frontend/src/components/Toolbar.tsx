@@ -288,29 +288,6 @@ export function Toolbar({
       {/* Remix/fork attribution slot (injected by cloud wrapper) */}
       {remixInfoSlot}
 
-      {/* Execution result banner */}
-      {execution.status === "completed" && execution.imageIds.length > 0 && (
-        <div className="bg-green-50 dark:bg-green-900/30 border-b border-green-200 dark:border-green-800 px-4 py-3">
-          <div className="flex items-center gap-4">
-            <span className="text-green-700 dark:text-green-400 font-medium">
-              Generated {execution.imageIds.length} image
-              {execution.imageIds.length !== 1 ? "s" : ""}
-            </span>
-            <div className="flex gap-2">
-              {execution.imageUrls.slice(0, 4).map((url, idx) => (
-                <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block">
-                  <img
-                    src={url}
-                    alt="Generated"
-                    className="h-12 w-12 object-cover rounded border border-green-300 dark:border-green-700"
-                  />
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {execution.status === "error" && (
         <div className="bg-red-50 dark:bg-red-900/30 border-b border-red-200 dark:border-red-800 px-4 py-3">
           <span className="text-red-700 dark:text-red-400">Error: {execution.error}</span>
