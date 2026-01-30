@@ -5,6 +5,18 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.18.1] - 2026-01-30
+
+### @teamflojo/floimg-studio-backend (0.5.1)
+
+- feat: add `/api/version` endpoint for deployment visibility
+  - Returns service name, version, git commit, build time, and node environment
+  - Build metadata injected via Docker build args during release workflow
+
+### Docker Image
+
+- feat: Docker image now includes build metadata (GIT_COMMIT, BUILD_TIME, APP_VERSION)
+
 ## [v0.18.0] - 2026-01-24
 
 ### @teamflojo/floimg-studio-ui (0.7.0)
