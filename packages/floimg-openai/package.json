@@ -44,7 +44,7 @@
     "@teamflojo/floimg": "^0.8.0"
   },
   "dependencies": {
-    "openai": "^6.16.0"
+    "openai": "^6.17.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
