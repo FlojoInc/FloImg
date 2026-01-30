@@ -51,6 +51,9 @@ const browserGlobals = {
   alert: "readonly",
   confirm: "readonly",
   React: "readonly",
+  // Vite build-time constants
+  __APP_VERSION__: "readonly",
+  __GIT_COMMIT__: "readonly",
 };
 
 // Test globals for Vitest
