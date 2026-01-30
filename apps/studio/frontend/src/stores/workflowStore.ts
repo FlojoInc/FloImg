@@ -24,6 +24,8 @@ import { createSSEConnection, type SSEConnection } from "../api/sse";
 
 // Module-level variable to store active SSE connection (not in store since it's not serializable)
 let activeExecutionConnection: SSEConnection | null = null;
+// Track execution start time for duration calculation
+let executionStartTime: number | null = null;
 import type { StudioNode, StudioEdge, StudioNodeData } from "@teamflojo/floimg-studio-shared";
 import { useSettingsStore } from "./settingsStore";
 
@@ -44,6 +46,25 @@ interface DataOutput {
   dataType: "text" | "json";
   content: string;
   parsed?: Record<string, unknown>;
+}
+
+// Execution history entry - stores data URLs for universal access (works for all user types)
+export interface ExecutionRunOutput {
+  nodeId: string;
+  nodeName: string;
+  preview: string; // data URL (base64) - works for guests, self-hosted, and cloud users
+  imageId?: string; // if saved to storage (FSC authenticated only)
+}
+
+export interface ExecutionRun {
+  id: string;
+  timestamp: number;
+  status: "completed" | "error";
+  duration: number; // milliseconds
+  nodeCount: number;
+  outputs: ExecutionRunOutput[];
+  error?: string;
+  errorNodeId?: string;
 }
 
 // Saved workflow structure for persistence
@@ -141,6 +162,11 @@ interface WorkflowStore {
   execute: () => Promise<void>;
   cancelExecution: () => void;
 
+  // Execution history - stores past runs with data URLs for universal access
+  executionHistory: ExecutionRun[];
+  addExecutionRun: (run: ExecutionRun) => void;
+  clearHistory: () => void;
+
   // Export
   exportToYaml: () => Promise<string>;
 
@@ -235,10 +261,25 @@ export const useWorkflowStore = create<WorkflowStore>()(
           nodeStatus: {},
         },
 
+        // Execution history - limited to 20 runs for memory efficiency
+        executionHistory: [],
+
         // Output inspector state
         inspectedNodeId: null,
         openOutputInspector: (nodeId) => set({ inspectedNodeId: nodeId }),
         closeOutputInspector: () => set({ inspectedNodeId: null }),
+
+        // Execution history methods
+        addExecutionRun: (run) => {
+          set((state) => {
+            // Limit to 20 runs (newest at the beginning)
+            const MAX_HISTORY = 20;
+            const newHistory = [run, ...state.executionHistory].slice(0, MAX_HISTORY);
+            return { executionHistory: newHistory };
+          });
+        },
+
+        clearHistory: () => set({ executionHistory: [] }),
 
         loadTemplate: (template) => {
           // Convert StudioNodes to React Flow nodes with new IDs
@@ -498,6 +539,9 @@ export const useWorkflowStore = create<WorkflowStore>()(
             initialNodeStatus[node.id] = "pending";
           }
 
+          // Track start time for duration calculation
+          executionStartTime = Date.now();
+
           set({
             execution: {
               status: "running",
@@ -582,6 +626,43 @@ export const useWorkflowStore = create<WorkflowStore>()(
                       }
                     }
 
+                    // Calculate duration
+                    const duration = executionStartTime ? Date.now() - executionStartTime : 0;
+                    executionStartTime = null;
+
+                    // Build outputs from previews (data URLs that work for all user types)
+                    const outputs: ExecutionRunOutput[] = Object.entries(
+                      state.execution.previews
+                    ).map(([nodeId, preview]) => {
+                      const node = state.nodes.find((n) => n.id === nodeId);
+                      const nodeData = node?.data as NodeData | undefined;
+                      // Get a readable name for the node
+                      let nodeName = "Unknown Node";
+                      if (nodeData && "generatorName" in nodeData) {
+                        nodeName = nodeData.generatorName;
+                      } else if (nodeData && "operation" in nodeData) {
+                        nodeName = nodeData.operation;
+                      } else if (node?.type) {
+                        nodeName = node.type.charAt(0).toUpperCase() + node.type.slice(1);
+                      }
+                      return {
+                        nodeId,
+                        nodeName,
+                        preview,
+                      };
+                    });
+
+                    // Create and add execution run to history
+                    const run: ExecutionRun = {
+                      id: `run_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+                      timestamp: Date.now(),
+                      status: "completed",
+                      duration,
+                      nodeCount: state.nodes.length,
+                      outputs,
+                    };
+                    get().addExecutionRun(run);
+
                     set({
                       execution: {
                         ...state.execution,
@@ -600,6 +681,40 @@ export const useWorkflowStore = create<WorkflowStore>()(
                     if (event.data.id) {
                       errorNodeStatus[event.data.id] = "error";
                     }
+
+                    // Calculate duration
+                    const duration = executionStartTime ? Date.now() - executionStartTime : 0;
+                    executionStartTime = null;
+
+                    // Build outputs from any previews we got before the error
+                    const outputs: ExecutionRunOutput[] = Object.entries(
+                      state.execution.previews
+                    ).map(([nodeId, preview]) => {
+                      const node = state.nodes.find((n) => n.id === nodeId);
+                      const nodeData = node?.data as NodeData | undefined;
+                      let nodeName = "Unknown Node";
+                      if (nodeData && "generatorName" in nodeData) {
+                        nodeName = nodeData.generatorName;
+                      } else if (nodeData && "operation" in nodeData) {
+                        nodeName = nodeData.operation;
+                      } else if (node?.type) {
+                        nodeName = node.type.charAt(0).toUpperCase() + node.type.slice(1);
+                      }
+                      return { nodeId, nodeName, preview };
+                    });
+
+                    // Create and add failed execution run to history
+                    const run: ExecutionRun = {
+                      id: `run_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+                      timestamp: Date.now(),
+                      status: "error",
+                      duration,
+                      nodeCount: state.nodes.length,
+                      outputs,
+                      error: event.data.error,
+                      errorNodeId: event.data.id,
+                    };
+                    get().addExecutionRun(run);
 
                     set({
                       execution: {

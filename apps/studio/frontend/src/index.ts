@@ -24,6 +24,7 @@ export {
 export { NodeInspector } from "./components/NodeInspector";
 export { Toolbar, type ToolbarProps } from "./components/Toolbar";
 export { Gallery } from "./components/Gallery";
+export { ExecutionHistory } from "./components/ExecutionHistory";
 export { TemplateGallery } from "./components/TemplateGallery";
 export { WorkflowLibrary } from "./components/WorkflowLibrary";
 export { AISettings } from "./components/AISettings";
@@ -38,7 +39,12 @@ export { SHORTCUT_DEFINITIONS, CATEGORY_NAMES } from "./lib/keyboard/shortcuts";
 export type * from "./lib/keyboard/types";
 
 // State management
-export { useWorkflowStore } from "./stores/workflowStore";
+export {
+  useWorkflowStore,
+  type ExecutionRun,
+  type ExecutionRunOutput,
+  type SavedWorkflow,
+} from "./stores/workflowStore";
 export { useSettingsStore } from "./stores/settingsStore";
 
 // Re-export types from shared
