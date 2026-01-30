@@ -4,7 +4,7 @@ import { WorkflowEditor } from "./editor/WorkflowEditor";
 import { NodePalette } from "./components/NodePalette";
 import { NodeInspector } from "./components/NodeInspector";
 import { Toolbar } from "./components/Toolbar";
-import { Gallery } from "./components/Gallery";
+import { ExecutionHistory } from "./components/ExecutionHistory";
 import { TemplateGallery } from "./components/TemplateGallery";
 import { WorkflowLibrary } from "./components/WorkflowLibrary";
 import { AISettings } from "./components/AISettings";
@@ -75,7 +75,7 @@ function EditorDropZone() {
   );
 }
 
-type TabType = "editor" | "gallery" | "templates";
+type TabType = "editor" | "history" | "templates";
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>("editor");
@@ -235,10 +235,10 @@ function App() {
                 Editor
               </button>
               <button
-                onClick={() => setActiveTab("gallery")}
-                className={`floimg-tab ${activeTab === "gallery" ? "floimg-tab--active" : ""}`}
+                onClick={() => setActiveTab("history")}
+                className={`floimg-tab ${activeTab === "history" ? "floimg-tab--active" : ""}`}
               >
-                Images
+                History
               </button>
               <button
                 onClick={() => setActiveTab("templates")}
@@ -272,9 +272,9 @@ function App() {
               {selectedNodeId && <NodeInspector />}
             </>
           )}
-          {activeTab === "gallery" && (
+          {activeTab === "history" && (
             <div className="flex-1 overflow-auto">
-              <Gallery />
+              <ExecutionHistory />
             </div>
           )}
           {activeTab === "templates" && (
