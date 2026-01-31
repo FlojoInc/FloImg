@@ -846,6 +846,108 @@ export async function executeWorkflow(
       }
     }
 
+    // Step 4.7: Resolve overlay images for composite transforms
+    // Similar to reference images, but injected into params.overlays[N].blob
+    const overlayImageVarsToResolve = new Set<string>();
+    for (const step of pipeline.steps) {
+      if (step.kind === "transform" && step.params?._overlayImageVars) {
+        const overlayVarsWithIndex = step.params._overlayImageVars as Array<{
+          varName: string;
+          index: number;
+        }>;
+        for (const { varName } of overlayVarsWithIndex) {
+          if (!initialVariables[varName]) {
+            overlayImageVarsToResolve.add(varName);
+          }
+        }
+      }
+    }
+
+    // Execute overlay image source steps if needed
+    const resolvedOverlayImages = new Map<string, ImageBlob>();
+    if (overlayImageVarsToResolve.size > 0) {
+      console.log(`Resolving ${overlayImageVarsToResolve.size} overlay image sources`);
+
+      // Find steps that produce the needed overlay images (skip already resolved refs)
+      const overlaySourceSteps = pipeline.steps.filter(
+        (s) =>
+          (s.kind === "generate" || s.kind === "transform") &&
+          overlayImageVarsToResolve.has(s.out) &&
+          !resolvedRefImages.has(s.out)
+      );
+
+      if (overlaySourceSteps.length > 0) {
+        const overlayPipeline: Pipeline = {
+          name: "Overlay Image Resolution",
+          steps: overlaySourceSteps as Pipeline["steps"],
+          initialVariables,
+        };
+
+        const overlayResults = await client.run(overlayPipeline);
+
+        for (const result of overlayResults) {
+          if (isImageBlob(result.value)) {
+            resolvedOverlayImages.set(result.out, result.value);
+          }
+        }
+      }
+    }
+
+    // Inject overlay images into composite transform steps
+    for (const step of pipeline.steps) {
+      if (step.kind === "transform" && step.params?._overlayImageVars) {
+        const overlayVarsWithIndex = step.params._overlayImageVars as Array<{
+          varName: string;
+          index: number;
+        }>;
+        const existingOverlays = (step.params.overlays || []) as Array<{
+          left?: number;
+          top?: number;
+          blob?: ImageBlob;
+        }>;
+
+        // Track missing overlays for clear error reporting
+        const missingOverlays: string[] = [];
+
+        // Inject blob at the correct index position (supports sparse arrays)
+        for (const { varName, index } of overlayVarsWithIndex) {
+          let blob: ImageBlob | undefined;
+
+          // Check initialVariables first
+          const fromInitial = initialVariables[varName];
+          if (fromInitial && isImageBlob(fromInitial)) {
+            blob = fromInitial;
+          } else {
+            // Check resolved images (from generator/transform)
+            blob = resolvedRefImages.get(varName) || resolvedOverlayImages.get(varName);
+          }
+
+          if (blob) {
+            // Ensure overlays array is long enough for this index
+            while (existingOverlays.length <= index) {
+              existingOverlays.push({ left: 0, top: 0 });
+            }
+            existingOverlays[index].blob = blob;
+          } else {
+            missingOverlays.push(`${varName} (index ${index})`);
+          }
+        }
+
+        // Fail fast with clear error instead of cryptic Sharp error
+        if (missingOverlays.length > 0) {
+          throw new Error(
+            `Composite transform missing overlay images: ${missingOverlays.join(", ")}`
+          );
+        }
+
+        step.params.overlays = existingOverlays;
+        console.log(`Injected ${overlayVarsWithIndex.length} overlay images for composite step`);
+
+        // Clean up the marker
+        delete step.params._overlayImageVars;
+      }
+    }
+
     console.log(`Executing pipeline with ${pipeline.steps.length} steps via core runner`);
 
     // Step 5: Map step indices to node IDs for callbacks
