@@ -214,10 +214,7 @@ export async function executeRoutes(fastify: FastifyInstance) {
 
       // Build previews map: stepId -> base64 data URL
       const previews: Record<string, string> = {};
-      for (const [imageId, buffer] of result.images) {
-        let mime = "image/png";
-        if (buffer[0] === 0x3c) mime = "image/svg+xml";
-        else if (buffer[0] === 0xff) mime = "image/jpeg";
+      for (const [imageId, { buffer, mime }] of result.images) {
         const base64 = buffer.toString("base64");
         previews[imageId] = `data:${mime};base64,${base64}`;
       }

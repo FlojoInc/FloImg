@@ -195,7 +195,7 @@ export interface ExecutionResult {
  */
 export interface PipelineExecutionResult {
   imageIds: string[];
-  images: Map<string, Buffer>;
+  images: Map<string, { buffer: Buffer; mime: string }>;
   dataOutputs: Map<string, { dataType: "text" | "json"; content: string; parsed?: unknown }>;
   usageEvents: UsageEvent[];
 }
@@ -242,7 +242,7 @@ export async function executePipeline(
 
   try {
     const imageIds: string[] = [];
-    const images = new Map<string, Buffer>();
+    const images = new Map<string, { buffer: Buffer; mime: string }>();
     const dataOutputs = new Map<
       string,
       { dataType: "text" | "json"; content: string; parsed?: unknown }
@@ -390,8 +390,9 @@ export async function executePipeline(
 
             const imageId = nanoid();
             const buffer = Buffer.from(result.value.bytes);
+            const mime = result.value.mime || "image/png";
             imageIds.push(imageId);
-            images.set(imageId, buffer);
+            images.set(imageId, { buffer, mime });
 
             // Save image to disk
             const ext = MIME_TO_EXT[result.value.mime] || "png";
