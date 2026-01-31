@@ -39,6 +39,8 @@ export default defineConfig({
             "packages/floimg-qr/test/**/*.test.ts",
             "packages/floimg-quickchart/test/**/*.test.ts",
             "packages/floimg-d3/test/**/*.test.ts",
+            // Transform plugins
+            "packages/floimg-vectorize/test/**/*.test.ts",
           ],
           testTimeout: 10000,
         },
