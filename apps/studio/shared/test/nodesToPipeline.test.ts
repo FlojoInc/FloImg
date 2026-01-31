@@ -722,4 +722,186 @@ describe("nodesToPipeline", () => {
       });
     });
   });
+
+  describe("composite transforms", () => {
+    it("accepts 'base' targetHandle for composite base image", () => {
+      const nodes: StudioNode[] = [
+        {
+          id: "base",
+          type: "generator",
+          position: { x: 0, y: 0 },
+          data: {
+            generatorName: "shapes",
+            params: { shapeType: "rectangle", width: 800 },
+          } as GeneratorNodeData,
+        },
+        {
+          id: "composite_1",
+          type: "transform",
+          position: { x: 200, y: 0 },
+          data: {
+            operation: "composite",
+            providerName: "sharp",
+            params: { overlays: [{ left: 0, top: 0 }] },
+          } as TransformNodeData,
+        },
+      ];
+      const edges: StudioEdge[] = [
+        {
+          id: "e1",
+          source: "base",
+          target: "composite_1",
+          targetHandle: "base",
+        },
+      ];
+
+      const { pipeline } = nodesToPipeline(nodes, edges);
+
+      expect(pipeline.steps).toHaveLength(2);
+      expect(pipeline.steps[1]).toMatchObject({
+        kind: "transform",
+        op: "composite",
+        in: "base",
+      });
+    });
+
+    it("collects overlay images via _overlayImageVars", () => {
+      const nodes: StudioNode[] = [
+        {
+          id: "base",
+          type: "generator",
+          position: { x: 0, y: 0 },
+          data: {
+            generatorName: "shapes",
+            params: { shapeType: "rectangle" },
+          } as GeneratorNodeData,
+        },
+        {
+          id: "overlay_1",
+          type: "generator",
+          position: { x: 0, y: 100 },
+          data: {
+            generatorName: "dalle-3",
+            params: { prompt: "Logo" },
+          } as GeneratorNodeData,
+        },
+        {
+          id: "overlay_2",
+          type: "generator",
+          position: { x: 0, y: 200 },
+          data: {
+            generatorName: "dalle-3",
+            params: { prompt: "Text" },
+          } as GeneratorNodeData,
+        },
+        {
+          id: "composite_1",
+          type: "transform",
+          position: { x: 200, y: 0 },
+          data: {
+            operation: "composite",
+            providerName: "sharp",
+            params: {
+              overlays: [
+                { left: 100, top: 100 },
+                { left: 500, top: 100 },
+              ],
+            },
+          } as TransformNodeData,
+        },
+      ];
+      const edges: StudioEdge[] = [
+        {
+          id: "e1",
+          source: "base",
+          target: "composite_1",
+          targetHandle: "base",
+        },
+        {
+          id: "e2",
+          source: "overlay_1",
+          target: "composite_1",
+          targetHandle: "overlays[0]",
+        },
+        {
+          id: "e3",
+          source: "overlay_2",
+          target: "composite_1",
+          targetHandle: "overlays[1]",
+        },
+      ];
+
+      const { pipeline } = nodesToPipeline(nodes, edges);
+
+      // Composite step should have base as input and overlay vars
+      const compositeStep = pipeline.steps.find(
+        (s) => s.kind === "transform" && s.op === "composite"
+      );
+      expect(compositeStep).toBeDefined();
+      expect(compositeStep).toMatchObject({
+        kind: "transform",
+        op: "composite",
+        in: "base",
+        params: {
+          overlays: [
+            { left: 100, top: 100 },
+            { left: 500, top: 100 },
+          ],
+          _overlayImageVars: ["overlay_1", "overlay_2"],
+        },
+      });
+    });
+
+    it("sorts overlay vars by index", () => {
+      const nodes: StudioNode[] = [
+        {
+          id: "base",
+          type: "generator",
+          position: { x: 0, y: 0 },
+          data: { generatorName: "shapes", params: {} } as GeneratorNodeData,
+        },
+        {
+          id: "overlay_a",
+          type: "generator",
+          position: { x: 0, y: 100 },
+          data: { generatorName: "dalle-3", params: { prompt: "A" } } as GeneratorNodeData,
+        },
+        {
+          id: "overlay_b",
+          type: "generator",
+          position: { x: 0, y: 200 },
+          data: { generatorName: "dalle-3", params: { prompt: "B" } } as GeneratorNodeData,
+        },
+        {
+          id: "composite_1",
+          type: "transform",
+          position: { x: 200, y: 0 },
+          data: {
+            operation: "composite",
+            providerName: "sharp",
+            params: {
+              overlays: [
+                { left: 0, top: 0 },
+                { left: 100, top: 0 },
+              ],
+            },
+          } as TransformNodeData,
+        },
+      ];
+      // Edges in reverse order to test sorting
+      const edges: StudioEdge[] = [
+        { id: "e1", source: "base", target: "composite_1", targetHandle: "base" },
+        { id: "e3", source: "overlay_b", target: "composite_1", targetHandle: "overlays[1]" },
+        { id: "e2", source: "overlay_a", target: "composite_1", targetHandle: "overlays[0]" },
+      ];
+
+      const { pipeline } = nodesToPipeline(nodes, edges);
+
+      const compositeStep = pipeline.steps.find(
+        (s) => s.kind === "transform" && s.op === "composite"
+      );
+      // Should be sorted by index, not by edge order
+      expect(compositeStep?.params?._overlayImageVars).toEqual(["overlay_a", "overlay_b"]);
+    });
+  });
 });

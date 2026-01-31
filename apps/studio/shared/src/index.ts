@@ -908,9 +908,16 @@ export function nodesToPipeline(
       });
     } else if (node.type === "transform") {
       const data = node.data as TransformNodeData;
-      const imageEdge = edges.find(
-        (e) => e.target === node.id && (e.targetHandle === "image" || !e.targetHandle)
-      );
+      const isComposite = data.operation === "composite";
+
+      // For composite, accept "base" handle; otherwise "image" or undefined
+      const imageEdge = edges.find((e) => {
+        if (e.target !== node.id) return false;
+        if (isComposite) {
+          return e.targetHandle === "base" || e.targetHandle === "image" || !e.targetHandle;
+        }
+        return e.targetHandle === "image" || !e.targetHandle;
+      });
       const inputVar = imageEdge ? nodeToVar.get(imageEdge.source) : undefined;
 
       if (!inputVar) {
@@ -939,6 +946,27 @@ export function nodesToPipeline(
           .filter((v): v is string => v !== undefined);
         if (refVars.length > 0) {
           params._referenceImageVars = refVars;
+        }
+      }
+
+      // Handle composite overlay inputs - collect edges with "overlays[N]" handles
+      if (isComposite) {
+        const overlayEdges = edges
+          .filter((e) => e.target === node.id && e.targetHandle?.startsWith("overlays["))
+          .sort((a, b) => {
+            // Sort by index to maintain order
+            const idxA = parseInt(a.targetHandle?.match(/\[(\d+)\]/)?.[1] || "0", 10);
+            const idxB = parseInt(b.targetHandle?.match(/\[(\d+)\]/)?.[1] || "0", 10);
+            return idxA - idxB;
+          });
+
+        if (overlayEdges.length > 0) {
+          const overlayVars = overlayEdges
+            .map((e) => nodeToVar.get(e.source))
+            .filter((v): v is string => v !== undefined);
+          if (overlayVars.length > 0) {
+            params._overlayImageVars = overlayVars;
+          }
         }
       }
 
