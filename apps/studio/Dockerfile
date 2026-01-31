@@ -57,6 +57,7 @@ RUN pnpm --filter @teamflojo/floimg-stability build
 RUN pnpm --filter @teamflojo/floimg-google build
 RUN pnpm --filter @teamflojo/floimg-replicate build
 RUN pnpm --filter @teamflojo/floimg-xai build
+RUN pnpm --filter @teamflojo/floimg-vectorize build
 RUN pnpm --filter @teamflojo/floimg-studio-shared build
 RUN pnpm --filter @teamflojo/floimg-studio-backend build
 RUN pnpm --filter @teamflojo/floimg-studio-ui build
