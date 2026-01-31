@@ -52,6 +52,7 @@ jobs:
           pnpm --filter @teamflojo/floimg-qr publish --no-git-checks --access public
           pnpm --filter @teamflojo/floimg-quickchart publish --no-git-checks --access public
           pnpm --filter @teamflojo/floimg-screenshot publish --no-git-checks --access public
+          pnpm --filter @teamflojo/floimg-vectorize publish --no-git-checks --access public
 
           # Publish AI provider packages
           pnpm --filter @teamflojo/floimg-openai publish --no-git-checks --access public
