@@ -28,6 +28,7 @@ COPY packages/floimg-stability/package.json ./packages/floimg-stability/
 COPY packages/floimg-google/package.json ./packages/floimg-google/
 COPY packages/floimg-replicate/package.json ./packages/floimg-replicate/
 COPY packages/floimg-xai/package.json ./packages/floimg-xai/
+COPY packages/floimg-vectorize/package.json ./packages/floimg-vectorize/
 COPY apps/studio/shared/package.json ./apps/studio/shared/
 COPY apps/studio/backend/package.json ./apps/studio/backend/
 COPY apps/studio/frontend/package.json ./apps/studio/frontend/
@@ -45,6 +46,7 @@ COPY packages/floimg-stability ./packages/floimg-stability
 COPY packages/floimg-google ./packages/floimg-google
 COPY packages/floimg-replicate ./packages/floimg-replicate
 COPY packages/floimg-xai ./packages/floimg-xai
+COPY packages/floimg-vectorize ./packages/floimg-vectorize
 COPY apps/studio ./apps/studio
 
 # Build packages in dependency order
@@ -92,6 +94,7 @@ COPY packages/floimg-stability/package.json ./packages/floimg-stability/
 COPY packages/floimg-google/package.json ./packages/floimg-google/
 COPY packages/floimg-replicate/package.json ./packages/floimg-replicate/
 COPY packages/floimg-xai/package.json ./packages/floimg-xai/
+COPY packages/floimg-vectorize/package.json ./packages/floimg-vectorize/
 COPY apps/studio/shared/package.json ./apps/studio/shared/
 COPY apps/studio/backend/package.json ./apps/studio/backend/
 
@@ -108,6 +111,7 @@ COPY --from=builder /app/packages/floimg-stability/dist ./packages/floimg-stabil
 COPY --from=builder /app/packages/floimg-google/dist ./packages/floimg-google/dist
 COPY --from=builder /app/packages/floimg-replicate/dist ./packages/floimg-replicate/dist
 COPY --from=builder /app/packages/floimg-xai/dist ./packages/floimg-xai/dist
+COPY --from=builder /app/packages/floimg-vectorize/dist ./packages/floimg-vectorize/dist
 COPY --from=builder /app/apps/studio/shared/dist ./apps/studio/shared/dist
 COPY --from=builder /app/apps/studio/backend/dist ./apps/studio/backend/dist
 COPY --from=builder /app/apps/studio/frontend/dist ./apps/studio/frontend/dist
