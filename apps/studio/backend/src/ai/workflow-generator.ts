@@ -127,6 +127,7 @@ A workflow consists of:
 6. For image generation, prefer AI generators like "generator:gemini-generate" or "generator:dalle-3"
 7. For transforms, use the correct provider format: "transform:{provider}:{operation}"
 8. When a generator receives a dynamic prompt from a text node, use "prePrompt" to add context/instructions that get prepended to the dynamic content
+9. For composite transforms (transform:sharp:composite), use targetHandle: "base" for the background image and targetHandle: "overlays[0]", "overlays[1]", etc. for each overlay image
 
 ## Text Node Structured Output
 
@@ -264,6 +265,22 @@ Response nodes:
 Response edges:
 - source: "node_1", target: "node_2"
 - source: "node_2", target: "node_3"
+
+### Advanced: Composite transform (layering images)
+**User**: "Generate a background and a logo, then composite them together"
+
+Response nodes:
+- id: "gen_bg", nodeType: "generator:gemini-generate", label: "Background", parametersJson: '{"prompt": "abstract gradient background, blue and purple"}'
+- id: "gen_logo", nodeType: "generator:gemini-generate", label: "Logo", parametersJson: '{"prompt": "minimalist tech company logo, white on transparent"}'
+- id: "composite_1", nodeType: "transform:sharp:composite", label: "Layer Images", parametersJson: '{"gravity": "center"}'
+
+Response edges:
+- source: "gen_bg", target: "composite_1", targetHandle: "base"
+- source: "gen_logo", target: "composite_1", targetHandle: "overlays[0]"
+
+Note: The composite transform requires specific targetHandle values:
+- "base" for the background/base image (required)
+- "overlays[0]", "overlays[1]", etc. for each overlay image (indexed)
 
 ### Iterative: Generate variations and AI-select the best
 **User**: "Generate 3 variations of a mountain landscape and have AI pick the best one"
