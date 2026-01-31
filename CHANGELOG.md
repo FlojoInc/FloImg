@@ -5,6 +5,13 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.1] - 2026-01-31
+
+### Build Fixes
+
+- fix: Add floimg-vectorize to npm publish workflow
+- fix: Add floimg-vectorize to Docker build steps
+
 ## [v0.21.0] - 2026-01-31
 
 ### @teamflojo/floimg-vectorize (0.1.0) [NEW]
