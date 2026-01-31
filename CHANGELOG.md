@@ -5,6 +5,19 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.20.1] - 2026-01-30
+
+### @teamflojo/floimg-studio-shared (0.9.1)
+
+- fix: Accept "base" targetHandle for composite transform base image input
+- fix: Collect overlay images via "overlays[N]" handles with index preservation
+- fix: Support sparse overlay indices (e.g., [2, 5] instead of [0, 1])
+
+### @teamflojo/floimg-studio-backend (0.5.2)
+
+- fix: Resolve and inject overlay images for composite transforms
+- fix: Validate missing overlays with clear error message instead of cryptic Sharp error
+
 ## [v0.20.0] - 2026-01-30
 
 ### @teamflojo/floimg-studio-ui (0.9.0)
