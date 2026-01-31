@@ -5,6 +5,15 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.20.3] - 2026-01-30
+
+### FloImg Studio Backend
+
+- fix: Add composite transform documentation to AI workflow generator
+  - Added rule 9: composite transforms require "base" and "overlays[N]" handles
+  - Added example workflow showing correct edge handle format
+  - Fixes AI-generated composite workflows failing with "Overlay image missing"
+
 ## [v0.20.2] - 2026-01-30
 
 ### @teamflojo/floimg-studio-ui (0.9.1)
