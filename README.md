@@ -278,6 +278,8 @@ FloImg Studio is a visual workflow builder for FloImg. Design image pipelines wi
 docker run -d -p 5100:5100 -e OPENAI_API_KEY=sk-... ghcr.io/flojoinc/floimg-studio
 ```
 
+The Docker image supports **amd64** (Intel/AMD) and **arm64** (Apple Silicon, ARM servers).
+
 Access at `http://localhost:5100`. See [apps/studio/DEPLOYMENT.md](./apps/studio/DEPLOYMENT.md) for more options.
 
 ### Hosted Version
