@@ -51,6 +51,15 @@ export type {
 // Export type guards
 export { isImageBlob, isDataBlob } from "./core/types.js";
 
+// Export validation utilities
+export {
+  validatePipeline,
+  validateStep,
+  validateGeneratorParams,
+  validateTransformParams,
+} from "./core/validator.js";
+export type { ValidationResult, ValidationIssue, ValidationOptions } from "./core/validator.js";
+
 // Export errors and error utilities
 export {
   // Error classes
