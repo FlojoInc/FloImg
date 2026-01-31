@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### @teamflojo/floimg-vectorize (0.1.0) [NEW]
+
+- feat: New package for raster-to-SVG vectorization
+  - Convert PNG, JPEG, WebP to SVG vector graphics
+  - Uses vtracer via @neplex/vectorizer - fast (2-7ms), full color support
+  - User-friendly parameters: colorPrecision, filterSpeckle, simplify
+  - Registered in Studio backend for visual editor integration
+  - Best for AI-generated logos, icons, and flat illustrations
+
 ### @teamflojo/floimg
 
 - feat: Add parameter validation API for pipelines and templates

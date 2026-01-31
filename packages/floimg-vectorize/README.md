@@ -138,3 +138,9 @@ This plugin uses [vtracer](https://github.com/nicholasxjy/vtracer) via [@neplex/
 ## License
 
 MIT
+
+## See Also
+
+- [floimg](https://github.com/FlojoInc/floimg) - Core library
+- [vtracer](https://github.com/nicholasxjy/vtracer) - Rust vectorization library
+- [@neplex/vectorizer](https://www.npmjs.com/package/@neplex/vectorizer) - Node.js bindings for vtracer
