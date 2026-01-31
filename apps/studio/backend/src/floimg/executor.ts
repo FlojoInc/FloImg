@@ -285,6 +285,83 @@ export async function executePipeline(
         });
       }
 
+      // Inject reference images for transforms that need them (e.g., edit/inpaint)
+      // The frontend's nodesToPipeline() adds _referenceImageVars to tell us which
+      // variables to look up and inject as referenceImages[]
+      if (
+        (step.kind === "generate" || step.kind === "transform") &&
+        step.params?._referenceImageVars
+      ) {
+        const refVars = step.params._referenceImageVars as string[];
+        const referenceImages: ImageBlob[] = [];
+        const missingRefs: string[] = [];
+
+        for (const varName of refVars) {
+          const blob = stepVariables[varName];
+          if (blob && isImageBlob(blob)) {
+            referenceImages.push(blob);
+          } else {
+            missingRefs.push(varName);
+          }
+        }
+
+        if (missingRefs.length > 0) {
+          throw new Error(`Transform missing reference images: ${missingRefs.join(", ")}`);
+        }
+
+        step.params.referenceImages = referenceImages;
+        console.log(
+          `[executePipeline] Injected ${referenceImages.length} reference images for ${step.kind} step`
+        );
+
+        // Clean up the marker
+        delete step.params._referenceImageVars;
+      }
+
+      // Inject overlay images for composite transforms
+      // The frontend's nodesToPipeline() adds _overlayImageVars to tell us which
+      // variables to look up and inject as overlays[N].blob
+      if (step.kind === "transform" && step.params?._overlayImageVars) {
+        const overlayVarsWithIndex = step.params._overlayImageVars as Array<{
+          varName: string;
+          index: number;
+        }>;
+        const existingOverlays = (step.params.overlays || []) as Array<{
+          left?: number;
+          top?: number;
+          blob?: ImageBlob;
+        }>;
+
+        const missingOverlays: string[] = [];
+
+        for (const { varName, index } of overlayVarsWithIndex) {
+          const blob = stepVariables[varName];
+          if (blob && isImageBlob(blob)) {
+            // Ensure overlays array is long enough for this index
+            while (existingOverlays.length <= index) {
+              existingOverlays.push({ left: 0, top: 0 });
+            }
+            existingOverlays[index].blob = blob;
+          } else {
+            missingOverlays.push(`${varName} (index ${index})`);
+          }
+        }
+
+        if (missingOverlays.length > 0) {
+          throw new Error(
+            `Composite transform missing overlay images: ${missingOverlays.join(", ")}`
+          );
+        }
+
+        step.params.overlays = existingOverlays;
+        console.log(
+          `[executePipeline] Injected ${overlayVarsWithIndex.length} overlay images for composite step`
+        );
+
+        // Clean up the marker
+        delete step.params._overlayImageVars;
+      }
+
       // Create a single-step pipeline with current variables
       // Include both ImageBlob and DataBlob for dependent steps
       const pipelineVariables: Record<string, ImageBlob | DataBlob> = {};
