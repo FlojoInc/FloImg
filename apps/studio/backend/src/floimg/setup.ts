@@ -27,6 +27,7 @@ import googleImagen, {
 } from "@teamflojo/floimg-google";
 import { grokText, grokVision } from "@teamflojo/floimg-xai";
 import { replicateTransform } from "@teamflojo/floimg-replicate";
+import { vectorizeTransform } from "@teamflojo/floimg-vectorize";
 
 type FloimgClient = ReturnType<typeof createClient>;
 
@@ -157,6 +158,9 @@ export function initializeClient(config: { verbose?: boolean } = {}): FloimgClie
   client.registerGenerator(qr());
   client.registerGenerator(mermaid());
   client.registerGenerator(quickchart());
+
+  // Register deterministic transform providers (no API key required)
+  client.registerTransformProvider(vectorizeTransform());
 
   // Register AI generators and transforms when API keys are available
   // All AI providers get usage hooks for cost tracking

@@ -1,0 +1,57 @@
+{
+  "name": "@teamflojo/floimg-vectorize",
+  "version": "0.1.0",
+  "description": "Vectorize transform plugin for floimg - convert raster images to SVG",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build",
+    "test": "vitest --run"
+  },
+  "keywords": [
+    "floimg",
+    "vectorize",
+    "svg",
+    "raster-to-vector",
+    "image-tracing",
+    "vtracer"
+  ],
+  "author": "Brett Cooke",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FlojoInc/floimg.git",
+    "directory": "packages/floimg-vectorize"
+  },
+  "peerDependencies": {
+    "@teamflojo/floimg": "^0.8.0"
+  },
+  "dependencies": {
+    "@neplex/vectorizer": "^0.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@teamflojo/floimg": "workspace:*",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
