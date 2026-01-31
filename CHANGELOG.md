@@ -5,6 +5,18 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### @teamflojo/floimg
+
+- feat: Add parameter validation API for pipelines and templates
+  - `validatePipeline()` - Validate entire pipeline against schemas
+  - `validateStep()` - Validate single step
+  - `validateGeneratorParams()` - Validate generator parameters
+  - `validateTransformParams()` - Validate transform parameters
+  - Detects missing required params, unknown params (warns), type mismatches
+  - Validates enum values, number min/max constraints
+
 ## [v0.20.3] - 2026-01-30
 
 ### FloImg Studio Backend

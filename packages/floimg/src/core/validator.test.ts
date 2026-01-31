@@ -204,7 +204,21 @@ describe("type validation", () => {
 
     expect(result.valid).toBe(false);
     expect(result.errors[0].code).toBe("INVALID_PARAM_TYPE");
-    expect(result.errors[0].message).toContain("Expected number");
+    expect(result.errors[0].message).toContain("Expected finite number");
+  });
+
+  it("should reject NaN and Infinity", () => {
+    const resultNaN = validateGeneratorParams("qr", { text: "test", width: NaN }, mockCapabilities);
+    expect(resultNaN.valid).toBe(false);
+    expect(resultNaN.errors[0].message).toContain("NaN");
+
+    const resultInfinity = validateGeneratorParams(
+      "qr",
+      { text: "test", width: Infinity },
+      mockCapabilities
+    );
+    expect(resultInfinity.valid).toBe(false);
+    expect(resultInfinity.errors[0].message).toContain("Infinity");
   });
 
   it("should validate enum values", () => {

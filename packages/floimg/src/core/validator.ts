@@ -219,8 +219,8 @@ function validateType(value: unknown, schema: ParameterSchema, paramName: string
       break;
 
     case "number":
-      if (typeof value !== "number") {
-        return `Expected number for '${paramName}', got ${actualType}`;
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        return `Expected finite number for '${paramName}', got ${typeof value === "number" ? String(value) : actualType}`;
       }
       if (schema.minimum !== undefined && value < schema.minimum) {
         return `Value ${value} for '${paramName}' is below minimum ${schema.minimum}`;
