@@ -86,23 +86,16 @@ export class FloimgError extends Error {
   /** The underlying error */
   readonly cause?: Error;
 
-  constructor(message: string, options: FloimgErrorOptions | string = {}) {
+  constructor(message: string, options: FloimgErrorOptions = {}) {
     super(message);
     this.name = "FloimgError";
 
-    // Support legacy signature: new FloimgError(message, code)
-    if (typeof options === "string") {
-      this.code = options;
-      this.category = "internal";
-      this.retryable = false;
-    } else {
-      this.code = options.code || "FLOIMG_ERROR";
-      this.category = options.category || "internal";
-      this.retryable = options.retryable ?? false;
-      this.provider = options.provider;
-      this.operation = options.operation;
-      this.cause = options.cause;
-    }
+    this.code = options.code || "FLOIMG_ERROR";
+    this.category = options.category || "internal";
+    this.retryable = options.retryable ?? false;
+    this.provider = options.provider;
+    this.operation = options.operation;
+    this.cause = options.cause;
 
     // Maintain proper stack trace in V8 environments
     if (Error.captureStackTrace) {

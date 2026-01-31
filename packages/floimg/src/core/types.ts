@@ -623,21 +623,6 @@ export interface SaveProvider {
 }
 
 /**
- * Input for upload operation
- * @deprecated Use save() instead
- */
-export interface UploadInput {
-  /** Image blob to upload */
-  blob: ImageBlob;
-  /** Storage key/path */
-  key: string;
-  /** Storage provider name (uses default if not specified) */
-  provider?: string;
-  /** Custom headers to send with upload */
-  headers?: Record<string, string>;
-}
-
-/**
  * Pipeline step definitions
  */
 export type PipelineStep =
