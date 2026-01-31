@@ -17,7 +17,6 @@ export type {
   StoreProvider,
   GenerateInput,
   TransformInput,
-  UploadInput,
   UploadResult,
   Pipeline,
   PipelineStep,
