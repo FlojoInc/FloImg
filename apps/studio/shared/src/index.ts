@@ -950,6 +950,7 @@ export function nodesToPipeline(
       }
 
       // Handle composite overlay inputs - collect edges with "overlays[N]" handles
+      // Store both variable name and original index to support sparse arrays
       if (isComposite) {
         const overlayEdges = edges
           .filter((e) => e.target === node.id && e.targetHandle?.startsWith("overlays["))
@@ -961,11 +962,15 @@ export function nodesToPipeline(
           });
 
         if (overlayEdges.length > 0) {
-          const overlayVars = overlayEdges
-            .map((e) => nodeToVar.get(e.source))
-            .filter((v): v is string => v !== undefined);
-          if (overlayVars.length > 0) {
-            params._overlayImageVars = overlayVars;
+          const overlayVarsWithIndex = overlayEdges
+            .map((e) => {
+              const varName = nodeToVar.get(e.source);
+              const index = parseInt(e.targetHandle?.match(/\[(\d+)\]/)?.[1] || "0", 10);
+              return varName ? { varName, index } : null;
+            })
+            .filter((v): v is { varName: string; index: number } => v !== null);
+          if (overlayVarsWithIndex.length > 0) {
+            params._overlayImageVars = overlayVarsWithIndex;
           }
         }
       }

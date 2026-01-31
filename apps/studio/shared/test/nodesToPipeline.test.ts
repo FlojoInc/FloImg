@@ -833,7 +833,7 @@ describe("nodesToPipeline", () => {
 
       const { pipeline } = nodesToPipeline(nodes, edges);
 
-      // Composite step should have base as input and overlay vars
+      // Composite step should have base as input and overlay vars with indices
       const compositeStep = pipeline.steps.find(
         (s) => s.kind === "transform" && s.op === "composite"
       );
@@ -847,7 +847,10 @@ describe("nodesToPipeline", () => {
             { left: 100, top: 100 },
             { left: 500, top: 100 },
           ],
-          _overlayImageVars: ["overlay_1", "overlay_2"],
+          _overlayImageVars: [
+            { varName: "overlay_1", index: 0 },
+            { varName: "overlay_2", index: 1 },
+          ],
         },
       });
     });
@@ -900,8 +903,61 @@ describe("nodesToPipeline", () => {
       const compositeStep = pipeline.steps.find(
         (s) => s.kind === "transform" && s.op === "composite"
       );
-      // Should be sorted by index, not by edge order
-      expect(compositeStep?.params?._overlayImageVars).toEqual(["overlay_a", "overlay_b"]);
+      // Should be sorted by index, not by edge order, and include original indices
+      expect(compositeStep?.params?._overlayImageVars).toEqual([
+        { varName: "overlay_a", index: 0 },
+        { varName: "overlay_b", index: 1 },
+      ]);
+    });
+
+    it("preserves sparse overlay indices", () => {
+      const nodes: StudioNode[] = [
+        {
+          id: "base",
+          type: "generator",
+          position: { x: 0, y: 0 },
+          data: { generatorName: "shapes", params: {} } as GeneratorNodeData,
+        },
+        {
+          id: "overlay_at_2",
+          type: "generator",
+          position: { x: 0, y: 100 },
+          data: { generatorName: "dalle-3", params: { prompt: "At index 2" } } as GeneratorNodeData,
+        },
+        {
+          id: "overlay_at_5",
+          type: "generator",
+          position: { x: 0, y: 200 },
+          data: { generatorName: "dalle-3", params: { prompt: "At index 5" } } as GeneratorNodeData,
+        },
+        {
+          id: "composite_1",
+          type: "transform",
+          position: { x: 200, y: 0 },
+          data: {
+            operation: "composite",
+            providerName: "sharp",
+            params: { overlays: [] },
+          } as TransformNodeData,
+        },
+      ];
+      // Sparse indices [2, 5] - not contiguous
+      const edges: StudioEdge[] = [
+        { id: "e1", source: "base", target: "composite_1", targetHandle: "base" },
+        { id: "e2", source: "overlay_at_2", target: "composite_1", targetHandle: "overlays[2]" },
+        { id: "e3", source: "overlay_at_5", target: "composite_1", targetHandle: "overlays[5]" },
+      ];
+
+      const { pipeline } = nodesToPipeline(nodes, edges);
+
+      const compositeStep = pipeline.steps.find(
+        (s) => s.kind === "transform" && s.op === "composite"
+      );
+      // Should preserve original indices [2, 5], not map to [0, 1]
+      expect(compositeStep?.params?._overlayImageVars).toEqual([
+        { varName: "overlay_at_2", index: 2 },
+        { varName: "overlay_at_5", index: 5 },
+      ]);
     });
   });
 });

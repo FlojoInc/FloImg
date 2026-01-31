@@ -851,8 +851,11 @@ export async function executeWorkflow(
     const overlayImageVarsToResolve = new Set<string>();
     for (const step of pipeline.steps) {
       if (step.kind === "transform" && step.params?._overlayImageVars) {
-        const overlayVars = step.params._overlayImageVars as string[];
-        for (const varName of overlayVars) {
+        const overlayVarsWithIndex = step.params._overlayImageVars as Array<{
+          varName: string;
+          index: number;
+        }>;
+        for (const { varName } of overlayVarsWithIndex) {
           if (!initialVariables[varName]) {
             overlayImageVarsToResolve.add(varName);
           }
@@ -893,16 +896,21 @@ export async function executeWorkflow(
     // Inject overlay images into composite transform steps
     for (const step of pipeline.steps) {
       if (step.kind === "transform" && step.params?._overlayImageVars) {
-        const overlayVars = step.params._overlayImageVars as string[];
+        const overlayVarsWithIndex = step.params._overlayImageVars as Array<{
+          varName: string;
+          index: number;
+        }>;
         const existingOverlays = (step.params.overlays || []) as Array<{
           left?: number;
           top?: number;
           blob?: ImageBlob;
         }>;
 
-        // Inject blob into each overlay position
-        for (let i = 0; i < overlayVars.length; i++) {
-          const varName = overlayVars[i];
+        // Track missing overlays for clear error reporting
+        const missingOverlays: string[] = [];
+
+        // Inject blob at the correct index position (supports sparse arrays)
+        for (const { varName, index } of overlayVarsWithIndex) {
           let blob: ImageBlob | undefined;
 
           // Check initialVariables first
@@ -915,18 +923,25 @@ export async function executeWorkflow(
           }
 
           if (blob) {
-            // Ensure overlays array is long enough
-            while (existingOverlays.length <= i) {
+            // Ensure overlays array is long enough for this index
+            while (existingOverlays.length <= index) {
               existingOverlays.push({ left: 0, top: 0 });
             }
-            existingOverlays[i].blob = blob;
+            existingOverlays[index].blob = blob;
           } else {
-            console.warn(`Overlay image variable ${varName} not found`);
+            missingOverlays.push(`${varName} (index ${index})`);
           }
         }
 
+        // Fail fast with clear error instead of cryptic Sharp error
+        if (missingOverlays.length > 0) {
+          throw new Error(
+            `Composite transform missing overlay images: ${missingOverlays.join(", ")}`
+          );
+        }
+
         step.params.overlays = existingOverlays;
-        console.log(`Injected ${overlayVars.length} overlay images for composite step`);
+        console.log(`Injected ${overlayVarsWithIndex.length} overlay images for composite step`);
 
         // Clean up the marker
         delete step.params._overlayImageVars;
