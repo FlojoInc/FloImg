@@ -5,6 +5,22 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.4] - 2026-02-01
+
+### @teamflojo/floimg-google (0.6.1)
+
+- fix: Allow prePrompt-only mode for gemini-generate
+  - Validation now accepts either prompt or prePrompt (or both)
+  - Enables AI Workflow Generator patterns with dynamic prompt injection
+  - Full prompt construction handles empty prompt cleanly
+
+### @teamflojo/floimg-studio-ui (0.9.2)
+
+- fix: Limit output schema display to 3 items in nodes
+  - VisionNode and TextNode now show only first 3 output properties
+  - Displays "+N more" indicator for remaining properties
+  - Keeps nodes compact on canvas while preserving all output handles
+
 ## [v0.21.3] - 2026-01-31
 
 ### @teamflojo/floimg-studio-shared (0.9.2)
