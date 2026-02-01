@@ -5,6 +5,15 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.5] - 2026-02-01
+
+### @teamflojo/floimg-studio-ui (0.10.0)
+
+- feat: Add optional callbacks to AIChat component for generation events
+  - `onGenerationSuccess(data)` - called when workflow generation succeeds
+  - `onGenerationFailed(data)` - called when workflow generation fails
+  - Useful for tracking, logging, or custom UI feedback
+
 ## [v0.21.4] - 2026-02-01
 
 ### @teamflojo/floimg-google (0.6.1)
