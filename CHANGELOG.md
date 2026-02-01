@@ -5,6 +5,15 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.6] - 2026-02-01
+
+### @teamflojo/floimg (0.16.1)
+
+- fix: Parse DataBlob content in fan-out when parsed is undefined
+  - Fan-out array mode now attempts JSON parsing of content if parsed field is missing
+  - Fixes AI workflow generation failing when text nodes return JSON content without pre-populating parsed field
+  - Enables complex workflows with gemini-text → fan-out patterns
+
 ## [v0.21.5] - 2026-02-01
 
 ### @teamflojo/floimg-studio-ui (0.10.0)
