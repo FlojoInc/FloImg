@@ -5,6 +5,15 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.3] - 2026-01-31
+
+### @teamflojo/floimg-studio-shared (0.9.2)
+
+- fix: Include usageEvents in streaming completion event
+  - Adds UsageEvent type for AI provider usage metrics
+  - SSE completion events now return usageEvents for cost tracking
+  - Enables accurate AI cost tracking for streaming workflow executions
+
 ## [v0.21.2] - 2026-01-31
 
 ### Build Fixes
