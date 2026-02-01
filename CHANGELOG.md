@@ -5,6 +5,17 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.7] - 2026-02-01
+
+### @teamflojo/floimg-google (0.7.0)
+
+- feat: Improve structured output reliability for gemini-text and gemini-vision
+  - Higher default maxTokens for JSON mode (8192 vs 1000) - prevents truncation
+  - Check `finishReason === "MAX_TOKENS"` and throw clear, actionable error
+  - Detect truncated JSON patterns and provide specific error messages
+  - Better error messages for empty responses (safety filters, internal limits)
+  - Addresses [known Gemini API issue](https://github.com/googleapis/python-genai/issues/1039) where structured output returns None on token limit
+
 ## [v0.21.6] - 2026-02-01
 
 ### @teamflojo/floimg (0.16.1)
