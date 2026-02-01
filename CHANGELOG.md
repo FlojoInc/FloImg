@@ -139,7 +139,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **BREAKING**: "Images" tab renamed to "History" tab
 - refactor: Remove "Generated images bar" from Toolbar
-  - Bar showed broken thumbnails for FSC guests (used network URLs)
   - Node previews + History tab now provide complete execution feedback
   - Design principle: Results appear in context, not summary overlays
 - feat: Add execution history tracking with data URLs
@@ -412,8 +411,7 @@ Update `.mcp.json` configuration:
 ### @teamflojo/floimg-studio-backend (0.4.0)
 
 - feat: collect and return usage events from workflow execution
-  - OSS backend now returns `usageEvents` in execution results
-  - Enables cloud platforms to track actual AI costs
+  - Backend returns `usageEvents` in execution results for cost tracking
 
 ## [v0.13.0] - 2026-01-09
 
@@ -573,10 +571,6 @@ The shapes generator now separates geometry (shape type) from appearance (fill t
 - feat: add radial gradient type (`gradientType: 'radial'`)
 - feat: add checkerboard pattern (`patternType: 'checkerboard'`)
 
-#### Why No Backwards Compatibility?
-
-FloImg is pre-1.0. We follow the "No Backwards Compatibility" principle: delete, don't deprecate. This keeps the codebase clean and avoids technical debt. See `vault/architecture/No-Backwards-Compatibility.md`.
-
 ### @teamflojo/floimg-studio-ui (0.3.4)
 
 - feat: add conditional field visibility for shapes generator (only show relevant params)
@@ -643,7 +637,7 @@ FloImg is pre-1.0. We follow the "No Backwards Compatibility" principle: delete,
 ### @teamflojo/floimg-templates (0.1.0)
 
 - fix: actually publish to npm (was missing from release workflow in v0.9.1)
-- docs: clean up OSS documentation (remove internal acronyms)
+- docs: improve package documentation clarity
 
 ### @teamflojo/floimg-studio-ui (0.3.2)
 
@@ -652,7 +646,7 @@ FloImg is pre-1.0. We follow the "No Backwards Compatibility" principle: delete,
 ### Repository
 
 - chore: add floimg-templates to release workflow
-- docs: improve OSS boundaries in templates package documentation
+- docs: improve templates package documentation
 
 ## [v0.9.1] - 2026-01-04
 
@@ -660,7 +654,7 @@ FloImg is pre-1.0. We follow the "No Backwards Compatibility" principle: delete,
 
 - feat: new shared package for workflow templates
 - feat: templates organized by category (AI Workflows, Data Viz, Marketing, Utilities)
-- feat: `coreTemplates` for OSS (offline-compatible) vs `allTemplates` for FSC
+- feat: `coreTemplates` (bundled, works offline) vs `allTemplates` (includes cloud-only templates)
 - feat: `resolveTemplate()` for legacy ID mapping
 - feat: `getStudioUrl()` helper for template deep links
 
@@ -679,9 +673,9 @@ FloImg is pre-1.0. We follow the "No Backwards Compatibility" principle: delete,
 ### @teamflojo/floimg-studio-ui (0.3.0)
 
 - feat: context-aware AI generation error UI
-- feat: show "View Setup Guide" link for OSS self-hosted deployments
-- feat: show "View Plans" link for FSC tier limit errors
-- feat: show "Contact Support" link for FSC service errors (paid users only)
+- feat: show "View Setup Guide" link for self-hosted deployments
+- feat: show "View Plans" link for tier limit errors (cloud deployments)
+- feat: show "Contact Support" link for service errors (paid users only)
 
 ### @teamflojo/floimg-studio-shared (0.3.0)
 
