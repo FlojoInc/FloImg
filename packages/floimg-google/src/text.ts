@@ -92,7 +92,8 @@ export const geminiTextSchema: TextProviderSchema = {
     maxTokens: {
       type: "number",
       title: "Max Tokens",
-      description: "Maximum tokens in the response",
+      description:
+        "Maximum tokens in the response. Default: 1000 for text, 8192 for JSON mode (to ensure complete structured output)",
       default: 1000,
     },
     temperature: {
@@ -257,7 +258,8 @@ export function geminiText(config: GeminiTextConfig = {}): TextProvider {
           ) {
             throw new Error(
               `Gemini returned truncated JSON that could not be parsed. ` +
-                `The response may have been cut off. Try increasing maxTokens or simplifying your request.`
+                `The response appears incomplete. This may indicate a safety filter or internal issue. ` +
+                `Try simplifying your request or adjusting maxTokens.`
             );
           }
           // Otherwise, it's genuinely malformed JSON - treat as text (existing behavior)
@@ -355,7 +357,8 @@ export const geminiVisionSchema: VisionProviderSchema = {
     maxTokens: {
       type: "number",
       title: "Max Tokens",
-      description: "Maximum tokens in the response",
+      description:
+        "Maximum tokens in the response. Default: 1000 for text, 8192 for JSON mode (to ensure complete structured output)",
       default: 1000,
     },
     apiKey: {
@@ -531,7 +534,8 @@ export function geminiVision(config: GeminiVisionConfig = {}): VisionProvider {
           ) {
             throw new Error(
               `Gemini returned truncated JSON that could not be parsed. ` +
-                `The response may have been cut off. Try increasing maxTokens or simplifying your request.`
+                `The response appears incomplete. This may indicate a safety filter or internal issue. ` +
+                `Try simplifying your request or adjusting maxTokens.`
             );
           }
           // Otherwise, it's genuinely malformed JSON - treat as text
