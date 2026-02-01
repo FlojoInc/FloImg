@@ -13,13 +13,88 @@ import { createSSEConnection, type SSEConnection } from "../api/sse";
 // (Not in component state because SSEConnection is not serializable)
 let activeGenerationConnection: SSEConnection | null = null;
 
+/**
+ * Analytics data for successful workflow generation
+ */
+export interface GenerationSuccessData {
+  nodeCount: number;
+  hasAINodes: boolean;
+  promptLength: number;
+  isConversation: boolean;
+}
+
+/**
+ * Analytics data for failed workflow generation
+ */
+export interface GenerationFailedData {
+  errorType: "invalid_node_type" | "generation_error" | "rate_limit" | "network" | "unknown";
+  promptLength: number;
+  isConversation: boolean;
+}
+
 interface AIChatProps {
   isOpen: boolean;
   onClose: () => void;
   onApplyWorkflow: (workflow: GeneratedWorkflowData) => void;
+  /** Called when workflow generation succeeds (for analytics) */
+  onGenerationSuccess?: (data: GenerationSuccessData) => void;
+  /** Called when workflow generation fails (for analytics) */
+  onGenerationFailed?: (data: GenerationFailedData) => void;
 }
 
-export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
+/**
+ * Categorize an error message into an analytics-friendly error type
+ */
+function categorizeError(errorMessage: string): GenerationFailedData["errorType"] {
+  if (errorMessage.includes("Unknown node type")) {
+    return "invalid_node_type";
+  }
+  if (
+    errorMessage.includes("rate limit") ||
+    errorMessage.includes("429") ||
+    errorMessage.includes("quota")
+  ) {
+    return "rate_limit";
+  }
+  if (
+    errorMessage.includes("network") ||
+    errorMessage.includes("Failed to fetch") ||
+    errorMessage.includes("timeout") ||
+    errorMessage.includes("ECONNREFUSED")
+  ) {
+    return "network";
+  }
+  if (
+    errorMessage.includes("generate") ||
+    errorMessage.includes("Gemini") ||
+    errorMessage.includes("workflow")
+  ) {
+    return "generation_error";
+  }
+  return "unknown";
+}
+
+/**
+ * Check if a node type is an AI node (generator or AI transform)
+ */
+function isAINode(nodeType: string): boolean {
+  return (
+    nodeType.startsWith("generator:") ||
+    nodeType.startsWith("transform:stability") ||
+    nodeType.startsWith("transform:openai") ||
+    nodeType.startsWith("transform:replicate") ||
+    nodeType.startsWith("vision:") ||
+    nodeType.startsWith("text:")
+  );
+}
+
+export function AIChat({
+  isOpen,
+  onClose,
+  onApplyWorkflow,
+  onGenerationSuccess,
+  onGenerationFailed,
+}: AIChatProps) {
   const [messages, setMessages] = useState<GenerateWorkflowMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -82,6 +157,8 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
     setGenerationMessage("");
 
     let receivedWorkflow: GeneratedWorkflowData | undefined;
+    const promptLength = userMessage.content.length;
+    const isConversation = messages.length > 0;
 
     activeGenerationConnection = createSSEConnection<GenerationSSEEvent>(
       "/api/generate/workflow/stream",
@@ -99,10 +176,31 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
 
           if (event.type === "generation.completed") {
             receivedWorkflow = event.data;
+
+            // Call analytics callback on success
+            if (onGenerationSuccess) {
+              const nodeCount = event.data.nodes.length;
+              const hasAINodes = event.data.nodes.some((node) => isAINode(node.nodeType));
+              onGenerationSuccess({
+                nodeCount,
+                hasAINodes,
+                promptLength,
+                isConversation,
+              });
+            }
           }
 
           if (event.type === "generation.error") {
             setError(event.data.error);
+
+            // Call analytics callback on failure
+            if (onGenerationFailed) {
+              onGenerationFailed({
+                errorType: categorizeError(event.data.error),
+                promptLength,
+                isConversation,
+              });
+            }
           }
         },
         onError: (err) => {
@@ -110,6 +208,15 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
           setError(err.message || "Failed to generate workflow");
           setIsLoading(false);
           setGenerationPhase(null);
+
+          // Call analytics callback on network error
+          if (onGenerationFailed) {
+            onGenerationFailed({
+              errorType: "network",
+              promptLength,
+              isConversation,
+            });
+          }
         },
         onClose: () => {
           activeGenerationConnection = null;
@@ -130,7 +237,7 @@ export function AIChat({ isOpen, onClose, onApplyWorkflow }: AIChatProps) {
         },
       }
     );
-  }, [input, isLoading, messages]);
+  }, [input, isLoading, messages, onGenerationSuccess, onGenerationFailed]);
 
   const handleCancelGeneration = useCallback(() => {
     if (activeGenerationConnection) {
