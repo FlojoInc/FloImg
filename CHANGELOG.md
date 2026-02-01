@@ -139,7 +139,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **BREAKING**: "Images" tab renamed to "History" tab
 - refactor: Remove "Generated images bar" from Toolbar
-  - Bar showed broken thumbnails for FSC guests (used network URLs)
   - Node previews + History tab now provide complete execution feedback
   - Design principle: Results appear in context, not summary overlays
 - feat: Add execution history tracking with data URLs
@@ -412,8 +411,7 @@ Update `.mcp.json` configuration:
 ### @teamflojo/floimg-studio-backend (0.4.0)
 
 - feat: collect and return usage events from workflow execution
-  - OSS backend now returns `usageEvents` in execution results
-  - Enables cloud platforms to track actual AI costs
+  - Backend returns `usageEvents` in execution results for cost tracking
 
 ## [v0.13.0] - 2026-01-09
 
@@ -575,7 +573,7 @@ The shapes generator now separates geometry (shape type) from appearance (fill t
 
 #### Why No Backwards Compatibility?
 
-FloImg is pre-1.0. We follow the "No Backwards Compatibility" principle: delete, don't deprecate. This keeps the codebase clean and avoids technical debt. See `vault/architecture/No-Backwards-Compatibility.md`.
+FloImg is pre-1.0. We intentionally delete rather than deprecate to keep the codebase clean and avoid technical debt. Old parameters are removed entirely—update your workflows to use the new schema.
 
 ### @teamflojo/floimg-studio-ui (0.3.4)
 
