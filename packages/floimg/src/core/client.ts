@@ -382,9 +382,30 @@ export class FloImg {
         // Array mode: distribute array items to branches
         let items: unknown[];
 
-        if (isDataBlob(input) && input.parsed && step.arrayProperty) {
-          // Extract array from parsed JSON
-          const arrayValue = input.parsed[step.arrayProperty];
+        if (isDataBlob(input) && step.arrayProperty) {
+          // Extract array from parsed JSON (or parse content if needed)
+          let parsedData = input.parsed;
+
+          // If parsed is undefined but content looks like JSON, try to parse it
+          // This handles cases where upstream providers return JSON content without pre-parsing
+          if (!parsedData && input.content) {
+            try {
+              const trimmed = input.content.trim();
+              if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+                parsedData = JSON.parse(input.content);
+              }
+            } catch {
+              // Not valid JSON, will fall through to error
+            }
+          }
+
+          if (!parsedData) {
+            throw new ConfigurationError(
+              `Fan-out in array mode: could not parse DataBlob content as JSON`
+            );
+          }
+
+          const arrayValue = parsedData[step.arrayProperty];
           if (!Array.isArray(arrayValue)) {
             throw new ConfigurationError(
               `Fan-out array property "${step.arrayProperty}" is not an array`

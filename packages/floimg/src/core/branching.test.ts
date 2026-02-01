@@ -836,6 +836,31 @@ describe("FloImg client: branching execution", () => {
       await expect(client.run(pipeline)).rejects.toThrow(/not an array/);
     });
 
+    it("should parse DataBlob content as JSON when parsed is undefined", async () => {
+      // This tests the fix for BUG-2026-016: Fan-out should handle DataBlob
+      // where content is JSON but parsed is undefined (common with AI text providers)
+      const pipeline: Pipeline = {
+        name: "unparsed-json-test",
+        initialVariables: {
+          // DataBlob with JSON content but NO parsed field
+          data: mockDataBlob(JSON.stringify({ items: ["a", "b", "c"] })),
+        },
+        steps: [
+          {
+            kind: "fan-out",
+            in: "data",
+            mode: "array",
+            arrayProperty: "items",
+            out: ["item_0", "item_1", "item_2"],
+          },
+        ],
+      };
+
+      const results = await client.run(pipeline);
+      expect(results).toHaveLength(1);
+      expect(results[0].step.kind).toBe("fan-out");
+    });
+
     it("should fail if router selectionProperty is missing from selection data", async () => {
       // Create text provider that returns wrong property
       const wrongPropProvider: TextProvider = {
