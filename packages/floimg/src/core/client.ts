@@ -395,13 +395,38 @@ export class FloImg {
                 parsedData = JSON.parse(input.content);
               }
             } catch {
-              // Not valid JSON, will fall through to error
+              // Not valid JSON, will fall through to error with detailed context
             }
           }
 
           if (!parsedData) {
+            // Provide detailed error context to help users diagnose the issue
+            let errorContext = "";
+            if (!input.content || input.content.trim() === "") {
+              errorContext =
+                " The upstream provider returned empty content. " +
+                "This may indicate a safety filter, rate limit, or internal provider error.";
+            } else {
+              const trimmed = input.content.trim();
+              const looksLikeJson = trimmed.startsWith("{") || trimmed.startsWith("[");
+              const hasClosingBrace = trimmed.endsWith("}") || trimmed.endsWith("]");
+
+              if (looksLikeJson && !hasClosingBrace) {
+                errorContext =
+                  " The content appears to be truncated JSON (starts with '{' or '[' but has no closing brace). " +
+                  "This usually means the upstream AI provider hit its token limit. " +
+                  "Try increasing maxTokens in the text node configuration.";
+              } else if (!looksLikeJson) {
+                const preview = input.content.slice(0, 100);
+                errorContext = ` The content does not appear to be JSON. Preview: "${preview}${input.content.length > 100 ? "..." : ""}"`;
+              } else {
+                errorContext =
+                  " The content looks like JSON but could not be parsed. " +
+                  "Check for malformed syntax in the upstream provider's output.";
+              }
+            }
             throw new ConfigurationError(
-              `Fan-out in array mode: could not parse DataBlob content as JSON`
+              `Fan-out in array mode: could not parse DataBlob content as JSON.${errorContext}`
             );
           }
 
