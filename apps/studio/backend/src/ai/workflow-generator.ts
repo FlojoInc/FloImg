@@ -42,7 +42,7 @@ const WORKFLOW_SCHEMA = {
           nodeType: {
             type: Type.STRING,
             description:
-              "Node type from the registry (e.g., 'generator:dalle-3', 'transform:sharp:resize', 'input:upload')",
+              "Node type from the registry (e.g., 'generator:gemini-generate', 'generator:openai', 'transform:sharp:resize')",
           },
           label: {
             type: Type.STRING,
@@ -124,7 +124,7 @@ A workflow consists of:
 3. Use node IDs like "node_1", "node_2" etc.
 4. The nodeType must exactly match one from the available list above
 5. Parameters must be provided as a JSON string in the "parametersJson" field
-6. For image generation, prefer AI generators like "generator:gemini-generate" or "generator:dalle-3"
+6. For image generation, use AI generators like "generator:gemini-generate", "generator:openai", or "generator:stability"
 7. For transforms, use the correct provider format: "transform:{provider}:{operation}"
 8. When a generator receives a dynamic prompt from a text node, use "prePrompt" to add context/instructions that get prepended to the dynamic content
 9. For composite transforms (transform:sharp:composite), use targetHandle: "base" for the background image and targetHandle: "overlays[0]", "overlays[1]", etc. for each overlay image
