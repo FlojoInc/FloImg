@@ -163,10 +163,15 @@ export function geminiText(config: GeminiTextConfig = {}): TextProvider {
         context,
         outputFormat = "text",
         jsonSchema,
-        maxTokens = config.maxTokens || 1000,
+        maxTokens: requestMaxTokens,
         temperature = config.temperature || 0.7,
         apiKey: paramApiKey,
       } = params as Partial<GeminiTextParams>;
+
+      // Use higher default for JSON mode since structured outputs need to be complete
+      // Truncated JSON is unusable, so we default to 8192 tokens for JSON vs 1000 for text
+      const defaultMaxTokens = outputFormat === "json" ? 8192 : 1000;
+      const maxTokens = requestMaxTokens ?? config.maxTokens ?? defaultMaxTokens;
 
       if (!prompt) {
         throw new Error("prompt is required for Gemini text generation");
@@ -217,6 +222,18 @@ export function geminiText(config: GeminiTextConfig = {}): TextProvider {
         config: generationConfig,
       });
 
+      // Check for truncation due to token limits
+      // When MAX_TOKENS is the finish reason with structured output, the response is often
+      // empty or truncated, making the JSON unusable
+      const finishReason = response.candidates?.[0]?.finishReason;
+      if (finishReason === "MAX_TOKENS") {
+        throw new Error(
+          `Gemini response was truncated due to token limits (maxTokens: ${maxTokens}). ` +
+            `The model could not complete its response within the token budget. ` +
+            `Try increasing maxTokens or simplifying your request.`
+        );
+      }
+
       const content = response.text || "";
 
       // Try to parse JSON if requested
@@ -225,7 +242,25 @@ export function geminiText(config: GeminiTextConfig = {}): TextProvider {
         try {
           parsed = JSON.parse(content);
         } catch {
-          // If JSON parsing fails, treat as text
+          // Provide more context about why parsing failed
+          if (content === "") {
+            throw new Error(
+              `Gemini returned an empty response for JSON output. ` +
+                `This may indicate the model was blocked by safety filters or hit an internal limit.`
+            );
+          }
+          // Check if it looks like truncated JSON (starts with { or [ but doesn't end properly)
+          const trimmed = content.trim();
+          if (
+            (trimmed.startsWith("{") || trimmed.startsWith("[")) &&
+            !(trimmed.endsWith("}") || trimmed.endsWith("]"))
+          ) {
+            throw new Error(
+              `Gemini returned truncated JSON that could not be parsed. ` +
+                `The response may have been cut off. Try increasing maxTokens or simplifying your request.`
+            );
+          }
+          // Otherwise, it's genuinely malformed JSON - treat as text (existing behavior)
         }
       }
 
@@ -383,9 +418,13 @@ export function geminiVision(config: GeminiVisionConfig = {}): VisionProvider {
         prompt = "Describe this image in detail.",
         outputFormat = "text",
         jsonSchema,
-        maxTokens = config.maxTokens || 1000,
+        maxTokens: requestMaxTokens,
         apiKey: paramApiKey,
       } = params as Partial<GeminiVisionParams>;
+
+      // Use higher default for JSON mode since structured outputs need to be complete
+      const defaultMaxTokens = outputFormat === "json" ? 8192 : 1000;
+      const maxTokens = requestMaxTokens ?? config.maxTokens ?? defaultMaxTokens;
 
       // Use per-request API key if provided, otherwise use config key
       const apiKey = paramApiKey || configApiKey;
@@ -459,6 +498,16 @@ export function geminiVision(config: GeminiVisionConfig = {}): VisionProvider {
         config: generationConfig,
       });
 
+      // Check for truncation due to token limits
+      const finishReason = response.candidates?.[0]?.finishReason;
+      if (finishReason === "MAX_TOKENS") {
+        throw new Error(
+          `Gemini response was truncated due to token limits (maxTokens: ${maxTokens}). ` +
+            `The model could not complete its response within the token budget. ` +
+            `Try increasing maxTokens or simplifying your request.`
+        );
+      }
+
       const content = response.text || "";
 
       // Try to parse JSON if requested
@@ -467,7 +516,25 @@ export function geminiVision(config: GeminiVisionConfig = {}): VisionProvider {
         try {
           parsed = JSON.parse(content);
         } catch {
-          // If JSON parsing fails, treat as text
+          // Provide more context about why parsing failed
+          if (content === "") {
+            throw new Error(
+              `Gemini returned an empty response for JSON output. ` +
+                `This may indicate the model was blocked by safety filters or hit an internal limit.`
+            );
+          }
+          // Check if it looks like truncated JSON
+          const trimmed = content.trim();
+          if (
+            (trimmed.startsWith("{") || trimmed.startsWith("[")) &&
+            !(trimmed.endsWith("}") || trimmed.endsWith("]"))
+          ) {
+            throw new Error(
+              `Gemini returned truncated JSON that could not be parsed. ` +
+                `The response may have been cut off. Try increasing maxTokens or simplifying your request.`
+            );
+          }
+          // Otherwise, it's genuinely malformed JSON - treat as text
         }
       }
 
