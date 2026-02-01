@@ -609,8 +609,8 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
         );
       }
 
-      if (!prompt) {
-        throw new Error("prompt is required for Gemini image generation");
+      if (!prompt && !prePrompt) {
+        throw new Error("prompt or prePrompt is required for Gemini image generation");
       }
 
       // Optionally enhance the prompt using Google's best practices
@@ -618,7 +618,12 @@ export function geminiGenerate(config: GeminiGenerateConfig = {}): ImageGenerato
 
       // Build full prompt: prePrompt (if set) + processed prompt
       // prePrompt helps guide the model when receiving dynamic prompts from text nodes
-      const fullPrompt = prePrompt ? `${prePrompt}\n\n${processedPrompt}` : processedPrompt;
+      // Either can be used alone, or combined together
+      const fullPrompt = prePrompt
+        ? processedPrompt
+          ? `${prePrompt}\n\n${processedPrompt}`
+          : prePrompt
+        : processedPrompt;
 
       // Validate reference images count (max 14 per Google docs)
       if (referenceImages && referenceImages.length > 14) {
