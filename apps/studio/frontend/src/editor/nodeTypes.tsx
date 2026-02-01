@@ -608,13 +608,13 @@ export const VisionNode = memo(function VisionNode({
             {String(data.params.prompt).slice(0, 30)}...
           </div>
         ) : null}
-        {/* Show output schema info if defined */}
+        {/* Show output schema info if defined - limit to 3 to keep node compact */}
         {hasMultiOutput && (
           <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-700/50">
             <div className="text-[10px] text-cyan-500 dark:text-cyan-400 font-medium mb-1">
               Outputs:
             </div>
-            {outputProperties.map(([key]) => (
+            {outputProperties.slice(0, 3).map(([key]) => (
               <div
                 key={key}
                 className="text-[10px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1"
@@ -623,6 +623,11 @@ export const VisionNode = memo(function VisionNode({
                 {key}
               </div>
             ))}
+            {outputProperties.length > 3 && (
+              <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                +{outputProperties.length - 3} more
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -729,13 +734,13 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
             {String(data.params.prompt).slice(0, 30)}...
           </div>
         ) : null}
-        {/* Show output schema info if defined */}
+        {/* Show output schema info if defined - limit to 3 to keep node compact */}
         {hasMultiOutput && (
           <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-700/50">
             <div className="text-[10px] text-pink-500 dark:text-pink-400 font-medium mb-1">
               Outputs:
             </div>
-            {outputProperties.map(([key]) => (
+            {outputProperties.slice(0, 3).map(([key]) => (
               <div
                 key={key}
                 className="text-[10px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1"
@@ -744,6 +749,11 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
                 {key}
               </div>
             ))}
+            {outputProperties.length > 3 && (
+              <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                +{outputProperties.length - 3} more
+              </div>
+            )}
           </div>
         )}
       </div>
