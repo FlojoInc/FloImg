@@ -571,10 +571,6 @@ The shapes generator now separates geometry (shape type) from appearance (fill t
 - feat: add radial gradient type (`gradientType: 'radial'`)
 - feat: add checkerboard pattern (`patternType: 'checkerboard'`)
 
-#### Why No Backwards Compatibility?
-
-FloImg is pre-1.0. We intentionally delete rather than deprecate to keep the codebase clean and avoid technical debt. Old parameters are removed entirely—update your workflows to use the new schema.
-
 ### @teamflojo/floimg-studio-ui (0.3.4)
 
 - feat: add conditional field visibility for shapes generator (only show relevant params)
@@ -641,7 +637,7 @@ FloImg is pre-1.0. We intentionally delete rather than deprecate to keep the cod
 ### @teamflojo/floimg-templates (0.1.0)
 
 - fix: actually publish to npm (was missing from release workflow in v0.9.1)
-- docs: clean up OSS documentation (remove internal acronyms)
+- docs: improve package documentation clarity
 
 ### @teamflojo/floimg-studio-ui (0.3.2)
 
@@ -650,7 +646,7 @@ FloImg is pre-1.0. We intentionally delete rather than deprecate to keep the cod
 ### Repository
 
 - chore: add floimg-templates to release workflow
-- docs: improve OSS boundaries in templates package documentation
+- docs: improve templates package documentation
 
 ## [v0.9.1] - 2026-01-04
 
@@ -658,7 +654,7 @@ FloImg is pre-1.0. We intentionally delete rather than deprecate to keep the cod
 
 - feat: new shared package for workflow templates
 - feat: templates organized by category (AI Workflows, Data Viz, Marketing, Utilities)
-- feat: `coreTemplates` for OSS (offline-compatible) vs `allTemplates` for FSC
+- feat: `coreTemplates` (bundled, works offline) vs `allTemplates` (includes cloud-only templates)
 - feat: `resolveTemplate()` for legacy ID mapping
 - feat: `getStudioUrl()` helper for template deep links
 
@@ -677,9 +673,9 @@ FloImg is pre-1.0. We intentionally delete rather than deprecate to keep the cod
 ### @teamflojo/floimg-studio-ui (0.3.0)
 
 - feat: context-aware AI generation error UI
-- feat: show "View Setup Guide" link for OSS self-hosted deployments
-- feat: show "View Plans" link for FSC tier limit errors
-- feat: show "Contact Support" link for FSC service errors (paid users only)
+- feat: show "View Setup Guide" link for self-hosted deployments
+- feat: show "View Plans" link for tier limit errors (cloud deployments)
+- feat: show "Contact Support" link for service errors (paid users only)
 
 ### @teamflojo/floimg-studio-shared (0.3.0)
 
