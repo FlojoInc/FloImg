@@ -608,11 +608,31 @@ export interface ExecutionSSEStep {
   data: ExecutionStepResult;
 }
 
+/**
+ * Usage metrics from AI provider calls during workflow execution.
+ * Collected via hooks and returned for cost tracking.
+ */
+export interface UsageEvent {
+  provider: string;
+  model: string;
+  operation: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  imageWidth?: number;
+  imageHeight?: number;
+  imageCount?: number;
+  quality?: string;
+  timestamp?: number;
+  rawMetadata?: Record<string, unknown>;
+}
+
 export interface ExecutionSSECompleted {
   type: "execution.completed";
   data: {
     imageIds: string[];
     imageUrls: string[];
+    /** Usage metrics from AI providers for cost tracking */
+    usageEvents?: UsageEvent[];
   };
 }
 

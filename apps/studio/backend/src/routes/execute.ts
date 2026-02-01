@@ -315,10 +315,10 @@ export async function executeRoutes(fastify: FastifyInstance) {
 
       const imageUrls = result.imageIds.map((id) => `/api/images/${id}/blob`);
 
-      // Send completed event
+      // Send completed event with usage metrics for cost tracking
       sendSSE(reply.raw, {
         type: "execution.completed",
-        data: { imageIds: result.imageIds, imageUrls },
+        data: { imageIds: result.imageIds, imageUrls, usageEvents: result.usageEvents },
       });
     } catch (error) {
       const errorInfo = extractErrorInfo(error);
