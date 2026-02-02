@@ -5,6 +5,23 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.10] - 2026-02-02
+
+### @teamflojo/floimg-studio-backend (0.5.4)
+
+- feat: Add `/api/validate` endpoint for pre-flight workflow validation
+  - Uses SDK `validatePipelineFull()` as single source of truth
+  - Maps validation issues to node IDs for UI highlighting
+
+### @teamflojo/floimg-studio-ui (0.10.2)
+
+- feat: Pre-flight validation panel before workflow execution
+  - ValidationPanel modal shows errors and warnings with user-friendly messages
+  - Error message dictionary maps SDK codes to actionable fix suggestions
+  - Errors block execution, warnings allow "Execute Anyway"
+  - "Edit Node" button navigates directly to problematic node
+  - ESC key support to dismiss panel
+
 ## [v0.21.9] - 2026-02-02
 
 ### @teamflojo/floimg (0.17.1)
