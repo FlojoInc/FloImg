@@ -66,6 +66,8 @@ export interface ValidationIssue {
   providerName?: string;
   /** The parameter that has an issue */
   parameterName?: string;
+  /** Actionable guidance for fixing this issue */
+  suggestedFix?: string;
 }
 
 /**
@@ -155,12 +157,15 @@ function validateParams(
     if (paramName.startsWith("_")) continue;
 
     if (!(paramName in actualParams) || actualParams[paramName] === undefined) {
+      const paramInfo = schema.parameters[paramName];
+      const paramType = paramInfo?.type || "value";
       errors.push({
         severity: "error",
         code: "MISSING_REQUIRED_PARAM",
         message: `Missing required parameter '${paramName}'`,
         ...context,
         parameterName: paramName,
+        suggestedFix: `Add the required '${paramName}' parameter with a ${paramType} value`,
       });
     }
   }
@@ -178,6 +183,7 @@ function validateParams(
         message: `Unknown parameter '${paramName}' for ${context.providerName}`,
         ...context,
         parameterName: paramName,
+        suggestedFix: `Remove '${paramName}' or check the parameter name spelling. Valid parameters: ${[...knownParams].join(", ")}`,
       };
 
       if (options.strictUnknownParams) {
@@ -203,6 +209,7 @@ function validateParams(
         message: typeError,
         ...context,
         parameterName: paramName,
+        suggestedFix: `Change '${paramName}' to a ${paramSchema.type} value${paramSchema.enum ? ` (one of: ${paramSchema.enum.join(", ")})` : ""}`,
       });
     }
   }
@@ -650,6 +657,7 @@ export function validatePipelineSemantics(
               message: `AI generator '${step.generator}' requires a prompt but has no static prompt and no dynamic prompt source (_promptFromVar)`,
               ...context,
               providerName: step.generator,
+              suggestedFix: `Either set a static 'prompt' parameter with descriptive text, OR connect a text node to this generator's text input (set _promptFromVar to the text step's output variable)`,
             });
           }
 
@@ -664,6 +672,7 @@ export function validatePipelineSemantics(
                 ...context,
                 providerName: step.generator,
                 parameterName: "_promptFromVar",
+                suggestedFix: `Ensure a text step with output variable '${promptVar}' exists before this generator step`,
               });
             }
           }
@@ -683,6 +692,7 @@ export function validatePipelineSemantics(
             message: `Transform step references undefined variable '${step.in}'`,
             ...context,
             providerName: step.op,
+            suggestedFix: `Connect a generator or another transform to this node's image input. The variable '${step.in}' must be defined by a previous step.`,
           });
         }
 
@@ -700,6 +710,7 @@ export function validatePipelineSemantics(
             message: `Vision step references undefined variable '${step.in}'`,
             ...context,
             providerName: step.provider,
+            suggestedFix: `Connect an image source (generator, transform, or collect node) to this vision node's image input. The variable '${step.in}' must be defined by a previous step.`,
           });
         }
 
@@ -717,6 +728,7 @@ export function validatePipelineSemantics(
             message: `Text step references undefined variable '${step.in}'`,
             ...context,
             providerName: step.provider,
+            suggestedFix: `Ensure the input variable '${step.in}' is defined by a previous step, or remove the input connection if this text node doesn't need one.`,
           });
         }
 
@@ -733,6 +745,7 @@ export function validatePipelineSemantics(
             code: SemanticValidationCodes.UNDEFINED_VARIABLE,
             message: `Save step references undefined variable '${step.in}'`,
             ...context,
+            suggestedFix: `Connect an image source to this save node. The variable '${step.in}' must be defined by a previous generator or transform step.`,
           });
         }
 
@@ -751,6 +764,7 @@ export function validatePipelineSemantics(
             code: SemanticValidationCodes.UNDEFINED_VARIABLE,
             message: `Fan-out step references undefined variable '${step.in}'`,
             ...context,
+            suggestedFix: `Connect a text node to this fan-out node's input. The variable '${step.in}' must be defined by a previous step.`,
           });
         }
 
@@ -761,6 +775,7 @@ export function validatePipelineSemantics(
             code: SemanticValidationCodes.MISSING_ARRAY_PROPERTY,
             message: `Fan-out step in array mode requires 'arrayProperty' to specify which array to iterate`,
             ...context,
+            suggestedFix: `Set 'arrayProperty' to the name of the array property in the upstream text node's JSON output (e.g., "prompts" for {"prompts": ["a", "b", "c"]})`,
           });
         }
 
@@ -780,6 +795,7 @@ export function validatePipelineSemantics(
               code: SemanticValidationCodes.UNDEFINED_COLLECT_INPUT,
               message: `Collect step references undefined variable '${inVar}'`,
               ...context,
+              suggestedFix: `Ensure all input nodes connected to this collect node are defined earlier in the workflow. The variable '${inVar}' is missing.`,
             });
           }
         }
@@ -797,6 +813,7 @@ export function validatePipelineSemantics(
             code: SemanticValidationCodes.UNDEFINED_ROUTER_INPUT,
             message: `Router step references undefined candidates variable '${step.in}'`,
             ...context,
+            suggestedFix: `Connect a collect node to the router's candidates input. The variable '${step.in}' must be an array from a collect node.`,
           });
         }
 
@@ -807,6 +824,7 @@ export function validatePipelineSemantics(
             code: SemanticValidationCodes.UNDEFINED_ROUTER_INPUT,
             message: `Router step references undefined selection variable '${step.selectionIn}'`,
             ...context,
+            suggestedFix: `Connect a vision node to the router's selection input. The variable '${step.selectionIn}' must contain JSON with the selection property.`,
           });
         }
 

@@ -16,6 +16,7 @@ import type {
   StudioNodeType,
   ExecutionSSEEvent,
   ErrorCategory,
+  StudioValidationIssue,
 } from "@teamflojo/floimg-studio-shared";
 import { nodesToPipeline } from "@teamflojo/floimg-studio-shared";
 import type { Template } from "@teamflojo/floimg-studio-shared";
@@ -96,6 +97,8 @@ interface ExecutionState {
   errorCategory?: ErrorCategory;
   /** Whether the operation can be retried */
   retryable?: boolean;
+  /** Validation issues with suggested fixes (for VALIDATION_ERROR) */
+  validationIssues?: StudioValidationIssue[];
 }
 
 interface WorkflowStore {
@@ -773,6 +776,9 @@ export const useWorkflowStore = create<WorkflowStore>()(
                     };
                     get().addExecutionRun(run);
 
+                    // Auto-select the error node for user attention
+                    const selectedNodeId = event.data.id || state.selectedNodeId;
+
                     set({
                       execution: {
                         ...state.execution,
@@ -784,7 +790,11 @@ export const useWorkflowStore = create<WorkflowStore>()(
                         errorCode: event.data.errorCode,
                         errorCategory: event.data.errorCategory,
                         retryable: event.data.retryable,
+                        // Validation issues with suggested fixes
+                        validationIssues: event.data.validationIssues,
                       },
+                      // Auto-select the error node so user can see details in inspector
+                      selectedNodeId,
                     });
                     reject(new Error(event.data.error));
                   }
