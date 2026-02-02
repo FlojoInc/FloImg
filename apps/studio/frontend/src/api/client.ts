@@ -195,6 +195,24 @@ export async function validateYaml(yaml: string): Promise<ImportValidationResult
   });
 }
 
+// Pre-flight workflow validation
+import type { StudioValidationIssue } from "@teamflojo/floimg-studio-shared";
+
+export interface WorkflowValidationResult {
+  valid: boolean;
+  issues: StudioValidationIssue[];
+}
+
+export async function validateWorkflow(
+  nodes: StudioNode[],
+  edges: StudioEdge[]
+): Promise<WorkflowValidationResult> {
+  return fetchJson(`${API_BASE}/validate`, {
+    method: "POST",
+    body: JSON.stringify({ nodes, edges }),
+  });
+}
+
 // Workflow Generation
 export async function generateWorkflow(
   request: GenerateWorkflowRequest

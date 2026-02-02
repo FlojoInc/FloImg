@@ -5,6 +5,7 @@ import { imagesRoutes } from "./images.js";
 import { uploadsRoutes } from "./uploads.js";
 import { importRoutes } from "./import.js";
 import { generateRoutes } from "./generate.js";
+import { validateRoutes } from "./validate.js";
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Health check
@@ -39,6 +40,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Import routes
   await fastify.register(importRoutes, { prefix: "/api" });
+
+  // Pre-flight validation routes
+  await fastify.register(validateRoutes, { prefix: "/api" });
 
   // AI workflow generation routes
   await fastify.register(generateRoutes, { prefix: "/api/generate" });

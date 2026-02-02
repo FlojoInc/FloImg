@@ -20,7 +20,7 @@ import type {
 } from "@teamflojo/floimg-studio-shared";
 import { nodesToPipeline } from "@teamflojo/floimg-studio-shared";
 import type { Template } from "@teamflojo/floimg-studio-shared";
-import { exportYaml } from "../api/client";
+import { exportYaml, validateWorkflow as validateWorkflowApi } from "../api/client";
 import { createSSEConnection, type SSEConnection } from "../api/sse";
 
 // Module-level variable to store active SSE connection (not in store since it's not serializable)
@@ -165,7 +165,17 @@ interface WorkflowStore {
   // Execution
   execution: ExecutionState;
   execute: () => Promise<void>;
+  executeWithValidation: () => Promise<void>;
   cancelExecution: () => void;
+
+  // Pre-flight validation
+  preflightValidation: {
+    show: boolean;
+    issues: StudioValidationIssue[];
+  };
+  validateWorkflow: () => Promise<StudioValidationIssue[]>;
+  showValidationPanel: (issues: StudioValidationIssue[]) => void;
+  hideValidationPanel: () => void;
 
   // Execution history - stores past runs with data URLs for universal access
   executionHistory: ExecutionRun[];
@@ -272,6 +282,12 @@ export const useWorkflowStore = create<WorkflowStore>()(
           dataOutputs: {},
           nodeStatus: {},
           nodeTiming: {},
+        },
+
+        // Pre-flight validation state
+        preflightValidation: {
+          show: false,
+          issues: [],
         },
 
         // Execution history - limited to 20 runs for memory efficiency
@@ -538,6 +554,69 @@ export const useWorkflowStore = create<WorkflowStore>()(
         setEdges: (edges) => set({ edges }),
 
         setSelectedNode: (id) => set({ selectedNodeId: id }),
+
+        // Pre-flight validation
+        validateWorkflow: async () => {
+          const { nodes, edges } = get();
+
+          // Convert React Flow nodes to StudioNodes
+          const studioNodes = nodes.map((n) => ({
+            id: n.id,
+            type: n.type as StudioNodeType,
+            position: n.position,
+            data: n.data,
+          }));
+
+          const studioEdges = edges.map((e) => ({
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            sourceHandle: e.sourceHandle ?? undefined,
+            targetHandle: e.targetHandle ?? undefined,
+          }));
+
+          try {
+            // Call backend validation API
+            const result = await validateWorkflowApi(studioNodes, studioEdges);
+            return result.issues;
+          } catch (error) {
+            // If validation API fails, allow execution to proceed
+            // (execution will catch any issues)
+            console.warn("Pre-flight validation failed:", error);
+            return [];
+          }
+        },
+
+        showValidationPanel: (issues) => {
+          set({ preflightValidation: { show: true, issues } });
+        },
+
+        hideValidationPanel: () => {
+          set({ preflightValidation: { show: false, issues: [] } });
+        },
+
+        executeWithValidation: async () => {
+          const { validateWorkflow, showValidationPanel, execute } = get();
+
+          // Run pre-flight validation
+          const issues = await validateWorkflow();
+
+          if (issues.length > 0) {
+            // Check if there are blocking errors
+            const hasErrors = issues.some((i) => i.severity === "error");
+            if (hasErrors) {
+              // Show validation panel with errors
+              showValidationPanel(issues);
+              return;
+            }
+            // Only warnings - show panel but allow execute anyway
+            showValidationPanel(issues);
+            return;
+          }
+
+          // No issues - execute directly
+          await execute();
+        },
 
         execute: async () => {
           const { nodes, edges } = get();

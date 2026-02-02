@@ -5,6 +5,7 @@ import { useWorkflowStore } from "../stores/workflowStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { generateJavaScript } from "../utils/codeGenerator";
 import { ImportModal } from "./ImportModal";
+import { ValidationPanel } from "./ValidationPanel";
 import type { StudioNode, StudioEdge } from "@teamflojo/floimg-studio-shared";
 
 type ExportTab = "yaml" | "javascript";
@@ -38,12 +39,15 @@ export function Toolbar({
 }: ToolbarProps = {}) {
   const execution = useWorkflowStore((s) => s.execution);
   const execute = useWorkflowStore((s) => s.execute);
+  const executeWithValidation = useWorkflowStore((s) => s.executeWithValidation);
   const cancelExecution = useWorkflowStore((s) => s.cancelExecution);
   const exportToYaml = useWorkflowStore((s) => s.exportToYaml);
   const importFromYaml = useWorkflowStore((s) => s.importFromYaml);
   const nodes = useWorkflowStore((s) => s.nodes);
   const edges = useWorkflowStore((s) => s.edges);
   const openSettings = useSettingsStore((s) => s.openSettings);
+  const preflightValidation = useWorkflowStore((s) => s.preflightValidation);
+  const hideValidationPanel = useWorkflowStore((s) => s.hideValidationPanel);
 
   // Workflow persistence state
   const activeWorkflowName = useWorkflowStore((s) => s.activeWorkflowName);
@@ -97,6 +101,11 @@ export function Toolbar({
   };
 
   const handleExecute = async () => {
+    await executeWithValidation();
+  };
+
+  const handleExecuteAnyway = async () => {
+    hideValidationPanel();
     await execute();
   };
 
@@ -377,6 +386,15 @@ export function Toolbar({
         onClose={() => setShowImport(false)}
         onImport={handleImport}
       />
+
+      {/* Validation panel */}
+      {preflightValidation.show && (
+        <ValidationPanel
+          issues={preflightValidation.issues}
+          onClose={hideValidationPanel}
+          onExecuteAnyway={handleExecuteAnyway}
+        />
+      )}
     </>
   );
 }
