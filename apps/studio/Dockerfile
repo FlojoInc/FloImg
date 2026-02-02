@@ -67,15 +67,15 @@ RUN pnpm --filter @teamflojo/floimg-studio-ui build
 # Stage 2: Production
 FROM node:22-alpine AS runner
 
-# Re-declare build args for this stage
-ARG GIT_COMMIT=unknown
-ARG BUILD_TIME=unknown
-ARG APP_VERSION=unknown
+# Re-declare build args WITHOUT defaults to inherit from global scope
+ARG GIT_COMMIT
+ARG BUILD_TIME
+ARG APP_VERSION
 
-# Set as environment variables for runtime access
-ENV GIT_COMMIT=$GIT_COMMIT
-ENV BUILD_TIME=$BUILD_TIME
-ENV APP_VERSION=$APP_VERSION
+# Set as environment variables for runtime access (with fallback for local builds)
+ENV GIT_COMMIT=${GIT_COMMIT:-unknown}
+ENV BUILD_TIME=${BUILD_TIME:-unknown}
+ENV APP_VERSION=${APP_VERSION:-unknown}
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
