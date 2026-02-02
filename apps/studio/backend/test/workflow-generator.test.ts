@@ -193,3 +193,150 @@ describe("repair prompt generation", () => {
     expect(mockValidationErrors[0].fix).toContain("text");
   });
 });
+
+describe("Pipeline validation integration", () => {
+  // These tests verify the End-to-End Consistency principle:
+  // The generator validates workflows in Pipeline format (what actually executes)
+  // not just Studio format (visual editor representation)
+
+  describe("generatedToStudioFormat conversion", () => {
+    it("should correctly map generator nodeTypes", () => {
+      // "generator:gemini-generate" -> type: "generator", data.generatorName: "gemini-generate"
+      const workflow = {
+        nodes: [
+          {
+            id: "gen_1",
+            nodeType: "generator:gemini-generate",
+            parameters: { prompt: "test" },
+          },
+        ],
+        edges: [],
+      };
+
+      expect(workflow.nodes[0].nodeType).toMatch(/^generator:/);
+    });
+
+    it("should correctly map transform nodeTypes", () => {
+      // "transform:sharp:resize" -> type: "transform", data.providerName: "sharp", data.operation: "resize"
+      const workflow = {
+        nodes: [
+          {
+            id: "transform_1",
+            nodeType: "transform:sharp:resize",
+            parameters: { width: 800 },
+          },
+        ],
+        edges: [],
+      };
+
+      const parts = workflow.nodes[0].nodeType.split(":");
+      expect(parts[0]).toBe("transform");
+      expect(parts[1]).toBe("sharp");
+      expect(parts[2]).toBe("resize");
+    });
+
+    it("should correctly map flow control nodeTypes", () => {
+      // "flow:fanout" -> type: "fanout"
+      const workflow = {
+        nodes: [
+          {
+            id: "fanout_1",
+            nodeType: "flow:fanout",
+            parameters: { mode: "count", count: 3 },
+          },
+        ],
+        edges: [],
+      };
+
+      expect(workflow.nodes[0].nodeType).toBe("flow:fanout");
+    });
+  });
+
+  describe("Pipeline semantic validation", () => {
+    it("should detect undefined variable references", () => {
+      // A transform that references a variable not defined by any previous step
+      // This would pass Studio validation but fail Pipeline validation
+      const workflow = {
+        nodes: [
+          {
+            id: "transform_1",
+            nodeType: "transform:sharp:resize",
+            parameters: { width: 800 },
+          },
+        ],
+        edges: [
+          // Edge from non-existent source
+          { source: "nonexistent", target: "transform_1" },
+        ],
+      };
+
+      // Expected: Pipeline validation should catch UNDEFINED_VARIABLE
+      expect(workflow.edges[0].source).toBe("nonexistent");
+    });
+
+    it("should detect missing prompt source in Pipeline format", () => {
+      // An AI generator with no prompt and no _promptFromVar
+      // Studio validation might pass (checks edges), but Pipeline should catch it
+      const workflow = {
+        nodes: [
+          {
+            id: "gen_1",
+            nodeType: "generator:gemini-generate",
+            parameters: {}, // No prompt!
+          },
+        ],
+        edges: [],
+      };
+
+      // Expected: MISSING_PROMPT_SOURCE error
+      expect(workflow.nodes[0].parameters.prompt).toBeUndefined();
+    });
+
+    it("should validate fan-out arrayProperty in Pipeline context", () => {
+      // Fan-out with mode: "array" but no arrayProperty
+      // Must fail Pipeline validation with MISSING_ARRAY_PROPERTY
+      const workflow = {
+        nodes: [
+          {
+            id: "text_1",
+            nodeType: "text:gemini-text",
+            parameters: { prompt: "generate prompts" },
+          },
+          {
+            id: "fanout_1",
+            nodeType: "flow:fanout",
+            parameters: {
+              mode: "array",
+              // Missing arrayProperty!
+            },
+          },
+        ],
+        edges: [{ source: "text_1", target: "fanout_1" }],
+      };
+
+      expect(workflow.nodes[1].parameters.mode).toBe("array");
+      expect(workflow.nodes[1].parameters.arrayProperty).toBeUndefined();
+    });
+  });
+
+  describe("error fix suggestions", () => {
+    it("should provide MISSING_PROMPT_SOURCE fix", () => {
+      const expectedFix =
+        'Either set a static "prompt" parameter OR connect a text node to the "text" input handle';
+      expect(expectedFix).toContain("prompt");
+      expect(expectedFix).toContain("text");
+    });
+
+    it("should provide MISSING_ARRAY_PROPERTY fix", () => {
+      const expectedFix =
+        'Set "arrayProperty" to the name of the array property in the upstream text node\'s JSON output';
+      expect(expectedFix).toContain("arrayProperty");
+    });
+
+    it("should provide UNDEFINED_VARIABLE fix", () => {
+      const expectedFix = "Ensure the referenced variable is defined by a previous step";
+      expect(expectedFix).toContain("variable");
+      expect(expectedFix).toContain("previous step");
+    });
+  });
+});

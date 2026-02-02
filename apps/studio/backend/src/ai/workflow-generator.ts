@@ -10,7 +10,19 @@ import type {
   GeneratedWorkflowData,
   GenerateWorkflowMessage,
   NodeDefinition,
+  StudioNode,
+  StudioEdge,
+  GeneratorNodeData,
+  TransformNodeData,
+  VisionNodeData,
+  TextNodeData,
+  FanOutNodeData,
+  CollectNodeData,
+  RouterNodeData,
+  StudioNodeType,
 } from "@teamflojo/floimg-studio-shared";
+import { nodesToPipeline, mapValidationToNodes } from "@teamflojo/floimg-studio-shared";
+import { validatePipelineFull } from "@teamflojo/floimg";
 import {
   getGenerators,
   getTransforms,
@@ -19,9 +31,131 @@ import {
   getVisionProviders,
   getFlowControlNodes,
 } from "../floimg/registry.js";
+import { getCachedCapabilities } from "../floimg/setup.js";
 
 // Model to use for workflow generation
 const MODEL_ID = "gemini-3-pro-preview";
+
+/**
+ * Convert GeneratedWorkflowData to Studio format for Pipeline validation
+ *
+ * The workflow generator uses a simplified format (GeneratedNode/GeneratedEdge).
+ * To validate as Pipeline, we convert to StudioNode/StudioEdge format first,
+ * then use nodesToPipeline() which handles all the edge cases.
+ */
+function generatedToStudioFormat(workflow: GeneratedWorkflowData): {
+  nodes: StudioNode[];
+  edges: StudioEdge[];
+} {
+  const nodes: StudioNode[] = workflow.nodes.map((node, index) => {
+    // Parse nodeType to extract type and provider info
+    // Format: "generator:openai", "transform:sharp:resize", "text:gemini-text", etc.
+    const parts = node.nodeType.split(":");
+    const typePrefix = parts[0];
+
+    // Map nodeType prefix to StudioNodeType
+    let studioType: StudioNodeType;
+    switch (typePrefix) {
+      case "generator":
+        studioType = "generator";
+        break;
+      case "transform":
+        studioType = "transform";
+        break;
+      case "text":
+        studioType = "text";
+        break;
+      case "vision":
+        studioType = "vision";
+        break;
+      case "input":
+        studioType = "input";
+        break;
+      case "flow":
+        // flow:fanout, flow:collect, flow:router
+        studioType = parts[1] as StudioNodeType;
+        break;
+      default:
+        studioType = "generator"; // Default fallback
+    }
+
+    // Build node data based on type
+    let data: StudioNode["data"];
+    switch (studioType) {
+      case "generator":
+        data = {
+          generatorName: parts.slice(1).join(":"), // e.g., "gemini-generate" from "generator:gemini-generate"
+          params: node.parameters,
+          isAI: true,
+        } as GeneratorNodeData;
+        break;
+      case "transform":
+        // transform:sharp:resize -> providerName="sharp", operation="resize"
+        data = {
+          providerName: parts[1],
+          operation: parts[2] || parts[1],
+          params: node.parameters,
+          isAI: parts[1]?.includes("gemini") || parts[1]?.includes("openai"),
+        } as TransformNodeData;
+        break;
+      case "text":
+        data = {
+          providerName: parts[1], // e.g., "gemini-text"
+          params: node.parameters,
+        } as TextNodeData;
+        break;
+      case "vision":
+        data = {
+          providerName: parts[1], // e.g., "gemini-vision"
+          params: node.parameters,
+        } as VisionNodeData;
+        break;
+      case "fanout":
+        data = {
+          mode: (node.parameters?.mode as "array" | "count") || "count",
+          count: (node.parameters?.count as number) || 3,
+          arrayProperty: node.parameters?.arrayProperty as string,
+        } as FanOutNodeData;
+        break;
+      case "collect":
+        data = {
+          expectedInputs: (node.parameters?.expectedInputs as number) || 3,
+          waitMode: (node.parameters?.waitMode as "all" | "available") || "all",
+        } as CollectNodeData;
+        break;
+      case "router":
+        data = {
+          selectionProperty: (node.parameters?.selectionProperty as string) || "best_index",
+          selectionType: (node.parameters?.selectionType as "index" | "value") || "index",
+          outputCount: (node.parameters?.outputCount as number) || 1,
+          contextProperty: node.parameters?.contextProperty as string,
+        } as RouterNodeData;
+        break;
+      default:
+        data = {
+          generatorName: parts.slice(1).join(":"),
+          params: node.parameters,
+        } as GeneratorNodeData;
+    }
+
+    return {
+      id: node.id,
+      type: studioType,
+      position: { x: index * 200, y: 0 }, // Position doesn't affect validation
+      data,
+    };
+  });
+
+  const edges: StudioEdge[] = workflow.edges.map((edge, index) => ({
+    id: `edge_${index}`,
+    source: edge.source,
+    target: edge.target,
+    sourceHandle: edge.sourceHandle,
+    targetHandle: edge.targetHandle,
+  }));
+
+  return { nodes, edges };
+}
 
 /**
  * JSON Schema for Gemini structured output
@@ -455,11 +589,68 @@ export async function generateWorkflow(
 
       lastWorkflow = workflow;
 
-      // Validate the workflow
+      // Validate the workflow - Studio format validation
       const validation = validateWorkflow(workflow, availableNodes);
 
       if (validation.valid) {
-        // Success! Return the validated workflow
+        // Studio validation passed - now validate as Pipeline (End-to-End Consistency)
+        // This catches semantic issues that only appear in execution format
+        try {
+          const { nodes: studioNodes, edges: studioEdges } = generatedToStudioFormat(workflow);
+          const { pipeline, nodeToVar } = nodesToPipeline(studioNodes, studioEdges);
+          const capabilities = getCachedCapabilities();
+          const pipelineValidation = validatePipelineFull(pipeline, capabilities);
+
+          if (!pipelineValidation.valid) {
+            // Pipeline validation failed - map errors back to nodes and trigger repair
+            const studioIssues = mapValidationToNodes(
+              pipelineValidation.errors,
+              nodeToVar,
+              pipeline.steps
+            );
+
+            // Convert to ValidationError format for repair prompt
+            lastValidationErrors = studioIssues.map((issue) => ({
+              nodeId: issue.nodeId || "unknown",
+              nodeType: issue.stepKind || "unknown",
+              error: issue.message,
+              fix: getPipelineErrorFix(issue.code),
+            }));
+
+            console.log(
+              `Pipeline validation failed on attempt ${attempt}/${MAX_GENERATION_ATTEMPTS}:`,
+              pipelineValidation.errors.map((e) => e.message)
+            );
+
+            if (attempt < MAX_GENERATION_ATTEMPTS) {
+              currentPrompt = buildRepairPrompt(prompt, workflow, lastValidationErrors);
+              console.log(`Sending Pipeline repair prompt for attempt ${attempt + 1}`);
+            }
+            continue; // Try again
+          }
+        } catch (conversionError) {
+          // nodesToPipeline() can throw on structural issues (e.g., missing connections)
+          const errorMsg =
+            conversionError instanceof Error ? conversionError.message : String(conversionError);
+          console.log(`Pipeline conversion failed on attempt ${attempt}: ${errorMsg}`);
+
+          lastValidationErrors = [
+            {
+              nodeId: "workflow",
+              nodeType: "structure",
+              error: errorMsg,
+              fix: "Ensure all nodes are properly connected with edges",
+            },
+          ];
+
+          if (attempt < MAX_GENERATION_ATTEMPTS) {
+            currentPrompt = buildRepairPrompt(prompt, workflow, lastValidationErrors);
+            console.log(`Sending structure repair prompt for attempt ${attempt + 1}`);
+          }
+          continue; // Try again
+        }
+
+        // Both validations passed!
         console.log(`Workflow generation succeeded on attempt ${attempt}`);
         return {
           success: true,
@@ -472,7 +663,7 @@ export async function generateWorkflow(
         };
       }
 
-      // Validation failed
+      // Studio format validation failed
       lastValidationErrors = validation.validationErrors;
       console.log(
         `Workflow validation failed on attempt ${attempt}/${MAX_GENERATION_ATTEMPTS}:`,
@@ -517,6 +708,31 @@ interface ValidationError {
   nodeType: string;
   error: string;
   fix: string;
+}
+
+/**
+ * Get fix suggestion for Pipeline validation error codes
+ * Maps SDK validation codes to actionable repair instructions
+ */
+function getPipelineErrorFix(code: string): string {
+  const fixes: Record<string, string> = {
+    MISSING_PROMPT_SOURCE:
+      'Either set a static "prompt" parameter OR connect a text node to the "text" input handle with an edge (sourceHandle: "text", targetHandle: "text")',
+    MISSING_IMAGE_INPUT: "Connect a generator or another transform to this node's image input",
+    MISSING_ARRAY_PROPERTY:
+      'Set "arrayProperty" to the name of the array property in the upstream text node\'s JSON output (e.g., "prompts" for {"prompts": ["a", "b", "c"]})',
+    UNDEFINED_VARIABLE:
+      "Ensure the referenced variable is defined by a previous step in the workflow",
+    UNDEFINED_COLLECT_INPUT:
+      "Ensure all input nodes connected to collect are defined earlier in the workflow",
+    UNDEFINED_ROUTER_INPUT: "Ensure both candidates and selection inputs are connected and defined",
+    MISSING_REQUIRED_PARAM: "Add the required parameter with an appropriate value",
+    UNKNOWN_GENERATOR: "Use a valid generator name from the available generators list",
+    UNKNOWN_TRANSFORM: "Use a valid transform operation from the available transforms list",
+    INVALID_PARAM_TYPE: "Ensure the parameter value matches the expected type",
+  };
+
+  return fixes[code] || "Review the node configuration and ensure all connections are valid";
 }
 
 /**
