@@ -4,6 +4,7 @@ import { parse } from "yaml";
 import createClient from "../../index.js";
 import { loadConfig } from "../../config/loader.js";
 import type { Pipeline } from "../../core/types.js";
+import { PipelineError } from "../../core/errors.js";
 
 export const runCommand = new Command("run")
   .description("Run a YAML pipeline")
@@ -27,13 +28,13 @@ export const runCommand = new Command("run")
 
       // Output results
       for (const result of results) {
-        if ('location' in result.value) {
+        if ("location" in result.value) {
           // SaveResult
           console.log(`  ${result.out}:`);
           console.log(`    Location: ${result.value.location}`);
           console.log(`    Provider: ${result.value.provider}`);
           console.log(`    Size: ${result.value.size} bytes`);
-        } else if ('bytes' in result.value) {
+        } else if ("bytes" in result.value) {
           // ImageBlob
           console.log(`  ${result.out}:`);
           console.log(`    Type: ${result.value.mime}`);
@@ -41,10 +42,16 @@ export const runCommand = new Command("run")
         }
       }
 
-      console.log('\n✨ Done!');
+      console.log("\n✨ Done!");
     } catch (error) {
-      console.error("\n❌ Error running pipeline:");
-      console.error(error instanceof Error ? error.message : error);
+      if (error instanceof PipelineError) {
+        // Validation errors get a clean, formatted output
+        console.error("\n❌ Pipeline validation failed:\n");
+        console.error(error.message);
+      } else {
+        console.error("\n❌ Error running pipeline:");
+        console.error(error instanceof Error ? error.message : error);
+      }
       process.exit(1);
     }
   });

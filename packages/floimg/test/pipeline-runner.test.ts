@@ -126,6 +126,8 @@ describe("Pipeline Runner", () => {
 
       const nodes = buildDependencyGraph(steps);
 
+      // Pipeline runner still detects missing dependencies at execution planning stage
+      // (even if SDK validation catches this earlier at client.run() level)
       expect(() => computeExecutionWaves(nodes)).toThrow(/Circular dependency or missing input/);
     });
 

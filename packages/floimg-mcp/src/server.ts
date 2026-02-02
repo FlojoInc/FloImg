@@ -10,7 +10,7 @@ import {
 import { readFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
-import createClient, { FloimgError } from "@teamflojo/floimg";
+import createClient, { FloimgError, PipelineError } from "@teamflojo/floimg";
 import { loadConfig } from "@teamflojo/floimg/config";
 import type { MimeType, ImageBlob } from "@teamflojo/floimg";
 
@@ -1235,19 +1235,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const message = error instanceof Error ? error.message : String(error);
     const errorType = error instanceof FloimgError ? error.name : "Error";
 
+    // Extract validation issues from PipelineError if available
+    const validationIssues =
+      error instanceof PipelineError &&
+      (error as PipelineError & { validationIssues?: unknown[] }).validationIssues;
+
+    const errorResponse: Record<string, unknown> = {
+      success: false,
+      error: errorType,
+      message,
+    };
+
+    // Include structured validation issues for programmatic handling
+    if (validationIssues) {
+      errorResponse.validationIssues = validationIssues;
+    }
+
     return {
       content: [
         {
           type: "text",
-          text: JSON.stringify(
-            {
-              success: false,
-              error: errorType,
-              message,
-            },
-            null,
-            2
-          ),
+          text: JSON.stringify(errorResponse, null, 2),
         },
       ],
       isError: true,

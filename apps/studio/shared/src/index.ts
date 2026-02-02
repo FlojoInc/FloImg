@@ -5,6 +5,13 @@
 // Template types
 export type { Template, TemplateCategory } from "./types/template.js";
 
+// Validation utilities - import type for local use, then re-export
+import type { StudioValidationIssue as _StudioValidationIssue } from "./validation.js";
+export { mapValidationToNodes, formatValidationResponse } from "./validation.js";
+export type { ValidationIssue, StudioValidationIssue } from "./validation.js";
+// Alias for use within this file
+type StudioValidationIssue = _StudioValidationIssue;
+
 // Node types in the visual editor
 export type StudioNodeType =
   | "generator"
@@ -648,6 +655,8 @@ export interface ExecutionSSEError {
     errorCategory?: ErrorCategory;
     /** Whether the operation can be retried */
     retryable?: boolean;
+    /** Validation issues (for VALIDATION_ERROR code) */
+    validationIssues?: StudioValidationIssue[];
   };
 }
 

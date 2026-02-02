@@ -5,11 +5,13 @@ import type {
   Pipeline,
   PipelineStep,
   ExecutionStepResult,
+  StudioValidationIssue,
 } from "@teamflojo/floimg-studio-shared";
+import { mapValidationToNodes, formatValidationResponse } from "@teamflojo/floimg-studio-shared";
 import { executePipeline } from "../floimg/executor.js";
 import { loadUpload } from "./uploads.js";
 import { stringify as yamlStringify } from "yaml";
-import { FloimgError, type ImageBlob } from "@teamflojo/floimg";
+import { FloimgError, PipelineError, type ImageBlob } from "@teamflojo/floimg";
 
 // Helper to extract structured error info from any error
 function extractErrorInfo(error: unknown): {
@@ -17,6 +19,7 @@ function extractErrorInfo(error: unknown): {
   code?: string;
   category?: ErrorCategory;
   retryable?: boolean;
+  validationIssues?: StudioValidationIssue[];
 } {
   if (error instanceof FloimgError) {
     return {
@@ -29,6 +32,37 @@ function extractErrorInfo(error: unknown): {
   return {
     message: error instanceof Error ? error.message : String(error),
   };
+}
+
+// Helper to extract validation issues from PipelineError
+function extractValidationIssues(
+  error: unknown,
+  steps: PipelineStep[],
+  nodeToVar?: Map<string, string>
+): StudioValidationIssue[] | undefined {
+  if (!(error instanceof PipelineError)) return undefined;
+
+  const errorWithIssues = error as PipelineError & {
+    validationIssues?: Array<{
+      severity: "error" | "warning";
+      code: string;
+      message: string;
+      stepIndex?: number;
+      stepKind?: string;
+      providerName?: string;
+      parameterName?: string;
+    }>;
+  };
+
+  if (!errorWithIssues.validationIssues) return undefined;
+
+  // If we have nodeToVar mapping, map to node IDs for UI highlighting
+  if (nodeToVar) {
+    return mapValidationToNodes(errorWithIssues.validationIssues, nodeToVar, steps);
+  }
+
+  // Otherwise return issues without node IDs
+  return errorWithIssues.validationIssues;
 }
 
 // Helper to send SSE event
@@ -239,6 +273,21 @@ export async function executeRoutes(fastify: FastifyInstance) {
         usageEvents: result.usageEvents,
       };
     } catch (error) {
+      // Check for validation errors first (return 400)
+      const validationIssues = extractValidationIssues(error, steps);
+      if (validationIssues && validationIssues.length > 0) {
+        const { message } = formatValidationResponse(validationIssues);
+        reply.code(400);
+        return {
+          status: "error",
+          error: message,
+          errorCode: "VALIDATION_ERROR",
+          errorCategory: "validation" as ErrorCategory,
+          validationIssues,
+        };
+      }
+
+      // Other execution errors (return 500)
       const errorInfo = extractErrorInfo(error);
       reply.code(500);
       return {
@@ -321,16 +370,31 @@ export async function executeRoutes(fastify: FastifyInstance) {
         data: { imageIds: result.imageIds, imageUrls, usageEvents: result.usageEvents },
       });
     } catch (error) {
-      const errorInfo = extractErrorInfo(error);
-      sendSSE(reply.raw, {
-        type: "execution.error",
-        data: {
-          error: errorInfo.message,
-          errorCode: errorInfo.code,
-          errorCategory: errorInfo.category,
-          retryable: errorInfo.retryable,
-        },
-      });
+      // Check for validation errors
+      const validationIssues = extractValidationIssues(error, steps);
+      if (validationIssues && validationIssues.length > 0) {
+        const { message } = formatValidationResponse(validationIssues);
+        sendSSE(reply.raw, {
+          type: "execution.error",
+          data: {
+            error: message,
+            errorCode: "VALIDATION_ERROR",
+            errorCategory: "validation" as ErrorCategory,
+            validationIssues,
+          },
+        });
+      } else {
+        const errorInfo = extractErrorInfo(error);
+        sendSSE(reply.raw, {
+          type: "execution.error",
+          data: {
+            error: errorInfo.message,
+            errorCode: errorInfo.code,
+            errorCategory: errorInfo.category,
+            retryable: errorInfo.retryable,
+          },
+        });
+      }
     } finally {
       reply.raw.end();
     }

@@ -352,10 +352,23 @@ export interface GenerateWorkflowResult {
   workflow?: GeneratedWorkflowData;
   message: string;
   error?: string;
+  /** Number of generation attempts made (1 = first try succeeded) */
+  attempts?: number;
+  /** Validation errors from the final attempt (if any) */
+  validationErrors?: ValidationError[];
 }
+
+/** Maximum number of retry attempts for validation failures */
+const MAX_GENERATION_ATTEMPTS = 3;
 
 /**
  * Generate a workflow from natural language using Gemini 3 Pro
+ *
+ * Implements a validation-retry loop:
+ * 1. Generate initial workflow from prompt
+ * 2. Validate the workflow (structural + semantic)
+ * 3. If validation fails, send repair prompt to LLM with specific fix instructions
+ * 4. Repeat up to MAX_GENERATION_ATTEMPTS times
  */
 export async function generateWorkflow(
   prompt: string,
@@ -370,99 +383,170 @@ export async function generateWorkflow(
     };
   }
 
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    const availableNodes = getAllAvailableNodes();
-    const systemPrompt = buildSystemPrompt(availableNodes);
+  const ai = new GoogleGenAI({ apiKey });
+  const availableNodes = getAllAvailableNodes();
+  const systemPrompt = buildSystemPrompt(availableNodes);
 
-    // Build contents with history
-    const contents = [
-      ...formatHistory(history),
-      {
-        role: "user" as const,
-        parts: [{ text: prompt }],
-      },
-    ];
+  let lastWorkflow: GeneratedWorkflowData | undefined;
+  let lastValidationErrors: ValidationError[] = [];
+  let currentPrompt = prompt;
+  let attempt = 0;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_ID,
-      contents,
-      config: {
-        systemInstruction: systemPrompt,
-        responseMimeType: "application/json",
-        responseSchema: WORKFLOW_SCHEMA,
-      },
-    });
+  while (attempt < MAX_GENERATION_ATTEMPTS) {
+    attempt++;
 
-    // Parse the response
-    const text = response.text;
-    if (!text) {
+    try {
+      // Build contents with history (only on first attempt)
+      const contents =
+        attempt === 1
+          ? [...formatHistory(history), { role: "user" as const, parts: [{ text: currentPrompt }] }]
+          : [
+              // For repair attempts, include the original history plus the repair prompt
+              ...formatHistory(history),
+              { role: "user" as const, parts: [{ text: prompt }] },
+              {
+                role: "model" as const,
+                parts: [{ text: `Generated workflow: ${JSON.stringify(lastWorkflow)}` }],
+              },
+              { role: "user" as const, parts: [{ text: currentPrompt }] },
+            ];
+
+      const response = await ai.models.generateContent({
+        model: MODEL_ID,
+        contents,
+        config: {
+          systemInstruction: systemPrompt,
+          responseMimeType: "application/json",
+          responseSchema: WORKFLOW_SCHEMA,
+        },
+      });
+
+      // Parse the response
+      const text = response.text;
+      if (!text) {
+        return {
+          success: false,
+          message: "No response from Gemini",
+          error: "Empty response received",
+          attempts: attempt,
+        };
+      }
+
+      const rawWorkflow = JSON.parse(text) as {
+        nodes: Array<{
+          id: string;
+          nodeType: string;
+          label?: string;
+          parametersJson?: string;
+        }>;
+        edges: GeneratedWorkflowData["edges"];
+      };
+
+      // Transform parametersJson strings to parameters objects
+      const workflow: GeneratedWorkflowData = {
+        nodes: rawWorkflow.nodes.map((node) => ({
+          id: node.id,
+          nodeType: node.nodeType,
+          label: node.label,
+          parameters: node.parametersJson ? JSON.parse(node.parametersJson) : {},
+        })),
+        edges: rawWorkflow.edges,
+      };
+
+      lastWorkflow = workflow;
+
+      // Validate the workflow
+      const validation = validateWorkflow(workflow, availableNodes);
+
+      if (validation.valid) {
+        // Success! Return the validated workflow
+        console.log(`Workflow generation succeeded on attempt ${attempt}`);
+        return {
+          success: true,
+          workflow,
+          message:
+            attempt === 1
+              ? `Created a workflow with ${workflow.nodes.length} nodes`
+              : `Created a workflow with ${workflow.nodes.length} nodes (fixed after ${attempt} attempts)`,
+          attempts: attempt,
+        };
+      }
+
+      // Validation failed
+      lastValidationErrors = validation.validationErrors;
+      console.log(
+        `Workflow validation failed on attempt ${attempt}/${MAX_GENERATION_ATTEMPTS}:`,
+        validation.errors
+      );
+
+      if (attempt < MAX_GENERATION_ATTEMPTS) {
+        // Build repair prompt for next attempt
+        currentPrompt = buildRepairPrompt(prompt, workflow, validation.validationErrors);
+        console.log(`Sending repair prompt for attempt ${attempt + 1}`);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`Generation attempt ${attempt} failed:`, errorMessage);
+
+      // Don't retry on parse errors or API errors
       return {
         success: false,
-        message: "No response from Gemini",
-        error: "Empty response received",
+        message: "Failed to generate workflow",
+        error: errorMessage,
+        attempts: attempt,
       };
     }
-
-    const rawWorkflow = JSON.parse(text) as {
-      nodes: Array<{
-        id: string;
-        nodeType: string;
-        label?: string;
-        parametersJson?: string;
-      }>;
-      edges: GeneratedWorkflowData["edges"];
-    };
-
-    // Transform parametersJson strings to parameters objects
-    const workflow: GeneratedWorkflowData = {
-      nodes: rawWorkflow.nodes.map((node) => ({
-        id: node.id,
-        nodeType: node.nodeType,
-        label: node.label,
-        parameters: node.parametersJson ? JSON.parse(node.parametersJson) : {},
-      })),
-      edges: rawWorkflow.edges,
-    };
-
-    // Validate the workflow
-    const validation = validateWorkflow(workflow, availableNodes);
-    if (!validation.valid) {
-      return {
-        success: false,
-        workflow,
-        message: `Generated workflow has issues: ${validation.errors.join(", ")}`,
-        error: validation.errors.join("; "),
-      };
-    }
-
-    return {
-      success: true,
-      workflow,
-      message: `Created a workflow with ${workflow.nodes.length} nodes`,
-    };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return {
-      success: false,
-      message: "Failed to generate workflow",
-      error: errorMessage,
-    };
   }
+
+  // All attempts exhausted - return the last workflow with validation errors
+  return {
+    success: false,
+    workflow: lastWorkflow,
+    message: `Generated workflow has issues after ${attempt} attempts: ${lastValidationErrors.map((e) => e.error).join(", ")}`,
+    error: lastValidationErrors.map((e) => `${e.nodeId}: ${e.error} - ${e.fix}`).join("; "),
+    attempts: attempt,
+    validationErrors: lastValidationErrors,
+  };
 }
 
 /**
- * Validate a generated workflow
+ * Validation error with actionable fix suggestion
+ */
+interface ValidationError {
+  nodeId: string;
+  nodeType: string;
+  error: string;
+  fix: string;
+}
+
+/**
+ * Validate a generated workflow - both structural and semantic checks
+ *
+ * Semantic validation ensures that:
+ * - Generators without static prompts have incoming text edges
+ * - AI transforms have proper prompt sources
+ * - Fan-out in array mode has arrayProperty configured
+ * - Edge handles match expected node inputs
  */
 function validateWorkflow(
   workflow: GeneratedWorkflowData,
   availableNodes: NodeDefinition[]
-): { valid: boolean; errors: string[] } {
+): { valid: boolean; errors: string[]; validationErrors: ValidationError[] } {
   const errors: string[] = [];
+  const validationErrors: ValidationError[] = [];
   const nodeIds = new Set(workflow.nodes.map((n) => n.id));
   const availableNodeTypes = new Set(availableNodes.map((n) => n.id));
+  const availableNodeMap = new Map(availableNodes.map((n) => [n.id, n]));
 
-  // Check nodes
+  // Build edge lookup: target node ID -> incoming edges
+  const incomingEdges = new Map<string, GeneratedWorkflowData["edges"]>();
+  for (const edge of workflow.edges) {
+    const existing = incomingEdges.get(edge.target) || [];
+    existing.push(edge);
+    incomingEdges.set(edge.target, existing);
+  }
+
+  // Check nodes - structural
   for (const node of workflow.nodes) {
     if (!node.id) {
       errors.push("Node missing ID");
@@ -474,7 +558,7 @@ function validateWorkflow(
     }
   }
 
-  // Check edges
+  // Check edges - structural
   for (const edge of workflow.edges) {
     if (!nodeIds.has(edge.source)) {
       errors.push(`Edge references unknown source: ${edge.source}`);
@@ -495,8 +579,125 @@ function validateWorkflow(
     errors.push("Workflow has no source node (generator, input, or text)");
   }
 
+  // Semantic validation - check required parameters and edge connections
+  for (const node of workflow.nodes) {
+    const nodeDef = availableNodeMap.get(node.nodeType);
+    if (!nodeDef) continue;
+
+    const nodeEdges = incomingEdges.get(node.id) || [];
+    const hasTextEdge = nodeEdges.some((e) => e.targetHandle === "text");
+    const hasImageEdge = nodeEdges.some(
+      (e) => !e.targetHandle || e.targetHandle === "image" || e.targetHandle === "input"
+    );
+
+    // Check generators
+    if (node.nodeType.startsWith("generator:")) {
+      const prompt = node.parameters?.prompt;
+      const promptEmpty = prompt === undefined || prompt === null || prompt === "";
+
+      // AI generators need either a static prompt OR an incoming text edge
+      if (nodeDef.params.required?.includes("prompt")) {
+        if (promptEmpty && !hasTextEdge) {
+          const errorMsg = `Generator "${node.id}" (${node.nodeType}) requires a prompt but has no prompt parameter and no incoming text edge`;
+          errors.push(errorMsg);
+          validationErrors.push({
+            nodeId: node.id,
+            nodeType: node.nodeType,
+            error: "Missing prompt source",
+            fix: `Either set a static "prompt" parameter OR connect a text node to the "text" input handle`,
+          });
+        }
+      }
+    }
+
+    // Check transforms - AI transforms need prompts too
+    if (node.nodeType.startsWith("transform:")) {
+      // Check if this is an AI transform that requires a prompt
+      const isAITransform =
+        node.nodeType.includes("gemini") ||
+        node.nodeType.includes("openai") ||
+        node.nodeType.includes("stability");
+
+      if (isAITransform && nodeDef.params.required?.includes("prompt")) {
+        const prompt = node.parameters?.prompt;
+        const promptEmpty = prompt === undefined || prompt === null || prompt === "";
+
+        if (promptEmpty && !hasTextEdge) {
+          const errorMsg = `AI Transform "${node.id}" (${node.nodeType}) requires a prompt but has no prompt parameter and no incoming text edge`;
+          errors.push(errorMsg);
+          validationErrors.push({
+            nodeId: node.id,
+            nodeType: node.nodeType,
+            error: "Missing prompt source",
+            fix: `Either set a static "prompt" parameter OR connect a text node to the "text" input handle`,
+          });
+        }
+      }
+
+      // Transforms need an image input (unless they're the first node somehow)
+      if (!hasImageEdge && nodeDef.params.required?.includes("in")) {
+        const errorMsg = `Transform "${node.id}" (${node.nodeType}) has no incoming image connection`;
+        errors.push(errorMsg);
+        validationErrors.push({
+          nodeId: node.id,
+          nodeType: node.nodeType,
+          error: "Missing image input",
+          fix: `Connect a generator or another transform to this node's image input`,
+        });
+      }
+    }
+
+    // Check flow:fanout nodes
+    if (node.nodeType === "flow:fanout") {
+      const mode = node.parameters?.mode;
+      const arrayProperty = node.parameters?.arrayProperty;
+
+      if (mode === "array" && !arrayProperty) {
+        const errorMsg = `Fan-out node "${node.id}" is in array mode but has no arrayProperty specified`;
+        errors.push(errorMsg);
+        validationErrors.push({
+          nodeId: node.id,
+          nodeType: node.nodeType,
+          error: "Missing arrayProperty for array mode",
+          fix: `Set "arrayProperty" to the name of the array property in the upstream text node's JSON output (e.g., "prompts" for {"prompts": ["a", "b", "c"]})`,
+        });
+      }
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,
+    validationErrors,
   };
+}
+
+/**
+ * Build a repair prompt from validation errors
+ * This gives the LLM specific instructions on how to fix the workflow
+ */
+function buildRepairPrompt(
+  originalPrompt: string,
+  workflow: GeneratedWorkflowData,
+  validationErrors: ValidationError[]
+): string {
+  const errorDescriptions = validationErrors
+    .map((e, i) => `${i + 1}. Node "${e.nodeId}" (${e.nodeType}): ${e.error}\n   Fix: ${e.fix}`)
+    .join("\n");
+
+  return `The workflow you generated has validation errors that need to be fixed.
+
+Original request: "${originalPrompt}"
+
+Current workflow (needs fixes):
+${JSON.stringify(workflow, null, 2)}
+
+Validation errors:
+${errorDescriptions}
+
+Please generate a corrected workflow that fixes ALL the validation errors above.
+Remember:
+- Generators that receive dynamic prompts from text nodes should have an empty "prompt": "" parameter AND an edge with targetHandle: "text"
+- The text node must have sourceHandle: "text" (or "output.{property}" for structured output)
+- Fan-out in array mode needs arrayProperty set to match the text node's JSON schema`;
 }

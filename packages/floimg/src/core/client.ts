@@ -25,7 +25,8 @@ import type {
 } from "./types.js";
 import { isImageBlob, isDataBlob } from "./types.js";
 import { Logger } from "./logger.js";
-import { ProviderNotFoundError, ConfigurationError } from "./errors.js";
+import { ProviderNotFoundError, ConfigurationError, PipelineError } from "./errors.js";
+import { validatePipelineFull } from "./validator.js";
 import {
   buildDependencyGraph,
   computeExecutionWaves,
@@ -229,9 +230,35 @@ export class FloImg {
    * Steps are analyzed for dependencies and executed in parallel where possible.
    * The `concurrency` option controls maximum parallel steps (default: Infinity).
    * Supports multi-modal workflows with images AND text/JSON data flowing between steps.
+   *
+   * Pre-execution validation:
+   * - Validates all step parameters against provider schemas
+   * - Validates semantic correctness (variable references, prompt sources, etc.)
+   * - Throws PipelineError if validation fails
    */
   async run(pipeline: Pipeline): Promise<PipelineResult[]> {
     this.logger.info(`Running pipeline: ${pipeline.name || "unnamed"}`);
+
+    // Validate pipeline before execution
+    const capabilities = this.getCapabilities();
+    const validation = validatePipelineFull(pipeline, capabilities);
+
+    if (!validation.valid) {
+      const errorMessage = validation.formatErrors();
+      this.logger.error(`Pipeline validation failed:\n${errorMessage}`);
+      const error = new PipelineError(
+        `Pipeline validation failed with ${validation.errors.length} error(s):\n${errorMessage}`
+      );
+      // Attach validation issues for programmatic access
+      (error as PipelineError & { validationIssues: typeof validation.errors }).validationIssues =
+        validation.errors;
+      throw error;
+    }
+
+    // Log warnings but continue execution
+    if (validation.warnings.length > 0) {
+      this.logger.warn(`Pipeline validation warnings:\n${validation.formatWarnings()}`);
+    }
 
     const results: PipelineResult[] = [];
     const variables = new Map<string, ImageBlob | DataBlob | SaveResult>();
