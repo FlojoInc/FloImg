@@ -106,13 +106,6 @@ export function getErrorMessage(code: string): ErrorMessage {
 }
 
 /**
- * Get severity-appropriate icon name for an error
- */
-export function getErrorIcon(severity: "error" | "warning"): string {
-  return severity === "error" ? "exclamation-triangle" : "exclamation-circle";
-}
-
-/**
  * Get severity-appropriate color class
  */
 export function getErrorColorClass(severity: "error" | "warning"): {

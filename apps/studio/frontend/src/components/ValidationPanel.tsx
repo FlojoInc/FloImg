@@ -6,6 +6,7 @@
  * warnings allow "Execute Anyway".
  */
 
+import { useEffect } from "react";
 import type { StudioValidationIssue } from "@teamflojo/floimg-studio-shared";
 import { getErrorMessage, getErrorColorClass } from "../utils/errorMessages";
 import { useWorkflowStore } from "../stores/workflowStore";
@@ -23,6 +24,17 @@ export function ValidationPanel({ issues, onClose, onExecuteAnyway }: Validation
   const warnings = issues.filter((i) => i.severity === "warning");
 
   const hasErrors = errors.length > 0;
+
+  // Handle ESC key to close the panel
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   const handleSelectNode = (nodeId: string | undefined) => {
     if (nodeId) {
@@ -60,7 +72,7 @@ export function ValidationPanel({ issues, onClose, onExecuteAnyway }: Validation
               </h3>
               <p className="text-sm text-gray-500 dark:text-zinc-400">
                 {hasErrors
-                  ? `${errors.length} error${errors.length > 1 ? "s" : ""} must be fixed before running`
+                  ? `${errors.length} error${errors.length > 1 ? "s" : ""} must be fixed${warnings.length > 0 ? `, ${warnings.length} warning${warnings.length > 1 ? "s" : ""}` : ""}`
                   : `${warnings.length} warning${warnings.length > 1 ? "s" : ""} found`}
               </p>
             </div>
