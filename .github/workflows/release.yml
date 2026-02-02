@@ -111,6 +111,7 @@ jobs:
             GIT_COMMIT=${{ github.sha }}
             BUILD_TIME=${{ github.event.head_commit.timestamp }}
             APP_VERSION=${{ steps.version.outputs.VERSION }}
+          no-cache-filters: runner
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
