@@ -6,191 +6,94 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { generatedToStudioFormat } from "../src/ai/workflow-generator.js";
+import { nodesToPipeline } from "@teamflojo/floimg-studio-shared";
+import { validatePipelineFull } from "@teamflojo/floimg";
+import type { GeneratedWorkflowData } from "@teamflojo/floimg-studio-shared";
+import type { ClientCapabilities } from "@teamflojo/floimg";
 
-// Since validateWorkflow is not exported, we test through generateWorkflow result shape
-// For unit testing, we'd need to export validateWorkflow or create a test helper
+// Minimal capabilities for testing validation
+const testCapabilities: ClientCapabilities = {
+  generators: ["gemini-generate", "dalle-3"],
+  transforms: { sharp: ["resize", "blur", "rotate"] },
+  textProviders: ["gemini-text"],
+  visionProviders: ["gemini-vision"],
+};
 
-describe("workflow validation", () => {
-  describe("generator prompt validation", () => {
-    it("should flag generators without prompt and no text edge", () => {
-      // This test validates the behavior we expect:
-      // A generator with no prompt and no incoming text edge should fail validation
-      const workflow = {
-        nodes: [
-          {
-            id: "gen_1",
-            nodeType: "generator:gemini-generate",
-            parameters: { model: "gemini-2.5-flash" }, // No prompt!
-          },
-        ],
-        edges: [], // No text edge!
-      };
+describe("generatedToStudioFormat conversion", () => {
+  it("should correctly map generator nodeTypes", () => {
+    const workflow: GeneratedWorkflowData = {
+      nodes: [
+        {
+          id: "gen_1",
+          nodeType: "generator:gemini-generate",
+          parameters: { prompt: "test" },
+        },
+      ],
+      edges: [],
+    };
 
-      // Expected validation error:
-      // "Generator 'gen_1' requires a prompt but has no prompt parameter and no incoming text edge"
-      expect(workflow.nodes[0].parameters.prompt).toBeUndefined();
-      expect(workflow.edges.length).toBe(0);
-    });
+    const result = generatedToStudioFormat(workflow);
 
-    it("should pass generators with empty prompt AND text edge", () => {
-      // This is the correct pattern for dynamic prompts
-      const workflow = {
-        nodes: [
-          {
-            id: "text_1",
-            nodeType: "text:gemini-text",
-            parameters: { prompt: "Generate a creative image prompt" },
-          },
-          {
-            id: "gen_1",
-            nodeType: "generator:gemini-generate",
-            parameters: { prompt: "" }, // Empty is OK when text edge exists
-          },
-        ],
-        edges: [
-          {
-            source: "text_1",
-            target: "gen_1",
-            sourceHandle: "text",
-            targetHandle: "text", // Proper text edge!
-          },
-        ],
-      };
-
-      expect(workflow.nodes[1].parameters.prompt).toBe("");
-      expect(workflow.edges[0].targetHandle).toBe("text");
-    });
-
-    it("should pass generators with static prompt", () => {
-      const workflow = {
-        nodes: [
-          {
-            id: "gen_1",
-            nodeType: "generator:gemini-generate",
-            parameters: { prompt: "A beautiful sunset over mountains" },
-          },
-        ],
-        edges: [],
-      };
-
-      expect(workflow.nodes[0].parameters.prompt).toBeTruthy();
-    });
+    expect(result.nodes[0].type).toBe("generator");
+    expect((result.nodes[0].data as { generatorName: string }).generatorName).toBe(
+      "gemini-generate"
+    );
   });
 
-  describe("fan-out validation", () => {
-    it("should flag fan-out in array mode without arrayProperty", () => {
-      const workflow = {
-        nodes: [
-          {
-            id: "fanout_1",
-            nodeType: "flow:fanout",
-            parameters: { mode: "array" }, // No arrayProperty!
-          },
-        ],
-        edges: [],
-      };
+  it("should correctly map transform nodeTypes", () => {
+    const workflow: GeneratedWorkflowData = {
+      nodes: [
+        {
+          id: "transform_1",
+          nodeType: "transform:sharp:resize",
+          parameters: { width: 800 },
+        },
+      ],
+      edges: [],
+    };
 
-      expect(workflow.nodes[0].parameters.mode).toBe("array");
-      expect(workflow.nodes[0].parameters.arrayProperty).toBeUndefined();
-    });
+    const result = generatedToStudioFormat(workflow);
 
-    it("should pass fan-out in array mode with arrayProperty", () => {
-      const workflow = {
-        nodes: [
-          {
-            id: "fanout_1",
-            nodeType: "flow:fanout",
-            parameters: { mode: "array", arrayProperty: "prompts" },
-          },
-        ],
-        edges: [],
-      };
-
-      expect(workflow.nodes[0].parameters.arrayProperty).toBe("prompts");
-    });
-
-    it("should pass fan-out in count mode without arrayProperty", () => {
-      const workflow = {
-        nodes: [
-          {
-            id: "fanout_1",
-            nodeType: "flow:fanout",
-            parameters: { mode: "count", count: 3 },
-          },
-        ],
-        edges: [],
-      };
-
-      expect(workflow.nodes[0].parameters.mode).toBe("count");
-    });
+    expect(result.nodes[0].type).toBe("transform");
+    expect((result.nodes[0].data as { operation: string }).operation).toBe("resize");
+    expect((result.nodes[0].data as { providerName: string }).providerName).toBe("sharp");
   });
 
-  describe("transform validation", () => {
-    it("should flag transforms without image input", () => {
-      const workflow = {
-        nodes: [
-          {
-            id: "transform_1",
-            nodeType: "transform:sharp:resize",
-            parameters: { width: 800, height: 600 },
-          },
-        ],
-        edges: [], // No image input edge!
-      };
+  it("should correctly map text nodeTypes", () => {
+    const workflow: GeneratedWorkflowData = {
+      nodes: [
+        {
+          id: "text_1",
+          nodeType: "text:gemini-text",
+          parameters: { prompt: "Generate a prompt" },
+        },
+      ],
+      edges: [],
+    };
 
-      expect(workflow.edges.length).toBe(0);
-    });
+    const result = generatedToStudioFormat(workflow);
 
-    it("should pass transforms with image input", () => {
-      const workflow = {
-        nodes: [
-          {
-            id: "gen_1",
-            nodeType: "generator:gemini-generate",
-            parameters: { prompt: "A cat" },
-          },
-          {
-            id: "transform_1",
-            nodeType: "transform:sharp:resize",
-            parameters: { width: 800, height: 600 },
-          },
-        ],
-        edges: [
-          { source: "gen_1", target: "transform_1" }, // Implicit image connection
-        ],
-      };
-
-      expect(workflow.edges.length).toBe(1);
-    });
+    expect(result.nodes[0].type).toBe("text");
+    expect((result.nodes[0].data as { providerName: string }).providerName).toBe("gemini-text");
   });
-});
 
-describe("repair prompt generation", () => {
-  it("should provide actionable fix instructions", () => {
-    // The repair prompt should include:
-    // 1. Original user request
-    // 2. Current (invalid) workflow
-    // 3. Specific errors with fix instructions
-    // 4. Reminder of proper patterns
+  it("should correctly map flow control nodeTypes", () => {
+    const workflow: GeneratedWorkflowData = {
+      nodes: [
+        {
+          id: "fanout_1",
+          nodeType: "flow:fanout",
+          parameters: { mode: "count", count: 3 },
+        },
+      ],
+      edges: [],
+    };
 
-    const mockValidationErrors = [
-      {
-        nodeId: "gen_1",
-        nodeType: "generator:stability",
-        error: "Missing prompt source",
-        fix: 'Either set a static "prompt" parameter OR connect a text node to the "text" input handle',
-      },
-    ];
+    const result = generatedToStudioFormat(workflow);
 
-    // Expected repair prompt structure:
-    // - "The workflow you generated has validation errors..."
-    // - "Original request: ..."
-    // - "Current workflow: ..."
-    // - "1. Node 'gen_1' (generator:stability): Missing prompt source"
-    // - "   Fix: Either set a static..."
-
-    expect(mockValidationErrors[0].fix).toContain("prompt");
-    expect(mockValidationErrors[0].fix).toContain("text");
+    expect(result.nodes[0].type).toBe("fanout");
+    expect((result.nodes[0].data as { mode: string }).mode).toBe("count");
   });
 });
 
@@ -199,144 +102,202 @@ describe("Pipeline validation integration", () => {
   // The generator validates workflows in Pipeline format (what actually executes)
   // not just Studio format (visual editor representation)
 
-  describe("generatedToStudioFormat conversion", () => {
-    it("should correctly map generator nodeTypes", () => {
-      // "generator:gemini-generate" -> type: "generator", data.generatorName: "gemini-generate"
-      const workflow = {
-        nodes: [
-          {
-            id: "gen_1",
-            nodeType: "generator:gemini-generate",
-            parameters: { prompt: "test" },
-          },
-        ],
-        edges: [],
-      };
+  it("should detect missing prompt source in AI generators", () => {
+    // An AI generator with no prompt and no _promptFromVar should fail
+    const workflow: GeneratedWorkflowData = {
+      nodes: [
+        {
+          id: "gen_1",
+          nodeType: "generator:gemini-generate",
+          parameters: { model: "gemini-2.5-flash" }, // No prompt!
+        },
+      ],
+      edges: [],
+    };
 
-      expect(workflow.nodes[0].nodeType).toMatch(/^generator:/);
-    });
+    const { nodes, edges } = generatedToStudioFormat(workflow);
+    const { pipeline } = nodesToPipeline(nodes, edges);
+    const validation = validatePipelineFull(pipeline, testCapabilities);
 
-    it("should correctly map transform nodeTypes", () => {
-      // "transform:sharp:resize" -> type: "transform", data.providerName: "sharp", data.operation: "resize"
-      const workflow = {
-        nodes: [
-          {
-            id: "transform_1",
-            nodeType: "transform:sharp:resize",
-            parameters: { width: 800 },
-          },
-        ],
-        edges: [],
-      };
-
-      const parts = workflow.nodes[0].nodeType.split(":");
-      expect(parts[0]).toBe("transform");
-      expect(parts[1]).toBe("sharp");
-      expect(parts[2]).toBe("resize");
-    });
-
-    it("should correctly map flow control nodeTypes", () => {
-      // "flow:fanout" -> type: "fanout"
-      const workflow = {
-        nodes: [
-          {
-            id: "fanout_1",
-            nodeType: "flow:fanout",
-            parameters: { mode: "count", count: 3 },
-          },
-        ],
-        edges: [],
-      };
-
-      expect(workflow.nodes[0].nodeType).toBe("flow:fanout");
-    });
+    expect(validation.valid).toBe(false);
+    expect(validation.errors.some((e) => e.code === "MISSING_PROMPT_SOURCE")).toBe(true);
   });
 
-  describe("Pipeline semantic validation", () => {
-    it("should detect undefined variable references", () => {
-      // A transform that references a variable not defined by any previous step
-      // This would pass Studio validation but fail Pipeline validation
-      const workflow = {
-        nodes: [
-          {
-            id: "transform_1",
-            nodeType: "transform:sharp:resize",
-            parameters: { width: 800 },
-          },
-        ],
-        edges: [
-          // Edge from non-existent source
-          { source: "nonexistent", target: "transform_1" },
-        ],
-      };
+  it("should pass AI generators with static prompt", () => {
+    const workflow: GeneratedWorkflowData = {
+      nodes: [
+        {
+          id: "gen_1",
+          nodeType: "generator:gemini-generate",
+          parameters: { prompt: "A beautiful sunset over mountains" },
+        },
+      ],
+      edges: [],
+    };
 
-      // Expected: Pipeline validation should catch UNDEFINED_VARIABLE
-      expect(workflow.edges[0].source).toBe("nonexistent");
-    });
+    const { nodes, edges } = generatedToStudioFormat(workflow);
+    const { pipeline } = nodesToPipeline(nodes, edges);
+    const validation = validatePipelineFull(pipeline, testCapabilities);
 
-    it("should detect missing prompt source in Pipeline format", () => {
-      // An AI generator with no prompt and no _promptFromVar
-      // Studio validation might pass (checks edges), but Pipeline should catch it
-      const workflow = {
-        nodes: [
-          {
-            id: "gen_1",
-            nodeType: "generator:gemini-generate",
-            parameters: {}, // No prompt!
-          },
-        ],
-        edges: [],
-      };
-
-      // Expected: MISSING_PROMPT_SOURCE error
-      expect(workflow.nodes[0].parameters.prompt).toBeUndefined();
-    });
-
-    it("should validate fan-out arrayProperty in Pipeline context", () => {
-      // Fan-out with mode: "array" but no arrayProperty
-      // Must fail Pipeline validation with MISSING_ARRAY_PROPERTY
-      const workflow = {
-        nodes: [
-          {
-            id: "text_1",
-            nodeType: "text:gemini-text",
-            parameters: { prompt: "generate prompts" },
-          },
-          {
-            id: "fanout_1",
-            nodeType: "flow:fanout",
-            parameters: {
-              mode: "array",
-              // Missing arrayProperty!
-            },
-          },
-        ],
-        edges: [{ source: "text_1", target: "fanout_1" }],
-      };
-
-      expect(workflow.nodes[1].parameters.mode).toBe("array");
-      expect(workflow.nodes[1].parameters.arrayProperty).toBeUndefined();
-    });
+    expect(validation.valid).toBe(true);
+    expect(validation.errors.filter((e) => e.code === "MISSING_PROMPT_SOURCE")).toHaveLength(0);
   });
 
-  describe("error fix suggestions", () => {
-    it("should provide MISSING_PROMPT_SOURCE fix", () => {
-      const expectedFix =
-        'Either set a static "prompt" parameter OR connect a text node to the "text" input handle';
-      expect(expectedFix).toContain("prompt");
-      expect(expectedFix).toContain("text");
-    });
+  it("should pass AI generators with prompt from text node", () => {
+    const workflow: GeneratedWorkflowData = {
+      nodes: [
+        {
+          id: "text_1",
+          nodeType: "text:gemini-text",
+          parameters: { prompt: "Generate a creative prompt" },
+        },
+        {
+          id: "gen_1",
+          nodeType: "generator:gemini-generate",
+          parameters: { prompt: "" }, // Empty is OK when text edge exists
+        },
+      ],
+      edges: [
+        {
+          source: "text_1",
+          target: "gen_1",
+          targetHandle: "text", // Text input connection
+        },
+      ],
+    };
 
-    it("should provide MISSING_ARRAY_PROPERTY fix", () => {
-      const expectedFix =
-        'Set "arrayProperty" to the name of the array property in the upstream text node\'s JSON output';
-      expect(expectedFix).toContain("arrayProperty");
-    });
+    const { nodes, edges } = generatedToStudioFormat(workflow);
+    const { pipeline } = nodesToPipeline(nodes, edges);
+    const validation = validatePipelineFull(pipeline, testCapabilities);
 
-    it("should provide UNDEFINED_VARIABLE fix", () => {
-      const expectedFix = "Ensure the referenced variable is defined by a previous step";
-      expect(expectedFix).toContain("variable");
-      expect(expectedFix).toContain("previous step");
-    });
+    // Should pass because prompt comes from text node via _promptFromVar
+    expect(validation.errors.filter((e) => e.code === "MISSING_PROMPT_SOURCE")).toHaveLength(0);
+  });
+
+  it("should detect missing arrayProperty in fan-out array mode", () => {
+    const workflow: GeneratedWorkflowData = {
+      nodes: [
+        {
+          id: "text_1",
+          nodeType: "text:gemini-text",
+          parameters: { prompt: "generate prompts" },
+        },
+        {
+          id: "fanout_1",
+          nodeType: "flow:fanout",
+          parameters: {
+            mode: "array",
+            // Missing arrayProperty!
+          },
+        },
+      ],
+      edges: [{ source: "text_1", target: "fanout_1" }],
+    };
+
+    const { nodes, edges } = generatedToStudioFormat(workflow);
+    const { pipeline } = nodesToPipeline(nodes, edges);
+    const validation = validatePipelineFull(pipeline, testCapabilities);
+
+    expect(validation.valid).toBe(false);
+    expect(validation.errors.some((e) => e.code === "MISSING_ARRAY_PROPERTY")).toBe(true);
+  });
+
+  it("should pass fan-out in array mode with arrayProperty", () => {
+    const workflow: GeneratedWorkflowData = {
+      nodes: [
+        {
+          id: "text_1",
+          nodeType: "text:gemini-text",
+          parameters: { prompt: "generate prompts" },
+        },
+        {
+          id: "fanout_1",
+          nodeType: "flow:fanout",
+          parameters: { mode: "array", arrayProperty: "prompts" },
+        },
+      ],
+      edges: [{ source: "text_1", target: "fanout_1" }],
+    };
+
+    const { nodes, edges } = generatedToStudioFormat(workflow);
+    const { pipeline } = nodesToPipeline(nodes, edges);
+    const validation = validatePipelineFull(pipeline, testCapabilities);
+
+    expect(validation.errors.filter((e) => e.code === "MISSING_ARRAY_PROPERTY")).toHaveLength(0);
+  });
+
+  it("should pass fan-out in count mode without arrayProperty", () => {
+    const workflow: GeneratedWorkflowData = {
+      nodes: [
+        {
+          id: "gen_1",
+          nodeType: "generator:gemini-generate",
+          parameters: { prompt: "A cat" },
+        },
+        {
+          id: "fanout_1",
+          nodeType: "flow:fanout",
+          parameters: { mode: "count", count: 3 },
+        },
+      ],
+      edges: [{ source: "gen_1", target: "fanout_1" }],
+    };
+
+    const { nodes, edges } = generatedToStudioFormat(workflow);
+    const { pipeline } = nodesToPipeline(nodes, edges);
+    const validation = validatePipelineFull(pipeline, testCapabilities);
+
+    expect(validation.errors.filter((e) => e.code === "MISSING_ARRAY_PROPERTY")).toHaveLength(0);
+  });
+});
+
+describe("suggestedFix in validation errors", () => {
+  it("should include suggestedFix for MISSING_PROMPT_SOURCE errors", () => {
+    const workflow: GeneratedWorkflowData = {
+      nodes: [
+        {
+          id: "gen_1",
+          nodeType: "generator:gemini-generate",
+          parameters: {},
+        },
+      ],
+      edges: [],
+    };
+
+    const { nodes, edges } = generatedToStudioFormat(workflow);
+    const { pipeline } = nodesToPipeline(nodes, edges);
+    const validation = validatePipelineFull(pipeline, testCapabilities);
+
+    const promptError = validation.errors.find((e) => e.code === "MISSING_PROMPT_SOURCE");
+    expect(promptError).toBeDefined();
+    expect(promptError?.suggestedFix).toBeDefined();
+    expect(promptError?.suggestedFix).toContain("prompt");
+  });
+
+  it("should include suggestedFix for MISSING_ARRAY_PROPERTY errors", () => {
+    const workflow: GeneratedWorkflowData = {
+      nodes: [
+        {
+          id: "text_1",
+          nodeType: "text:gemini-text",
+          parameters: { prompt: "test" },
+        },
+        {
+          id: "fanout_1",
+          nodeType: "flow:fanout",
+          parameters: { mode: "array" },
+        },
+      ],
+      edges: [{ source: "text_1", target: "fanout_1" }],
+    };
+
+    const { nodes, edges } = generatedToStudioFormat(workflow);
+    const { pipeline } = nodesToPipeline(nodes, edges);
+    const validation = validatePipelineFull(pipeline, testCapabilities);
+
+    const arrayError = validation.errors.find((e) => e.code === "MISSING_ARRAY_PROPERTY");
+    expect(arrayError).toBeDefined();
+    expect(arrayError?.suggestedFix).toBeDefined();
+    expect(arrayError?.suggestedFix).toContain("arrayProperty");
   });
 });

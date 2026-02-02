@@ -42,8 +42,10 @@ const MODEL_ID = "gemini-3-pro-preview";
  * The workflow generator uses a simplified format (GeneratedNode/GeneratedEdge).
  * To validate as Pipeline, we convert to StudioNode/StudioEdge format first,
  * then use nodesToPipeline() which handles all the edge cases.
+ *
+ * @exported for testing
  */
-function generatedToStudioFormat(workflow: GeneratedWorkflowData): {
+export function generatedToStudioFormat(workflow: GeneratedWorkflowData): {
   nodes: StudioNode[];
   edges: StudioEdge[];
 } {
