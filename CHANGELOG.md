@@ -5,6 +5,33 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.8] - 2026-02-02
+
+### @teamflojo/floimg (0.17.0)
+
+- feat: Consolidated validation with semantic checks for end-to-end consistency
+  - New validation codes: MISSING_PROMPT_SOURCE, UNDEFINED_VARIABLE, MISSING_ARRAY_PROPERTY
+  - `validatePipelineFull()` combines structural + semantic validation
+  - `client.run()` validates before execution, throws PipelineError with validationIssues
+  - CLI validates before run with helpful error messages
+  - Enables consistent validation across SDK → CLI → MCP → Studio
+
+### @teamflojo/floimg-mcp (0.2.0)
+
+- feat: Add pre-execution validation to run_pipeline tool
+  - Validates pipelines before execution
+  - Returns structured validation errors with issue codes and paths
+
+### FloImg Studio Backend
+
+- feat: AI workflow generator retry loop for invalid workflows
+  - Semantic validation catches missing prompt sources, undefined variables
+  - Invalid workflows trigger LLM repair prompt (max 3 attempts)
+  - Improved success rate for complex multi-step workflows
+- feat: Validation error mapping for UI highlighting
+  - Maps SDK validation issues to node IDs for visual feedback
+  - Returns 400 with structured validationIssues array
+
 ## [v0.21.7] - 2026-02-01
 
 ### @teamflojo/floimg-google (0.7.0)
