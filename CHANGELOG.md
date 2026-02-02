@@ -5,20 +5,20 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v0.21.9] - 2026-02-02
 
-### @teamflojo/floimg
+### @teamflojo/floimg (0.17.1)
 
 - feat: Add `suggestedFix` field to ValidationIssue for actionable error guidance
 
-### FloImg Studio Backend
+### @teamflojo/floimg-studio-backend (0.5.3)
 
 - feat: Add Pipeline validation to workflow generator retry loop
   - Converts generated workflows to Pipeline format for semantic validation
   - Validates using `validatePipelineFull()` before returning to user
   - Improved reliability for complex multi-step workflows
 
-### FloImg Studio Frontend
+### @teamflojo/floimg-studio-ui (0.10.1)
 
 - feat: Add ValidationIssuesPanel to NodeInspector
   - Shows validation errors with suggestedFix when error node is selected
