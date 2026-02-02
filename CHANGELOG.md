@@ -5,6 +5,15 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.13] - 2026-02-02
+
+### @teamflojo/floimg-studio-backend (0.5.5)
+
+- fix: Handle false-positive branch variable matches in executor
+  - Node IDs like "node_1" were incorrectly matched as fan-out branch variables
+  - When no fan-out step exists, now falls back to regular variable handling
+  - Fixes text-to-image workflows failing with "prompt is required"
+
 ## [v0.21.12] - 2026-02-02
 
 ### Docker
