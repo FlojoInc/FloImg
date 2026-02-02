@@ -5,6 +5,16 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.14] - 2026-02-02
+
+### @teamflojo/floimg-studio-backend (0.5.6)
+
+- fix: Add prompt injection to executePipeline for API callers
+  - The API endpoint uses `executePipeline`, but prompt injection logic only existed in `executeWorkflow`
+  - Now processes `_promptFromVar` and `_promptFromProperty` markers at runtime
+  - Extracts text from previous step's DataBlob output and injects as prompt
+  - Fixes AI-generated workflows with text-to-image connections failing with "prompt is required"
+
 ## [v0.21.13] - 2026-02-02
 
 ### @teamflojo/floimg-studio-backend (0.5.5)
@@ -12,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix: Handle false-positive branch variable matches in executor
   - Node IDs like "node_1" were incorrectly matched as fan-out branch variables
   - When no fan-out step exists, now falls back to regular variable handling
-  - Fixes text-to-image workflows failing with "prompt is required"
+  - Partial fix for text-to-image workflows (see v0.21.14 for complete fix)
 
 ## [v0.21.12] - 2026-02-02
 
