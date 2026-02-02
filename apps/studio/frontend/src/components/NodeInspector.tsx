@@ -11,6 +11,7 @@ import type {
   ParamField,
   OutputSchema,
   OutputProperty,
+  StudioValidationIssue,
 } from "@teamflojo/floimg-studio-shared";
 import { useWorkflowStore } from "../stores/workflowStore";
 
@@ -23,8 +24,13 @@ export function NodeInspector() {
   const visionProviders = useWorkflowStore((s) => s.visionProviders);
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
   const deleteNode = useWorkflowStore((s) => s.deleteNode);
+  const execution = useWorkflowStore((s) => s.execution);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+
+  // Get validation issues for the selected node
+  const nodeValidationIssues =
+    execution.validationIssues?.filter((issue) => issue.nodeId === selectedNodeId) || [];
 
   // Don't render if no node selected (parent handles visibility)
   if (!selectedNode) {
@@ -243,6 +249,9 @@ export function NodeInspector() {
             Delete
           </button>
         </div>
+
+        {/* Show validation issues for this node */}
+        {nodeValidationIssues.length > 0 && <ValidationIssuesPanel issues={nodeValidationIssues} />}
 
         <div className="space-y-4">
           {schema &&
@@ -569,6 +578,97 @@ function OutputSchemaEditor({ nodeId, outputSchema, updateNodeData }: OutputSche
           properties.
         </p>
       )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Validation Issues Panel for error nodes
+// ============================================================================
+
+interface ValidationIssuesPanelProps {
+  issues: StudioValidationIssue[];
+}
+
+function ValidationIssuesPanel({ issues }: ValidationIssuesPanelProps) {
+  const errors = issues.filter((i) => i.severity === "error");
+  const warnings = issues.filter((i) => i.severity === "warning");
+
+  return (
+    <div className="mb-4 space-y-2">
+      {/* Error issues */}
+      {errors.map((issue, index) => (
+        <div
+          key={`error-${index}`}
+          className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
+        >
+          <div className="flex items-start gap-2">
+            <svg
+              className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-red-700 dark:text-red-300">{issue.message}</p>
+              {issue.suggestedFix && (
+                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  <span className="font-medium">Fix:</span> {issue.suggestedFix}
+                </p>
+              )}
+              {issue.parameterName && (
+                <p className="mt-1 text-xs text-red-500 dark:text-red-500">
+                  Parameter:{" "}
+                  <code className="bg-red-100 dark:bg-red-900/40 px-1 rounded">
+                    {issue.parameterName}
+                  </code>
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* Warning issues */}
+      {warnings.map((issue, index) => (
+        <div
+          key={`warning-${index}`}
+          className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg"
+        >
+          <div className="flex items-start gap-2">
+            <svg
+              className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                {issue.message}
+              </p>
+              {issue.suggestedFix && (
+                <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                  <span className="font-medium">Fix:</span> {issue.suggestedFix}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
