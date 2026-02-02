@@ -19,6 +19,8 @@ export interface ValidationIssue {
   stepKind?: string;
   providerName?: string;
   parameterName?: string;
+  /** Actionable guidance for fixing this issue */
+  suggestedFix?: string;
 }
 
 /**
