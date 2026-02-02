@@ -575,9 +575,11 @@ describe("FloImg client: branching execution", () => {
         ],
       };
 
-      // With waitMode="all", the dependency analysis catches missing inputs
-      // before execution even starts - this is correct behavior
-      await expect(client.run(pipeline)).rejects.toThrow(/missing input|Unsatisfied/i);
+      // Pre-execution validation now catches missing inputs
+      // This is the intended behavior - fail fast with clear error messages
+      await expect(client.run(pipeline)).rejects.toThrow(
+        /UNDEFINED_COLLECT_INPUT|validation failed/i
+      );
     });
 
     it("should work with waitMode='available' when all inputs present", async () => {

@@ -521,6 +521,7 @@ describe("FloImg Core Client", () => {
       });
       clientWithDefaults.registerTransformProvider(mockTransformProvider);
 
+      // Pre-execution validation now catches undefined variable references
       await expect(
         clientWithDefaults.run({
           name: "invalid",
@@ -534,7 +535,7 @@ describe("FloImg Core Client", () => {
             },
           ],
         })
-      ).rejects.toThrow(/Circular dependency or missing input.*nonexistent/);
+      ).rejects.toThrow(/UNDEFINED_VARIABLE.*nonexistent|validation failed/i);
     });
 
     it("should throw error for invalid save reference", async () => {
@@ -543,6 +544,7 @@ describe("FloImg Core Client", () => {
       });
       clientWithDefaults.registerSaveProvider(mockSaveProvider);
 
+      // Pre-execution validation now catches undefined variable references
       await expect(
         clientWithDefaults.run({
           name: "invalid",
@@ -554,7 +556,7 @@ describe("FloImg Core Client", () => {
             },
           ],
         })
-      ).rejects.toThrow(/Circular dependency or missing input.*nonexistent/);
+      ).rejects.toThrow(/UNDEFINED_VARIABLE.*nonexistent|validation failed/i);
     });
 
     it("should execute independent steps in parallel", async () => {

@@ -6,6 +6,7 @@
  * - Warns about unknown parameters
  * - Validates parameter types
  * - Skips validation for missing schemas when configured
+ * - Catches semantic issues (missing prompt sources, undefined variables, etc.)
  */
 
 import { describe, it, expect } from "vitest";
@@ -20,6 +21,9 @@ import {
   validateStep,
   validateGeneratorParams,
   validateTransformParams,
+  validatePipelineSemantics,
+  validatePipelineFull,
+  SemanticValidationCodes,
 } from "./validator.js";
 
 // Mock generator schemas for testing
@@ -345,5 +349,600 @@ describe("formatErrors", () => {
     const result = validateGeneratorParams("openai", { prompt: "test" }, mockCapabilities);
 
     expect(result.formatErrors()).toBe("");
+  });
+});
+
+// =============================================================================
+// Semantic Validation Tests
+// =============================================================================
+
+describe("validatePipelineSemantics", () => {
+  describe("MISSING_PROMPT_SOURCE", () => {
+    it("should error when AI generator has no prompt and no _promptFromVar", () => {
+      const pipeline: Pipeline = {
+        steps: [{ kind: "generate", generator: "openai", params: {}, out: "img" }],
+      };
+
+      const result = validatePipelineSemantics(pipeline, mockCapabilities);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].code).toBe(SemanticValidationCodes.MISSING_PROMPT_SOURCE);
+      expect(result.errors[0].message).toContain("openai");
+      expect(result.errors[0].message).toContain("prompt");
+    });
+
+    it("should pass when AI generator has static prompt", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          { kind: "generate", generator: "openai", params: { prompt: "A sunset" }, out: "img" },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline, mockCapabilities);
+
+      expect(result.valid).toBe(true);
+    });
+
+    it("should pass when AI generator has _promptFromVar referencing defined variable", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          {
+            kind: "text",
+            provider: "gemini-text",
+            params: { prompt: "Generate a prompt" },
+            out: "prompt_text",
+          },
+          {
+            kind: "generate",
+            generator: "openai",
+            params: { _promptFromVar: "prompt_text" },
+            out: "img",
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline, mockCapabilities);
+
+      expect(result.valid).toBe(true);
+    });
+
+    it("should error when AI generator has empty string prompt", () => {
+      const pipeline: Pipeline = {
+        steps: [{ kind: "generate", generator: "openai", params: { prompt: "" }, out: "img" }],
+      };
+
+      const result = validatePipelineSemantics(pipeline, mockCapabilities);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe(SemanticValidationCodes.MISSING_PROMPT_SOURCE);
+    });
+
+    it("should error when AI generator has whitespace-only prompt", () => {
+      const pipeline: Pipeline = {
+        steps: [{ kind: "generate", generator: "openai", params: { prompt: "   " }, out: "img" }],
+      };
+
+      const result = validatePipelineSemantics(pipeline, mockCapabilities);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe(SemanticValidationCodes.MISSING_PROMPT_SOURCE);
+    });
+
+    it("should detect AI generators by name patterns (stability, gemini, imagen, replicate)", () => {
+      const generators = ["stability", "gemini-generate", "imagen", "replicate-flux"];
+
+      for (const generator of generators) {
+        const pipeline: Pipeline = {
+          steps: [{ kind: "generate", generator, params: {}, out: "img" }],
+        };
+
+        const result = validatePipelineSemantics(pipeline);
+        expect(result.valid).toBe(false);
+        expect(result.errors[0].code).toBe(SemanticValidationCodes.MISSING_PROMPT_SOURCE);
+      }
+    });
+
+    it("should not require prompt for non-AI generators (qr, screenshot, etc.)", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          {
+            kind: "generate",
+            generator: "qr",
+            params: { text: "https://example.com" },
+            out: "qr_code",
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe("UNDEFINED_VARIABLE", () => {
+    it("should error when transform references undefined variable", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          {
+            kind: "transform",
+            op: "resize",
+            in: "nonexistent",
+            params: { width: 800 },
+            out: "resized",
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].code).toBe(SemanticValidationCodes.UNDEFINED_VARIABLE);
+      expect(result.errors[0].message).toContain("nonexistent");
+    });
+
+    it("should pass when transform references variable from previous step", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          { kind: "generate", generator: "qr", params: { text: "test" }, out: "img" },
+          { kind: "transform", op: "resize", in: "img", params: { width: 800 }, out: "resized" },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(true);
+    });
+
+    it("should error when vision step references undefined variable", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          {
+            kind: "vision",
+            provider: "claude-vision",
+            in: "nonexistent",
+            params: { prompt: "describe" },
+            out: "desc",
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe(SemanticValidationCodes.UNDEFINED_VARIABLE);
+    });
+
+    it("should error when save step references undefined variable", () => {
+      const pipeline: Pipeline = {
+        steps: [{ kind: "save", in: "nonexistent", destination: "/tmp/test.png" }],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe(SemanticValidationCodes.UNDEFINED_VARIABLE);
+    });
+
+    it("should error when _promptFromVar references undefined variable", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          {
+            kind: "generate",
+            generator: "openai",
+            params: { _promptFromVar: "nonexistent" },
+            out: "img",
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline, mockCapabilities);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.some((e) => e.code === SemanticValidationCodes.UNDEFINED_VARIABLE)).toBe(
+        true
+      );
+      expect(result.errors.some((e) => e.message.includes("nonexistent"))).toBe(true);
+    });
+
+    it("should recognize variables from initialVariables", () => {
+      const pipeline: Pipeline = {
+        initialVariables: {
+          uploaded_image: { bytes: Buffer.from(""), mime: "image/png" },
+        },
+        steps: [
+          {
+            kind: "transform",
+            op: "resize",
+            in: "uploaded_image",
+            params: { width: 800 },
+            out: "resized",
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(true);
+    });
+
+    it("should allow optional 'in' for text steps", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          {
+            kind: "text",
+            provider: "gemini-text",
+            params: { prompt: "Generate something" },
+            out: "text_output",
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe("MISSING_ARRAY_PROPERTY", () => {
+    it("should error when fan-out in array mode has no arrayProperty", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          {
+            kind: "text",
+            provider: "gemini-text",
+            params: { prompt: "Generate prompts" },
+            out: "prompts",
+          },
+          { kind: "fan-out", in: "prompts", mode: "array", out: ["a", "b", "c"] },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].code).toBe(SemanticValidationCodes.MISSING_ARRAY_PROPERTY);
+    });
+
+    it("should pass when fan-out in array mode has arrayProperty", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          {
+            kind: "text",
+            provider: "gemini-text",
+            params: { prompt: "Generate prompts" },
+            out: "prompts",
+          },
+          {
+            kind: "fan-out",
+            in: "prompts",
+            mode: "array",
+            arrayProperty: "concepts",
+            out: ["a", "b", "c"],
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(true);
+    });
+
+    it("should not require arrayProperty for count mode", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          { kind: "generate", generator: "qr", params: { text: "test" }, out: "img" },
+          { kind: "fan-out", in: "img", mode: "count", count: 3, out: ["a", "b", "c"] },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe("UNDEFINED_COLLECT_INPUT", () => {
+    it("should error when collect references undefined variables", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          {
+            kind: "collect",
+            in: ["nonexistent1", "nonexistent2"],
+            waitMode: "all",
+            out: "collected",
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(2);
+      expect(result.errors[0].code).toBe(SemanticValidationCodes.UNDEFINED_COLLECT_INPUT);
+      expect(result.errors[1].code).toBe(SemanticValidationCodes.UNDEFINED_COLLECT_INPUT);
+    });
+
+    it("should pass when collect references defined variables", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          { kind: "generate", generator: "qr", params: { text: "1" }, out: "img1" },
+          { kind: "generate", generator: "qr", params: { text: "2" }, out: "img2" },
+          { kind: "collect", in: ["img1", "img2"], waitMode: "all", out: "collected" },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe("UNDEFINED_ROUTER_INPUT", () => {
+    it("should error when router references undefined candidates", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          { kind: "text", provider: "gemini-text", params: { prompt: "select" }, out: "selection" },
+          {
+            kind: "router",
+            in: "nonexistent",
+            selectionIn: "selection",
+            selectionType: "index",
+            selectionProperty: "winner",
+            out: "winner",
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(false);
+      expect(
+        result.errors.some((e) => e.code === SemanticValidationCodes.UNDEFINED_ROUTER_INPUT)
+      ).toBe(true);
+      expect(result.errors.some((e) => e.message.includes("candidates"))).toBe(true);
+    });
+
+    it("should error when router references undefined selection", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          { kind: "generate", generator: "qr", params: { text: "1" }, out: "img1" },
+          { kind: "generate", generator: "qr", params: { text: "2" }, out: "img2" },
+          { kind: "collect", in: ["img1", "img2"], waitMode: "all", out: "collected" },
+          {
+            kind: "router",
+            in: "collected",
+            selectionIn: "nonexistent",
+            selectionType: "index",
+            selectionProperty: "winner",
+            out: "winner",
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(false);
+      expect(
+        result.errors.some((e) => e.code === SemanticValidationCodes.UNDEFINED_ROUTER_INPUT)
+      ).toBe(true);
+      expect(result.errors.some((e) => e.message.includes("selection"))).toBe(true);
+    });
+
+    it("should pass when router references defined variables", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          { kind: "generate", generator: "qr", params: { text: "1" }, out: "img1" },
+          { kind: "generate", generator: "qr", params: { text: "2" }, out: "img2" },
+          { kind: "collect", in: ["img1", "img2"], waitMode: "all", out: "collected" },
+          {
+            kind: "vision",
+            provider: "claude-vision",
+            in: "img1",
+            params: { prompt: "pick best" },
+            out: "selection",
+          },
+          {
+            kind: "router",
+            in: "collected",
+            selectionIn: "selection",
+            selectionType: "index",
+            selectionProperty: "winner",
+            out: "winner",
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe("fan-out output variables", () => {
+    it("should define all fan-out output variables for subsequent steps", () => {
+      const pipeline: Pipeline = {
+        steps: [
+          { kind: "generate", generator: "qr", params: { text: "test" }, out: "source" },
+          {
+            kind: "fan-out",
+            in: "source",
+            mode: "count",
+            count: 3,
+            out: ["branch_0", "branch_1", "branch_2"],
+          },
+          {
+            kind: "transform",
+            op: "resize",
+            in: "branch_0",
+            params: { width: 100 },
+            out: "resized_0",
+          },
+          {
+            kind: "transform",
+            op: "resize",
+            in: "branch_1",
+            params: { width: 100 },
+            out: "resized_1",
+          },
+          {
+            kind: "transform",
+            op: "resize",
+            in: "branch_2",
+            params: { width: 100 },
+            out: "resized_2",
+          },
+        ],
+      };
+
+      const result = validatePipelineSemantics(pipeline);
+
+      expect(result.valid).toBe(true);
+    });
+  });
+});
+
+describe("validatePipelineFull", () => {
+  it("should combine parameter and semantic validation", () => {
+    const pipeline: Pipeline = {
+      steps: [
+        // Parameter error: missing required 'prompt' for openai
+        { kind: "generate", generator: "openai", params: {}, out: "img" },
+        // Semantic error: references undefined variable
+        {
+          kind: "transform",
+          op: "resize",
+          in: "nonexistent",
+          params: { width: 800 },
+          out: "resized",
+        },
+      ],
+    };
+
+    const result = validatePipelineFull(pipeline, mockCapabilities);
+
+    expect(result.valid).toBe(false);
+    // Should have both parameter and semantic errors
+    expect(result.errors.some((e) => e.code === "MISSING_REQUIRED_PARAM")).toBe(true);
+    expect(result.errors.some((e) => e.code === SemanticValidationCodes.UNDEFINED_VARIABLE)).toBe(
+      true
+    );
+  });
+
+  it("should pass when both parameter and semantic validation pass", () => {
+    const pipeline: Pipeline = {
+      steps: [
+        { kind: "generate", generator: "openai", params: { prompt: "A sunset" }, out: "img" },
+        { kind: "transform", op: "resize", in: "img", params: { width: 800 }, out: "resized" },
+      ],
+    };
+
+    const result = validatePipelineFull(pipeline, mockCapabilities);
+
+    expect(result.valid).toBe(true);
+  });
+});
+
+describe("complex workflow validation", () => {
+  it("should validate a complete iterative workflow", () => {
+    const pipeline: Pipeline = {
+      steps: [
+        // Generate prompts
+        {
+          kind: "text",
+          provider: "gemini-text",
+          params: { prompt: "Generate 3 prompts", outputFormat: "json" },
+          out: "prompts_data",
+        },
+        // Fan out to 3 branches
+        {
+          kind: "fan-out",
+          in: "prompts_data",
+          mode: "array",
+          arrayProperty: "prompts",
+          out: ["prompt_0", "prompt_1", "prompt_2"],
+        },
+        // Generate images
+        {
+          kind: "generate",
+          generator: "openai",
+          params: { _promptFromVar: "prompt_0" },
+          out: "img_0",
+        },
+        {
+          kind: "generate",
+          generator: "openai",
+          params: { _promptFromVar: "prompt_1" },
+          out: "img_1",
+        },
+        {
+          kind: "generate",
+          generator: "openai",
+          params: { _promptFromVar: "prompt_2" },
+          out: "img_2",
+        },
+        // Collect results
+        { kind: "collect", in: ["img_0", "img_1", "img_2"], waitMode: "all", out: "all_images" },
+        // Vision evaluation
+        {
+          kind: "vision",
+          provider: "claude-vision",
+          in: "img_0",
+          params: { prompt: "Pick best" },
+          out: "evaluation",
+        },
+        // Route to winner
+        {
+          kind: "router",
+          in: "all_images",
+          selectionIn: "evaluation",
+          selectionType: "index",
+          selectionProperty: "best_index",
+          out: "winner",
+        },
+        // Save winner
+        { kind: "save", in: "winner", destination: "/tmp/winner.png" },
+      ],
+    };
+
+    const result = validatePipelineSemantics(pipeline, mockCapabilities);
+
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it("should catch multiple errors in a broken workflow", () => {
+    const pipeline: Pipeline = {
+      steps: [
+        // Missing prompt - semantic error
+        { kind: "generate", generator: "openai", params: {}, out: "img" },
+        // References undefined variable
+        {
+          kind: "transform",
+          op: "resize",
+          in: "wrong_var",
+          params: { width: 800 },
+          out: "resized",
+        },
+        // Fan-out missing arrayProperty
+        { kind: "fan-out", in: "resized", mode: "array", out: ["a", "b"] },
+        // Collect references undefined
+        { kind: "collect", in: ["x", "y"], waitMode: "all", out: "collected" },
+      ],
+    };
+
+    const result = validatePipelineSemantics(pipeline, mockCapabilities);
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThanOrEqual(4);
+
+    const codes = result.errors.map((e) => e.code);
+    expect(codes).toContain(SemanticValidationCodes.MISSING_PROMPT_SOURCE);
+    expect(codes).toContain(SemanticValidationCodes.UNDEFINED_VARIABLE);
+    expect(codes).toContain(SemanticValidationCodes.MISSING_ARRAY_PROPERTY);
+    expect(codes).toContain(SemanticValidationCodes.UNDEFINED_COLLECT_INPUT);
   });
 });

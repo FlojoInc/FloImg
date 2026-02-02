@@ -2,10 +2,18 @@
  * FloImg Parameter Validator
  *
  * Validates workflow/pipeline parameters against generator and transform schemas.
- * Catches common issues like:
- * - Missing required parameters
- * - Unknown parameters (warns, doesn't error - for pass-through flexibility)
- * - Type mismatches
+ * Provides two levels of validation:
+ *
+ * 1. **Parameter validation** (validatePipeline/validateStep):
+ *    - Missing required parameters
+ *    - Unknown parameters (warns, doesn't error - for pass-through flexibility)
+ *    - Type mismatches
+ *
+ * 2. **Semantic validation** (validatePipelineSemantics):
+ *    - Missing prompt sources (AI generators need static prompt OR incoming text)
+ *    - Missing image inputs (transforms must have an image source)
+ *    - Missing array property (fan-out in array mode)
+ *    - Undefined variable references (steps must reference defined outputs)
  *
  * Can be used at:
  * - Build time: Validate templates before packaging
@@ -13,14 +21,18 @@
  *
  * @example
  * ```typescript
- * import { validatePipeline, ValidationError } from '@teamflojo/floimg';
+ * import { validatePipeline, validatePipelineSemantics, ValidationError } from '@teamflojo/floimg';
  *
- * const result = validatePipeline(pipeline, client.getCapabilities());
- * if (result.errors.length > 0) {
- *   throw new ValidationError(result.formatErrors());
+ * // Parameter validation
+ * const paramResult = validatePipeline(pipeline, client.getCapabilities());
+ * if (!paramResult.valid) {
+ *   throw new ValidationError(paramResult.formatErrors());
  * }
- * if (result.warnings.length > 0) {
- *   console.warn(result.formatWarnings());
+ *
+ * // Semantic validation (for workflows with variable references)
+ * const semanticResult = validatePipelineSemantics(pipeline, client.getCapabilities());
+ * if (!semanticResult.valid) {
+ *   throw new ValidationError(semanticResult.formatErrors());
  * }
  * ```
  */
@@ -540,4 +552,308 @@ export function validateTransformParams(
   const context = { providerName: operationName };
   const result = validateParams(params, schema, context, opts);
   return createResult(result.errors, result.warnings);
+}
+
+// =============================================================================
+// Semantic Validation
+// =============================================================================
+
+/**
+ * Semantic validation codes
+ */
+export const SemanticValidationCodes = {
+  /** AI generator requires prompt but has no static prompt AND no _promptFromVar */
+  MISSING_PROMPT_SOURCE: "MISSING_PROMPT_SOURCE",
+  /** Transform step has no image input (no 'in' reference or reference is undefined) */
+  MISSING_IMAGE_INPUT: "MISSING_IMAGE_INPUT",
+  /** Fan-out step in array mode is missing arrayProperty */
+  MISSING_ARRAY_PROPERTY: "MISSING_ARRAY_PROPERTY",
+  /** Step references a variable that doesn't exist (not defined by any previous step) */
+  UNDEFINED_VARIABLE: "UNDEFINED_VARIABLE",
+  /** Collect step references undefined input variables */
+  UNDEFINED_COLLECT_INPUT: "UNDEFINED_COLLECT_INPUT",
+  /** Router step references undefined candidate or selection input */
+  UNDEFINED_ROUTER_INPUT: "UNDEFINED_ROUTER_INPUT",
+} as const;
+
+export type SemanticValidationCode =
+  (typeof SemanticValidationCodes)[keyof typeof SemanticValidationCodes];
+
+/**
+ * Validate a pipeline for semantic correctness
+ *
+ * This checks higher-level semantic issues that parameter validation doesn't catch:
+ * - AI generators without a prompt source (static prompt or _promptFromVar)
+ * - Transforms without image input references
+ * - Fan-out in array mode without arrayProperty
+ * - References to undefined variables
+ *
+ * @param pipeline - The pipeline to validate
+ * @param capabilities - Client capabilities for schema lookups (optional, used for AI detection)
+ * @returns Validation result with errors and warnings
+ *
+ * @example
+ * ```typescript
+ * const result = validatePipelineSemantics(pipeline, client.getCapabilities());
+ * if (!result.valid) {
+ *   console.error(result.formatErrors());
+ * }
+ * ```
+ */
+export function validatePipelineSemantics(
+  pipeline: Pipeline,
+  capabilities?: ClientCapabilities
+): ValidationResult {
+  const errors: ValidationIssue[] = [];
+  const warnings: ValidationIssue[] = [];
+
+  // Track which variables are defined by previous steps
+  const definedVariables = new Set<string>();
+
+  // Add initial variables if present
+  if (pipeline.initialVariables) {
+    for (const varName of Object.keys(pipeline.initialVariables)) {
+      definedVariables.add(varName);
+    }
+  }
+
+  for (let i = 0; i < pipeline.steps.length; i++) {
+    const step = pipeline.steps[i];
+    const context = {
+      stepIndex: i,
+      stepKind: step.kind,
+    };
+
+    switch (step.kind) {
+      case "generate": {
+        // Check if AI generator has a prompt source
+        const schema = capabilities?.generators.find((g) => g.name === step.generator);
+        const isAI =
+          schema?.isAI ??
+          (step.generator.includes("openai") ||
+            step.generator.includes("stability") ||
+            step.generator.includes("gemini") ||
+            step.generator.includes("imagen") ||
+            step.generator.includes("replicate"));
+
+        if (isAI) {
+          const hasStaticPrompt =
+            step.params?.prompt &&
+            typeof step.params.prompt === "string" &&
+            step.params.prompt.trim() !== "";
+          const hasPromptFromVar = step.params?._promptFromVar !== undefined;
+
+          if (!hasStaticPrompt && !hasPromptFromVar) {
+            errors.push({
+              severity: "error",
+              code: SemanticValidationCodes.MISSING_PROMPT_SOURCE,
+              message: `AI generator '${step.generator}' requires a prompt but has no static prompt and no dynamic prompt source (_promptFromVar)`,
+              ...context,
+              providerName: step.generator,
+            });
+          }
+
+          // If using _promptFromVar, check it references a defined variable
+          if (hasPromptFromVar) {
+            const promptVar = step.params!._promptFromVar as string;
+            if (!definedVariables.has(promptVar)) {
+              errors.push({
+                severity: "error",
+                code: SemanticValidationCodes.UNDEFINED_VARIABLE,
+                message: `Generator references undefined variable '${promptVar}' in _promptFromVar`,
+                ...context,
+                providerName: step.generator,
+                parameterName: "_promptFromVar",
+              });
+            }
+          }
+        }
+
+        // Define output variable
+        definedVariables.add(step.out);
+        break;
+      }
+
+      case "transform": {
+        // Check that 'in' references a defined variable
+        if (!definedVariables.has(step.in)) {
+          errors.push({
+            severity: "error",
+            code: SemanticValidationCodes.UNDEFINED_VARIABLE,
+            message: `Transform step references undefined variable '${step.in}'`,
+            ...context,
+            providerName: step.op,
+          });
+        }
+
+        // Define output variable
+        definedVariables.add(step.out);
+        break;
+      }
+
+      case "vision": {
+        // Check that 'in' references a defined variable
+        if (!definedVariables.has(step.in)) {
+          errors.push({
+            severity: "error",
+            code: SemanticValidationCodes.UNDEFINED_VARIABLE,
+            message: `Vision step references undefined variable '${step.in}'`,
+            ...context,
+            providerName: step.provider,
+          });
+        }
+
+        // Define output variable
+        definedVariables.add(step.out);
+        break;
+      }
+
+      case "text": {
+        // 'in' is optional for text steps
+        if (step.in && !definedVariables.has(step.in)) {
+          errors.push({
+            severity: "error",
+            code: SemanticValidationCodes.UNDEFINED_VARIABLE,
+            message: `Text step references undefined variable '${step.in}'`,
+            ...context,
+            providerName: step.provider,
+          });
+        }
+
+        // Define output variable
+        definedVariables.add(step.out);
+        break;
+      }
+
+      case "save": {
+        // Check that 'in' references a defined variable
+        if (!definedVariables.has(step.in)) {
+          errors.push({
+            severity: "error",
+            code: SemanticValidationCodes.UNDEFINED_VARIABLE,
+            message: `Save step references undefined variable '${step.in}'`,
+            ...context,
+          });
+        }
+
+        // Define output variable if present
+        if (step.out) {
+          definedVariables.add(step.out);
+        }
+        break;
+      }
+
+      case "fan-out": {
+        // Check that 'in' references a defined variable
+        if (!definedVariables.has(step.in)) {
+          errors.push({
+            severity: "error",
+            code: SemanticValidationCodes.UNDEFINED_VARIABLE,
+            message: `Fan-out step references undefined variable '${step.in}'`,
+            ...context,
+          });
+        }
+
+        // Check array mode has arrayProperty
+        if (step.mode === "array" && !step.arrayProperty) {
+          errors.push({
+            severity: "error",
+            code: SemanticValidationCodes.MISSING_ARRAY_PROPERTY,
+            message: `Fan-out step in array mode requires 'arrayProperty' to specify which array to iterate`,
+            ...context,
+          });
+        }
+
+        // Define output variables
+        for (const outVar of step.out) {
+          definedVariables.add(outVar);
+        }
+        break;
+      }
+
+      case "collect": {
+        // Check all input variables are defined
+        for (const inVar of step.in) {
+          if (!definedVariables.has(inVar)) {
+            errors.push({
+              severity: "error",
+              code: SemanticValidationCodes.UNDEFINED_COLLECT_INPUT,
+              message: `Collect step references undefined variable '${inVar}'`,
+              ...context,
+            });
+          }
+        }
+
+        // Define output variable
+        definedVariables.add(step.out);
+        break;
+      }
+
+      case "router": {
+        // Check 'in' (candidates array) references a defined variable
+        if (!definedVariables.has(step.in)) {
+          errors.push({
+            severity: "error",
+            code: SemanticValidationCodes.UNDEFINED_ROUTER_INPUT,
+            message: `Router step references undefined candidates variable '${step.in}'`,
+            ...context,
+          });
+        }
+
+        // Check 'selectionIn' references a defined variable
+        if (!definedVariables.has(step.selectionIn)) {
+          errors.push({
+            severity: "error",
+            code: SemanticValidationCodes.UNDEFINED_ROUTER_INPUT,
+            message: `Router step references undefined selection variable '${step.selectionIn}'`,
+            ...context,
+          });
+        }
+
+        // Define output variable
+        definedVariables.add(step.out);
+        break;
+      }
+    }
+  }
+
+  return createResult(errors, warnings);
+}
+
+/**
+ * Comprehensive validation combining parameter and semantic checks
+ *
+ * This is the recommended validation function for most use cases.
+ * It runs both parameter validation (schema checks) and semantic validation
+ * (variable references, prompt sources, etc.)
+ *
+ * @param pipeline - The pipeline to validate
+ * @param capabilities - Client capabilities containing schemas
+ * @param options - Validation options
+ * @returns Combined validation result
+ *
+ * @example
+ * ```typescript
+ * const result = validatePipelineFull(pipeline, client.getCapabilities());
+ * if (!result.valid) {
+ *   throw new ValidationError(result.formatErrors());
+ * }
+ * ```
+ */
+export function validatePipelineFull(
+  pipeline: Pipeline,
+  capabilities: ClientCapabilities,
+  options: ValidationOptions = {}
+): ValidationResult {
+  // Run parameter validation
+  const paramResult = validatePipeline(pipeline, capabilities, options);
+
+  // Run semantic validation
+  const semanticResult = validatePipelineSemantics(pipeline, capabilities);
+
+  // Combine results
+  const allErrors = [...paramResult.errors, ...semanticResult.errors];
+  const allWarnings = [...paramResult.warnings, ...semanticResult.warnings];
+
+  return createResult(allErrors, allWarnings);
 }

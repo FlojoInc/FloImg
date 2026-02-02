@@ -53,11 +53,19 @@ export { isImageBlob, isDataBlob } from "./core/types.js";
 // Export validation utilities
 export {
   validatePipeline,
+  validatePipelineSemantics,
+  validatePipelineFull,
   validateStep,
   validateGeneratorParams,
   validateTransformParams,
+  SemanticValidationCodes,
 } from "./core/validator.js";
-export type { ValidationResult, ValidationIssue, ValidationOptions } from "./core/validator.js";
+export type {
+  ValidationResult,
+  ValidationIssue,
+  ValidationOptions,
+  SemanticValidationCode,
+} from "./core/validator.js";
 
 // Export errors and error utilities
 export {
