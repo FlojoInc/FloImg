@@ -623,6 +623,10 @@ export async function executeWorkflow(
           if (fanoutStep?.in) {
             // Add the fan-out's input (the text node's output) to resolution set
             textVarToResolve.add(fanoutStep.in);
+          } else {
+            // Not actually a fan-out branch variable (e.g., "node_1" looks like v1_0 but isn't)
+            // Treat as regular variable
+            textVarToResolve.add(varName);
           }
         } else {
           textVarToResolve.add(varName);
@@ -732,7 +736,7 @@ export async function executeWorkflow(
             const branchMatch = varName.match(/^(.+)_(\d+)$/);
 
             if (branchMatch) {
-              // This is a branch variable - extract from fan-out's source text node
+              // This might be a branch variable - extract from fan-out's source text node
               const branchIndex = parseInt(branchMatch[2], 10); // e.g., 0
 
               // Find the fan-out step whose output array contains this branch variable
@@ -763,7 +767,12 @@ export async function executeWorkflow(
                   }
                 }
               }
-            } else if (propertyName) {
+              // If branchMatch but no fan-out found (e.g., "node_1" looks like v1_0 but isn't),
+              // fall through to normal property extraction below
+            }
+
+            // Normal property extraction (also handles false-positive branch matches)
+            if (!text && propertyName) {
               // If a specific property was requested (from sourceHandle like "output.prompt")
               const parsed = resolvedParsed.get(varName);
               if (parsed && propertyName in parsed) {
@@ -782,8 +791,8 @@ export async function executeWorkflow(
                   text = resolvedText.get(varName);
                 }
               }
-            } else {
-              // No property specified - try parsed output first, then full content
+            } else if (!text) {
+              // No property specified and no text from fan-out - try parsed output first, then full content
               const parsed = resolvedParsed.get(varName);
               if (parsed) {
                 text = findPromptInParsed(parsed);
