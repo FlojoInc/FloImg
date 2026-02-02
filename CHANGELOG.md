@@ -5,6 +5,22 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.12] - 2026-02-02
+
+### Docker
+
+- fix: Skip cache for runner stage to ensure build args are embedded
+  - GHA cache backend doesn't invalidate on build-arg value changes
+  - Added `no-cache-filters: runner` to force rebuild of production stage
+  - Version endpoint now correctly returns commit, build time, and version
+
+## [v0.21.11] - 2026-02-02
+
+### Docker
+
+- fix: Inherit build args in production stage for deployment visibility
+  - (Note: This fix was incomplete due to Docker layer caching - see v0.21.12)
+
 ## [v0.21.10] - 2026-02-02
 
 ### @teamflojo/floimg-studio-backend (0.5.4)
