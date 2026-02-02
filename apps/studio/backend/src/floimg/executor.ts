@@ -362,6 +362,56 @@ export async function executePipeline(
         delete step.params._overlayImageVars;
       }
 
+      // Inject prompt from text step output for AI generators/transforms
+      // The frontend marks steps with _promptFromVar and _promptFromProperty
+      // to indicate they should get their prompt from a previous text step's output
+      if ((step.kind === "generate" || step.kind === "transform") && step.params?._promptFromVar) {
+        const sourceVarName = step.params._promptFromVar as string;
+        const propertyName = step.params._promptFromProperty as string | undefined;
+        const sourceValue = stepVariables[sourceVarName];
+
+        let promptText: string | undefined;
+
+        if (sourceValue && isDataBlob(sourceValue)) {
+          // Source is a DataBlob (text/vision step output)
+          if (propertyName && sourceValue.parsed) {
+            // Extract specific property from parsed JSON
+            const parsed = sourceValue.parsed as Record<string, unknown>;
+            if (propertyName in parsed) {
+              const value = parsed[propertyName];
+              promptText = typeof value === "string" ? value : JSON.stringify(value);
+            }
+          } else if (sourceValue.parsed) {
+            // No specific property - try to find a prompt field
+            const parsed = sourceValue.parsed as Record<string, unknown>;
+            if ("prompt" in parsed && typeof parsed.prompt === "string") {
+              promptText = parsed.prompt;
+            } else if ("text" in parsed && typeof parsed.text === "string") {
+              promptText = parsed.text;
+            }
+          }
+          // Fallback to raw content if no parsed property found
+          if (!promptText && sourceValue.content) {
+            promptText = sourceValue.content;
+          }
+        }
+
+        if (promptText) {
+          step.params.prompt = promptText;
+          console.log(
+            `[executePipeline] Injected prompt from ${sourceVarName}${propertyName ? `.${propertyName}` : ""}: "${promptText.slice(0, 50)}..."`
+          );
+        } else {
+          console.warn(
+            `[executePipeline] Could not extract prompt from ${sourceVarName}${propertyName ? `.${propertyName}` : ""}`
+          );
+        }
+
+        // Clean up the markers
+        delete step.params._promptFromVar;
+        delete step.params._promptFromProperty;
+      }
+
       // Create a single-step pipeline with current variables
       // Include both ImageBlob and DataBlob for dependent steps
       const pipelineVariables: Record<string, ImageBlob | DataBlob> = {};
