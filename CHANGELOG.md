@@ -5,6 +5,21 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.17] - 2026-02-03
+
+### @teamflojo/floimg-studio-shared (0.9.4)
+
+- feat: Add StorageAdapter interface for deployment-agnostic file uploads
+  - Enables Input node to work with different storage backends (local filesystem, S3)
+  - Defines upload/delete/preview operations abstractly
+
+### @teamflojo/floimg-studio-ui (0.10.5)
+
+- feat: Add StorageAdapterProvider for dependency injection
+  - React Context provider allows deployments to inject storage implementation
+  - OssStorageAdapter provided for self-hosted deployments
+  - Input node now uses adapter instead of hardcoded /api/uploads endpoint
+
 ## [v0.21.16] - 2026-02-03
 
 ### @teamflojo/floimg-studio-ui (0.10.4)
