@@ -5,6 +5,32 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.15] - 2026-02-03
+
+### @teamflojo/floimg-studio-backend (0.5.7)
+
+- feat: Add model selector to AI Workflow Generator
+  - Accept `model` parameter in `/api/generate/workflow` and `/api/generate/workflow/stream` endpoints
+  - Export `AVAILABLE_MODELS` array with supported models (Gemini 3 Pro, Gemini 3 Flash, Gemini 2.5 Flash)
+  - Validate model parameter against available models, fallback to default
+  - Return `availableModels` in `/api/generate/status` endpoint
+- fix(security): Update fastify to 5.7.4 (CVE fix)
+
+### @teamflojo/floimg-studio-shared (0.9.3)
+
+- feat: Add `GenerateModel` interface and update request/response types
+  - New `GenerateModel` type with id, name, description, isDefault
+  - Add optional `model` field to `GenerateWorkflowRequest`
+  - Add `availableModels` to `GenerateStatusResponse`
+
+### @teamflojo/floimg-studio-frontend (0.10.3)
+
+- feat: Add model selector dropdown to AI Workflow Generator
+  - Replace static "Gemini 3 Pro" badge with interactive dropdown
+  - Fetch available models from status endpoint on mount
+  - Persist selected model within session
+  - Pass selected model to generate requests
+
 ## [v0.21.14] - 2026-02-02
 
 ### @teamflojo/floimg-studio-backend (0.5.6)
