@@ -113,53 +113,6 @@ export async function getImageWorkflow(id: string): Promise<ImageMetadata | null
   }
 }
 
-// Uploads
-export interface UploadInfo {
-  id: string;
-  filename: string;
-  mime: string;
-  size: number;
-  createdAt: number;
-}
-
-export async function uploadImage(file: File): Promise<UploadInfo> {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const response = await fetch(`${API_BASE}/uploads`, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: "Upload failed" }));
-    throw new Error(error.error || `HTTP ${response.status}`);
-  }
-
-  return response.json();
-}
-
-export async function listUploads(): Promise<UploadInfo[]> {
-  return fetchJson(`${API_BASE}/uploads`);
-}
-
-export async function getUploadThumbnail(id: string): Promise<{ dataUrl: string }> {
-  return fetchJson(`${API_BASE}/uploads/${id}/thumbnail`);
-}
-
-export async function deleteUpload(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/uploads/${id}`, {
-    method: "DELETE",
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to delete upload: ${response.status}`);
-  }
-}
-
-export function getUploadBlobUrl(id: string): string {
-  return `${API_BASE}/uploads/${id}/blob`;
-}
-
 // Input nodes
 export async function getInputNodes(): Promise<NodeDefinition[]> {
   return fetchJson(`${API_BASE}/nodes/inputs`);

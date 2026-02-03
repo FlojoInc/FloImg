@@ -12,12 +12,7 @@ import type {
   RouterNodeData,
 } from "@teamflojo/floimg-studio-shared";
 import { useWorkflowStore } from "../stores/workflowStore";
-import { useStorageAdapter } from "../providers/StorageAdapterProvider";
-// Fallback for when no storage adapter is provided (legacy support during migration)
-import {
-  uploadImage as legacyUploadImage,
-  getUploadBlobUrl as legacyGetUploadBlobUrl,
-} from "../api/client";
+import { useRequiredStorageAdapter } from "../providers/StorageAdapterProvider";
 
 // Helper to get execution status class for node styling
 function getExecutionClass(nodeStatus: string | undefined): string {
@@ -404,30 +399,20 @@ export const InputNode = memo(function InputNode({ id, data, selected }: NodePro
   const previewVisible = useWorkflowStore((s) => s.previewVisible[id] !== false);
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const storageAdapter = useStorageAdapter();
+  const storageAdapter = useRequiredStorageAdapter();
 
   const executionClass = getExecutionClass(nodeStatus);
 
-  // Handle file selection - uses storage adapter if available, falls back to legacy
+  // Handle file selection via storage adapter
   const handleFileSelect = useCallback(
     async (file: File) => {
       try {
-        if (storageAdapter) {
-          const result = await storageAdapter.upload(file);
-          updateNodeData(id, {
-            uploadId: result.reference,
-            filename: result.filename,
-            mime: result.mime,
-          });
-        } else {
-          // Fallback for deployments without storage adapter configured
-          const result = await legacyUploadImage(file);
-          updateNodeData(id, {
-            uploadId: result.id,
-            filename: result.filename,
-            mime: result.mime,
-          });
-        }
+        const result = await storageAdapter.upload(file);
+        updateNodeData(id, {
+          uploadId: result.reference,
+          filename: result.filename,
+          mime: result.mime,
+        });
       } catch (error) {
         console.error("Upload failed:", error);
       }
@@ -468,11 +453,7 @@ export const InputNode = memo(function InputNode({ id, data, selected }: NodePro
   const getPreviewUrl = useCallback(() => {
     if (preview) return preview;
     if (!data.uploadId) return null;
-    if (storageAdapter) {
-      return storageAdapter.getPreviewUrl(data.uploadId);
-    }
-    // Fallback for deployments without storage adapter
-    return legacyGetUploadBlobUrl(data.uploadId);
+    return storageAdapter.getPreviewUrl(data.uploadId);
   }, [preview, data.uploadId, storageAdapter]);
 
   const previewUrl = getPreviewUrl();

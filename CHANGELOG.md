@@ -5,6 +5,16 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.18] - 2026-02-03
+
+### @teamflojo/floimg-studio-ui (0.10.6)
+
+- fix: Add crossOrigin to InputNode for authenticated cross-origin image requests
+  - Enables CORS credentials for deployments where UI and API are on different subdomains
+- refactor: InputNode now requires StorageAdapter
+  - Removed legacy upload fallback code
+  - Removed UploadGallery component and unused upload functions from api/client.ts
+
 ## [v0.21.17] - 2026-02-03
 
 ### @teamflojo/floimg-studio-shared (0.9.4)
