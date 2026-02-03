@@ -1138,3 +1138,10 @@
     border-bottom-color: rgba(255, 255, 255, 0.04);
   }
 }
+
+/* Fix white box behind nodes in dark mode - React Flow default override */
+@media (prefers-color-scheme: dark) {
+  .react-flow__node {
+    background: transparent;
+  }
+}

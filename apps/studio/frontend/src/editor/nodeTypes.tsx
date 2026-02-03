@@ -464,7 +464,10 @@ export const InputNode = memo(function InputNode({ id, data, selected }: NodePro
       ) : !previewUrl ? (
         <div
           className="h-20 flex items-center justify-center cursor-pointer bg-amber-50/50 dark:bg-amber-900/20 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors border-b border-amber-100/50 dark:border-amber-800/30"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={(e) => {
+            e.stopPropagation();
+            fileInputRef.current?.click();
+          }}
         >
           <div className="text-center text-amber-500 dark:text-amber-400">
             <svg
