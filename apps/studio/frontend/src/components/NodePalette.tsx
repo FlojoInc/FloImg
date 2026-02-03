@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { NodeDefinition } from "@teamflojo/floimg-studio-shared";
 import { getGenerators, getTransforms, getTextProviders, getVisionProviders } from "../api/client";
 import { useWorkflowStore } from "../stores/workflowStore";
-import { UploadGallery } from "./UploadGallery";
 import { NodePaletteItem } from "./NodePaletteItem";
 
 export function NodePalette() {
@@ -16,7 +15,6 @@ export function NodePalette() {
   const textProviders = useWorkflowStore((s) => s.textProviders);
   const visionProviders = useWorkflowStore((s) => s.visionProviders);
   const addNode = useWorkflowStore((s) => s.addNode);
-  const [showUploads, setShowUploads] = useState(false);
 
   // Fetch node definitions
   const { data: fetchedGenerators } = useQuery({
@@ -236,28 +234,13 @@ export function NodePalette() {
 
         {/* Input */}
         <div className="floimg-sidebar__section">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="floimg-sidebar__header !text-amber-600 dark:!text-amber-400 !mb-0">
-              Input
-            </h3>
-            <button
-              onClick={() => setShowUploads(!showUploads)}
-              className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
-            >
-              {showUploads ? "Hide" : "Browse"} Uploads
-            </button>
-          </div>
+          <h3 className="floimg-sidebar__header !text-amber-600 dark:!text-amber-400">Input</h3>
           <NodePaletteItem
             definition={inputDefinition}
             colorVariant="amber"
             onDragStart={handleDragStart}
             onDoubleClick={handleDoubleClick}
           />
-          {showUploads && (
-            <div className="mt-2 border border-amber-200 dark:border-amber-700 rounded bg-white dark:bg-zinc-900 max-h-64 overflow-y-auto">
-              <UploadGallery />
-            </div>
-          )}
         </div>
 
         {/* Generators */}

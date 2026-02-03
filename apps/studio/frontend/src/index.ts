@@ -29,7 +29,6 @@ export { TemplateGallery } from "./components/TemplateGallery";
 export { WorkflowLibrary } from "./components/WorkflowLibrary";
 export { AISettings } from "./components/AISettings";
 export { AIChat, type GenerationSuccessData, type GenerationFailedData } from "./components/AIChat";
-export { UploadGallery } from "./components/UploadGallery";
 export { CommandPalette } from "./components/CommandPalette";
 export { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
 
