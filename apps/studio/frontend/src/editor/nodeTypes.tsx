@@ -485,7 +485,12 @@ export const InputNode = memo(function InputNode({ id, data, selected }: NodePro
     >
       {previewUrl && previewVisible ? (
         <div className="floimg-node__preview">
-          <img src={previewUrl} alt="Uploaded" className="w-full h-20 object-contain rounded-md" />
+          <img
+            src={previewUrl}
+            alt="Uploaded"
+            className="w-full h-20 object-contain rounded-md"
+            crossOrigin="use-credentials"
+          />
         </div>
       ) : !previewUrl ? (
         <div
