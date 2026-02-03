@@ -62,17 +62,63 @@ The cloud-hosted version at `studio.floimg.com` (FloImg Studio Cloud) is powered
 
 1. Imports `@floimg-studio/*` packages as dependencies
 2. Wraps the editor with cloud-specific features
-3. Deploys the extended version
+3. Provides cloud-specific adapters via dependency injection
+4. Deploys the extended version
 
 ```
 floimg-cloud/packages/studio-cloud/
 ├── src/
-│   ├── CloudApp.tsx          # Wraps WorkflowEditor
-│   ├── CloudAuthProvider.tsx # Session management
-│   ├── UsageLimits.tsx       # Tier-based limits
-│   └── CloudToolbar.tsx      # Extended toolbar with user menu
-└── package.json              # depends on @floimg-studio/frontend
+│   ├── CloudEditorLayout.tsx     # Wraps WorkflowEditor with providers
+│   ├── adapters/
+│   │   └── CloudStorageAdapter.ts # S3 presigned URL storage
+│   ├── providers/
+│   │   └── UsageLimitsProvider.tsx
+│   └── components/
+│       └── CloudToolbar.tsx      # Extended toolbar with user menu
+└── package.json                  # depends on @teamflojo/floimg-studio-ui
 ```
+
+## Extension Points
+
+FloImg Studio provides extension points for cloud/custom deployments:
+
+### StorageAdapter (Input Node Uploads)
+
+Different deployments can inject their own storage backends:
+
+```tsx
+// OSS: uses local filesystem via /api/uploads
+import { StorageAdapterProvider, ossStorageAdapter } from "@teamflojo/floimg-studio-ui";
+
+<StorageAdapterProvider adapter={ossStorageAdapter}>
+  <App />
+</StorageAdapterProvider>;
+
+// Cloud: uses S3 via presigned URLs
+import { cloudStorageAdapter } from "./adapters/CloudStorageAdapter";
+
+<StorageAdapterProvider adapter={cloudStorageAdapter}>
+  <App />
+</StorageAdapterProvider>;
+```
+
+### Toolbar Slots
+
+Inject custom branding, buttons, and user menus:
+
+```tsx
+<Toolbar
+  brandingSlot={<CloudBadge />}
+  beforeActionsSlot={<WorkspaceButton />}
+  afterActionsSlot={<UserMenu />}
+  hideAttribution
+  hideWorkflowLibrary
+/>
+```
+
+### UsageLimitsProvider (Cloud-only)
+
+Cloud deployments can inject tier-based limits that components respect.
 
 ## For Contributors
 
