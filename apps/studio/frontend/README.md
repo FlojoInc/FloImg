@@ -73,6 +73,37 @@ import { Toolbar, type ToolbarProps } from "@teamflojo/floimg-studio-ui";
 />;
 ```
 
+## Storage Adapter
+
+For custom storage backends (e.g., S3, cloud storage), provide a `StorageAdapter`:
+
+```tsx
+import { StorageAdapterProvider, ossStorageAdapter } from "@teamflojo/floimg-studio-ui";
+import type { StorageAdapter } from "@teamflojo/floimg-studio-shared";
+
+// Use the built-in OSS adapter (local filesystem)
+<StorageAdapterProvider adapter={ossStorageAdapter}>
+  <App />
+</StorageAdapterProvider>;
+
+// Or implement your own
+const myAdapter: StorageAdapter = {
+  async upload(file: File) {
+    // Upload to your storage backend
+    return { reference: "id", filename: file.name, mime: file.type, size: file.size };
+  },
+  getPreviewUrl(reference: string) {
+    return `/my-storage/${reference}`;
+  },
+};
+
+<StorageAdapterProvider adapter={myAdapter}>
+  <App />
+</StorageAdapterProvider>;
+```
+
+The adapter handles Input node file uploads. Without a provider, the default `/api/uploads` endpoint is used.
+
 ## State Management
 
 Access workflow state with Zustand:
