@@ -4,7 +4,7 @@
 
 ## Current Focus
 
-(No active task)
+**BUG-2026-016**: Studio UI issues - dark mode white box, upload click, toolbar hover
 
 ## Next Up
 

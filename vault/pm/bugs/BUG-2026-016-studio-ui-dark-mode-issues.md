@@ -1,6 +1,6 @@
 ---
 tags: [type/bug]
-status: backlog
+status: in-progress
 priority: p2
 created: 2026-02-03
 updated: 2026-02-03
@@ -12,7 +12,7 @@ github_issue:
 ## Bug Details
 
 **Bug ID**: BUG-2026-016
-**Status**: backlog
+**Status**: in-progress
 **Priority**: p2
 **Created**: 2026-02-03
 **Fixed**:
