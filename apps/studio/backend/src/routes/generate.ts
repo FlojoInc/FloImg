@@ -8,7 +8,7 @@ import type {
   GenerateWorkflowResponse,
   GenerationSSEEvent,
 } from "@teamflojo/floimg-studio-shared";
-import { generateWorkflow } from "../ai/workflow-generator.js";
+import { generateWorkflow, AVAILABLE_MODELS } from "../ai/workflow-generator.js";
 
 // Helper to send SSE event
 function sendSSE(raw: { write: (data: string) => boolean }, event: GenerationSSEEvent): void {
@@ -23,7 +23,7 @@ export async function generateRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: GenerateWorkflowRequest }>(
     "/workflow",
     async (request, reply): Promise<GenerateWorkflowResponse> => {
-      const { prompt, history } = request.body;
+      const { prompt, history, model } = request.body;
 
       if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
         reply.code(400);
@@ -34,7 +34,7 @@ export async function generateRoutes(fastify: FastifyInstance) {
         };
       }
 
-      const result = await generateWorkflow(prompt.trim(), history);
+      const result = await generateWorkflow(prompt.trim(), history, model);
 
       if (!result.success) {
         // Return 200 with error details (not 500, since it's a valid response)
@@ -58,12 +58,17 @@ export async function generateRoutes(fastify: FastifyInstance) {
    * POST /api/generate/workflow/stream
    */
   fastify.post<{ Body: GenerateWorkflowRequest }>("/workflow/stream", async (request, reply) => {
-    const { prompt, history } = request.body;
+    const { prompt, history, model } = request.body;
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
       reply.code(400);
       return { error: "Prompt is required" };
     }
+
+    // Determine which model to use
+    const defaultModel = AVAILABLE_MODELS.find((m) => m.isDefault)?.id || "gemini-3-pro-preview";
+    const selectedModel =
+      model && AVAILABLE_MODELS.some((m) => m.id === model) ? model : defaultModel;
 
     // Set SSE headers
     reply.raw.writeHead(200, {
@@ -76,7 +81,7 @@ export async function generateRoutes(fastify: FastifyInstance) {
     sendSSE(reply.raw, {
       type: "generation.started",
       data: {
-        model: "gemini-3-pro-preview",
+        model: selectedModel,
       },
     });
 
@@ -113,7 +118,7 @@ export async function generateRoutes(fastify: FastifyInstance) {
     });
 
     try {
-      const result = await generateWorkflow(prompt.trim(), history);
+      const result = await generateWorkflow(prompt.trim(), history, selectedModel);
 
       if (!result.success || !result.workflow) {
         sendSSE(reply.raw, {
@@ -158,6 +163,7 @@ export async function generateRoutes(fastify: FastifyInstance) {
    */
   fastify.get("/status", async () => {
     const hasApiKey = !!process.env.GOOGLE_AI_API_KEY;
+    const defaultModel = AVAILABLE_MODELS.find((m) => m.isDefault)?.id || "gemini-3-pro-preview";
 
     if (!hasApiKey) {
       fastify.log.warn("AI workflow generation unavailable: GOOGLE_AI_API_KEY not configured");
@@ -165,7 +171,15 @@ export async function generateRoutes(fastify: FastifyInstance) {
 
     return {
       available: hasApiKey,
-      model: "gemini-3-pro-preview",
+      model: defaultModel,
+      availableModels: hasApiKey
+        ? AVAILABLE_MODELS.map((m) => ({
+            id: m.id,
+            name: m.name,
+            description: m.description,
+            isDefault: m.isDefault,
+          }))
+        : undefined,
       message: hasApiKey
         ? "Workflow generation is available"
         : "Set GOOGLE_AI_API_KEY environment variable to enable AI workflow generation",
