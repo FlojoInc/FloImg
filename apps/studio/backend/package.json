@@ -37,7 +37,7 @@
     "@teamflojo/floimg-studio-shared": "workspace:*",
     "@teamflojo/floimg-vectorize": "workspace:*",
     "@teamflojo/floimg-xai": "workspace:*",
-    "fastify": "^5.6.2",
+    "fastify": "^5.7.4",
     "nanoid": "^5.0.7",
     "openai": "^6.17.0",
     "yaml": "^2.4.1"
