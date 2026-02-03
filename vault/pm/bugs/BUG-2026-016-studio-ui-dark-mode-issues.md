@@ -1,9 +1,10 @@
 ---
 tags: [type/bug]
-status: in-progress
+status: completed
 priority: p2
 created: 2026-02-03
 updated: 2026-02-03
+completed: 2026-02-03
 github_issue:
 ---
 
@@ -12,10 +13,10 @@ github_issue:
 ## Bug Details
 
 **Bug ID**: BUG-2026-016
-**Status**: in-progress
+**Status**: completed
 **Priority**: p2
 **Created**: 2026-02-03
-**Fixed**:
+**Fixed**: 2026-02-03
 **GitHub Issue**:
 
 ## Description
@@ -132,19 +133,33 @@ onClick={(e) => {
 
 ### Testing Required
 
-- [ ] Visual test: Input node in dark mode - no white box
-- [ ] Functional test: Click drop zone - file picker opens
-- [ ] Visual test: All toolbar icons have same hover effect
+- [x] Visual test: Input node in dark mode - no white box
+- [x] Functional test: Click drop zone - file picker opens
+- [x] Visual test: All toolbar icons have same hover effect
 
 ## Review Checklist
 
-- [ ] Root cause identified
-- [ ] Fix implemented
+- [x] Root cause identified
+- [x] Fix implemented
 - [ ] Tests added to prevent regression
-- [ ] No breaking changes introduced
-- [ ] CHANGELOG updated
+- [x] No breaking changes introduced
+- [ ] CHANGELOG updated (minor styling fix, not user-facing feature)
+
+## Fix Summary
+
+All three issues resolved across two PRs:
+
+### PR #238 (floimg) - Issues 1 & 2
+
+- **Dark mode fix**: Added CSS override in `studio-theme.css` for `.react-flow__node { background: transparent }` in dark mode media query
+- **Upload click fix**: Added `e.stopPropagation()` to the drop zone click handler in `nodeTypes.tsx`
+
+### PR #127 (floimg-cloud) - Issue 3
+
+- **Toolbar hover fix**: Replaced inline Tailwind classes with `floimg-toolbar__btn` CSS class on WorkspaceButton and MyImagesButton components
 
 ## Notes
 
 - All three issues were found during visual debugging session
-- Issue 2 may need additional investigation if stopPropagation doesn't fix it
+- Used Chrome DevTools MCP to identify React Flow's default white background
+- Issue 3 required changes to floimg-cloud (FSC-specific components)
