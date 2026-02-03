@@ -33,8 +33,36 @@ import {
 } from "../floimg/registry.js";
 import { getCachedCapabilities } from "../floimg/setup.js";
 
-// Model to use for workflow generation
-const MODEL_ID = "gemini-3-pro-preview";
+/** Model definition for workflow generation */
+interface GenerateModelConfig {
+  id: string;
+  name: string;
+  description: string;
+  isDefault?: boolean;
+}
+
+// Available models for workflow generation
+export const AVAILABLE_MODELS: GenerateModelConfig[] = [
+  {
+    id: "gemini-3-pro-preview",
+    name: "Gemini 3 Pro",
+    description: "Most capable model for complex workflows",
+    isDefault: true,
+  },
+  {
+    id: "gemini-3-flash-preview",
+    name: "Gemini 3 Flash",
+    description: "Fast and capable, good for most workflows",
+  },
+  {
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    description: "Fastest response time, cost-effective",
+  },
+];
+
+// Default model ID
+const DEFAULT_MODEL_ID = "gemini-3-pro-preview";
 
 /**
  * Convert GeneratedWorkflowData to Studio format for Pipeline validation
@@ -498,17 +526,22 @@ export interface GenerateWorkflowResult {
 const MAX_GENERATION_ATTEMPTS = 3;
 
 /**
- * Generate a workflow from natural language using Gemini 3 Pro
+ * Generate a workflow from natural language using Gemini
  *
  * Implements a validation-retry loop:
  * 1. Generate initial workflow from prompt
  * 2. Validate the workflow (structural + semantic)
  * 3. If validation fails, send repair prompt to LLM with specific fix instructions
  * 4. Repeat up to MAX_GENERATION_ATTEMPTS times
+ *
+ * @param prompt - User's description of the workflow
+ * @param history - Previous conversation messages for context
+ * @param model - Model ID to use (defaults to DEFAULT_MODEL_ID)
  */
 export async function generateWorkflow(
   prompt: string,
-  history: GenerateWorkflowMessage[] = []
+  history: GenerateWorkflowMessage[] = [],
+  model: string = DEFAULT_MODEL_ID
 ): Promise<GenerateWorkflowResult> {
   const apiKey = process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) {
@@ -547,8 +580,12 @@ export async function generateWorkflow(
               { role: "user" as const, parts: [{ text: currentPrompt }] },
             ];
 
+      // Validate model ID against available models
+      const validModelIds = AVAILABLE_MODELS.map((m) => m.id);
+      const modelId = validModelIds.includes(model) ? model : DEFAULT_MODEL_ID;
+
       const response = await ai.models.generateContent({
-        model: MODEL_ID,
+        model: modelId,
         contents,
         config: {
           systemInstruction: systemPrompt,

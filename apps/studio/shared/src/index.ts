@@ -526,6 +526,20 @@ export interface GeneratedEdge {
 }
 
 /**
+ * Available model for workflow generation
+ */
+export interface GenerateModel {
+  /** Model identifier (e.g., "gemini-3-pro-preview") */
+  id: string;
+  /** Human-readable name (e.g., "Gemini 3 Pro") */
+  name: string;
+  /** Short description of model characteristics */
+  description: string;
+  /** Whether this is the default model */
+  isDefault?: boolean;
+}
+
+/**
  * Request to generate a workflow from natural language
  */
 export interface GenerateWorkflowRequest {
@@ -533,6 +547,8 @@ export interface GenerateWorkflowRequest {
   prompt: string;
   /** Previous messages for context (multi-turn refinement) */
   history?: GenerateWorkflowMessage[];
+  /** Model to use for generation (optional, uses default if not specified) */
+  model?: string;
 }
 
 /**
@@ -564,8 +580,10 @@ export type GenerateStatusReason =
 export interface GenerateStatusResponse {
   /** Whether generation is available */
   available: boolean;
-  /** Model being used */
+  /** Default model ID */
   model: string;
+  /** Available models for selection */
+  availableModels?: GenerateModel[];
   /** Human-readable status message */
   message: string;
   /** Reason for unavailability (if not available) */

@@ -5,6 +5,7 @@ import type {
   GenerateStatusReason,
   GenerationPhase,
   GenerationSSEEvent,
+  GenerateModel,
 } from "@teamflojo/floimg-studio-shared";
 import { getGenerateStatus } from "../api/client";
 import { createSSEConnection, type SSEConnection } from "../api/sse";
@@ -106,8 +107,26 @@ export function AIChat({
   const [statusReason, setStatusReason] = useState<GenerateStatusReason | undefined>();
   const [isCloudDeployment, setIsCloudDeployment] = useState(false);
   const [supportUrl, setSupportUrl] = useState<string | undefined>();
+  const [availableModels, setAvailableModels] = useState<GenerateModel[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const modelDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: Event) {
+      if (
+        modelDropdownRef.current &&
+        !modelDropdownRef.current.contains(event.target as HTMLElement)
+      ) {
+        setIsModelDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Check if generation is available on mount
   useEffect(() => {
@@ -119,6 +138,12 @@ export function AIChat({
           setStatusReason(status.reason);
           setIsCloudDeployment(status.isCloudDeployment ?? false);
           setSupportUrl(status.supportUrl);
+          if (status.availableModels) {
+            setAvailableModels(status.availableModels);
+            // Set default model
+            const defaultModel = status.availableModels.find((m) => m.isDefault);
+            setSelectedModel(defaultModel?.id || status.availableModels[0]?.id || "");
+          }
         })
         .catch(() => {
           setIsAvailable(false);
@@ -162,7 +187,7 @@ export function AIChat({
 
     activeGenerationConnection = createSSEConnection<GenerationSSEEvent>(
       "/api/generate/workflow/stream",
-      { prompt: userMessage.content, history: messages },
+      { prompt: userMessage.content, history: messages, model: selectedModel },
       {
         onMessage: (event) => {
           if (event.type === "generation.started") {
@@ -237,7 +262,7 @@ export function AIChat({
         },
       }
     );
-  }, [input, isLoading, messages, onGenerationSuccess, onGenerationFailed]);
+  }, [input, isLoading, messages, selectedModel, onGenerationSuccess, onGenerationFailed]);
 
   const handleCancelGeneration = useCallback(() => {
     if (activeGenerationConnection) {
@@ -292,9 +317,67 @@ export function AIChat({
                 AI Workflow Generator
               </h3>
             </div>
-            <span className="text-xs bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 px-2 py-0.5 rounded">
-              Gemini 3 Pro
-            </span>
+            {/* Model selector dropdown */}
+            {availableModels.length > 1 ? (
+              <div className="relative" ref={modelDropdownRef}>
+                <button
+                  onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                  className="flex items-center gap-1.5 text-xs bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 px-2 py-1 rounded hover:bg-teal-200 dark:hover:bg-teal-800 transition-colors"
+                  disabled={isLoading}
+                >
+                  <span>
+                    {availableModels.find((m) => m.id === selectedModel)?.name || "Select Model"}
+                  </span>
+                  <svg
+                    className={`h-3 w-3 transition-transform ${isModelDropdownOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                {isModelDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-56 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 py-1 z-10">
+                    {availableModels.map((model) => (
+                      <button
+                        key={model.id}
+                        onClick={() => {
+                          setSelectedModel(model.id);
+                          setIsModelDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 ${
+                          selectedModel === model.id ? "bg-teal-50 dark:bg-teal-900/30" : ""
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {model.name}
+                          </span>
+                          {model.isDefault && (
+                            <span className="text-xs text-teal-600 dark:text-teal-400">
+                              Default
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+                          {model.description}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <span className="text-xs bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 px-2 py-0.5 rounded">
+                {availableModels[0]?.name || "Gemini"}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {messages.length > 0 && (
