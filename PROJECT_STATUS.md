@@ -1,13 +1,14 @@
 # PROJECT STATUS
 
-**Last Updated**: 2026-01-30
+**Last Updated**: 2026-02-03
 
 ## Current Focus
 
-(No active task)
+**BUG-2026-016**: Studio UI issues - dark mode white box, upload click, toolbar hover
 
 ## Next Up
 
+- **BUG-2026-016**: Studio UI issues - dark mode white box, upload click, toolbar hover
 - **T-2025-008**: Shape Generator UX Overhaul
 - Undo/Redo (requires zundo middleware)
 - Additional FloImg Studio UX improvements
