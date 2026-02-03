@@ -5,6 +5,17 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.16] - 2026-02-03
+
+### @teamflojo/floimg-studio-ui (0.10.4)
+
+- fix: Dark mode node background rendering
+  - React Flow's default `.react-flow__node` had white background in dark mode
+  - Added dark mode CSS override to make node backgrounds transparent
+- fix: Upload click handler in Input nodes
+  - "Drop or click" area wasn't opening file picker due to React Flow event capture
+  - Added `e.stopPropagation()` to ensure click reaches the handler
+
 ## [v0.21.15] - 2026-02-03
 
 ### @teamflojo/floimg-studio-backend (0.5.7)
