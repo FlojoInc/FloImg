@@ -16,6 +16,8 @@ import { ConfirmationDialog } from "./components/ConfirmationDialog";
 import { useKeyboardShortcuts } from "./lib/keyboard/useKeyboardShortcuts";
 import { useWorkflowStore } from "./stores/workflowStore";
 import { useSettingsStore } from "./stores/settingsStore";
+import { StorageAdapterProvider } from "./providers/StorageAdapterProvider";
+import { ossStorageAdapter } from "./adapters/OssStorageAdapter";
 import type {
   NodeDefinition,
   GeneratedWorkflowData,
@@ -182,130 +184,132 @@ function App() {
   const cancelNewWorkflow = useSettingsStore((s) => s.cancelNewWorkflow);
 
   return (
-    <ReactFlowProvider>
-      {/* Global Keyboard Shortcuts - must be inside ReactFlowProvider */}
-      <KeyboardShortcutsProvider onToggleAIChat={handleToggleAIChat} />
+    <StorageAdapterProvider adapter={ossStorageAdapter}>
+      <ReactFlowProvider>
+        {/* Global Keyboard Shortcuts - must be inside ReactFlowProvider */}
+        <KeyboardShortcutsProvider onToggleAIChat={handleToggleAIChat} />
 
-      {/* Command Palette (Cmd+K) */}
-      <CommandPalette onToggleAIChat={handleToggleAIChat} />
+        {/* Command Palette (Cmd+K) */}
+        <CommandPalette onToggleAIChat={handleToggleAIChat} />
 
-      {/* Keyboard Shortcuts Help Modal (Cmd+?) */}
-      <KeyboardShortcutsModal />
+        {/* Keyboard Shortcuts Help Modal (Cmd+?) */}
+        <KeyboardShortcutsModal />
 
-      {/* New Workflow Confirmation Dialog */}
-      <ConfirmationDialog
-        isOpen={showNewWorkflowConfirm}
-        title="Unsaved Changes"
-        message="You have unsaved changes. Creating a new workflow will discard them. Are you sure you want to continue?"
-        confirmText="Create New"
-        cancelText="Keep Editing"
-        onConfirm={confirmNewWorkflow}
-        onCancel={cancelNewWorkflow}
-        destructive
-      />
-
-      {/* AI Settings Modal */}
-      <AISettings />
-
-      {/* AI Chat Modal */}
-      <AIChat
-        isOpen={showAIChat}
-        onClose={() => setShowAIChat(false)}
-        onApplyWorkflow={handleApplyWorkflow}
-      />
-
-      {/* Output Inspector Modal */}
-      {inspectedNode && inspectedOutput && (
-        <OutputInspector
-          isOpen={true}
-          onClose={closeOutputInspector}
-          nodeId={inspectedNodeId!}
-          nodeLabel={
-            (inspectedNode.data as { providerLabel?: string }).providerLabel ||
-            inspectedNode.type ||
-            "Node"
-          }
-          output={inspectedOutput}
+        {/* New Workflow Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={showNewWorkflowConfirm}
+          title="Unsaved Changes"
+          message="You have unsaved changes. Creating a new workflow will discard them. Are you sure you want to continue?"
+          confirmText="Create New"
+          cancelText="Keep Editing"
+          onConfirm={confirmNewWorkflow}
+          onCancel={cancelNewWorkflow}
+          destructive
         />
-      )}
 
-      {/* Workflow Library slide-out panel */}
-      <WorkflowLibrary />
+        {/* AI Settings Modal */}
+        <AISettings />
 
-      <div className="floimg-studio h-screen flex flex-col bg-gray-100 dark:bg-zinc-900">
-        <Toolbar />
+        {/* AI Chat Modal */}
+        <AIChat
+          isOpen={showAIChat}
+          onClose={() => setShowAIChat(false)}
+          onApplyWorkflow={handleApplyWorkflow}
+        />
 
-        {/* Tab navigation */}
-        <div className="floimg-tabs">
-          <div className="flex items-center justify-between">
-            <div className="flex">
-              <button
-                onClick={() => setActiveTab("editor")}
-                className={`floimg-tab ${activeTab === "editor" ? "floimg-tab--active" : ""}`}
-              >
-                Editor
-              </button>
-              <button
-                onClick={handleHistoryTabClick}
-                className={`floimg-tab ${activeTab === "history" ? "floimg-tab--active" : ""} relative`}
-              >
-                History
-                {/* Unseen runs badge */}
-                {unseenRunCount > 0 && (
-                  <span
-                    className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center text-xs font-medium rounded-full px-1 ${
-                      hasUnseenErrors ? "bg-red-500 text-white" : "bg-emerald-500 text-white"
-                    }`}
-                  >
-                    {unseenRunCount > 9 ? "9+" : unseenRunCount}
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab("templates")}
-                className={`floimg-tab ${activeTab === "templates" ? "floimg-tab--active" : ""}`}
-              >
-                Templates
+        {/* Output Inspector Modal */}
+        {inspectedNode && inspectedOutput && (
+          <OutputInspector
+            isOpen={true}
+            onClose={closeOutputInspector}
+            nodeId={inspectedNodeId!}
+            nodeLabel={
+              (inspectedNode.data as { providerLabel?: string }).providerLabel ||
+              inspectedNode.type ||
+              "Node"
+            }
+            output={inspectedOutput}
+          />
+        )}
+
+        {/* Workflow Library slide-out panel */}
+        <WorkflowLibrary />
+
+        <div className="floimg-studio h-screen flex flex-col bg-gray-100 dark:bg-zinc-900">
+          <Toolbar />
+
+          {/* Tab navigation */}
+          <div className="floimg-tabs">
+            <div className="flex items-center justify-between">
+              <div className="flex">
+                <button
+                  onClick={() => setActiveTab("editor")}
+                  className={`floimg-tab ${activeTab === "editor" ? "floimg-tab--active" : ""}`}
+                >
+                  Editor
+                </button>
+                <button
+                  onClick={handleHistoryTabClick}
+                  className={`floimg-tab ${activeTab === "history" ? "floimg-tab--active" : ""} relative`}
+                >
+                  History
+                  {/* Unseen runs badge */}
+                  {unseenRunCount > 0 && (
+                    <span
+                      className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center text-xs font-medium rounded-full px-1 ${
+                        hasUnseenErrors ? "bg-red-500 text-white" : "bg-emerald-500 text-white"
+                      }`}
+                    >
+                      {unseenRunCount > 9 ? "9+" : unseenRunCount}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab("templates")}
+                  className={`floimg-tab ${activeTab === "templates" ? "floimg-tab--active" : ""}`}
+                >
+                  Templates
+                </button>
+              </div>
+
+              {/* AI Generate button */}
+              <button onClick={() => setShowAIChat(true)} className="floimg-ai-btn mr-4">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                AI Generate
               </button>
             </div>
+          </div>
 
-            {/* AI Generate button */}
-            <button onClick={() => setShowAIChat(true)} className="floimg-ai-btn mr-4">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-              AI Generate
-            </button>
+          {/* Main content */}
+          <div className="flex-1 flex overflow-hidden">
+            {activeTab === "editor" && (
+              <>
+                <NodePalette />
+                <EditorDropZone />
+                {selectedNodeId && <NodeInspector />}
+              </>
+            )}
+            {activeTab === "history" && (
+              <div className="flex-1 overflow-auto">
+                <ExecutionHistory />
+              </div>
+            )}
+            {activeTab === "templates" && (
+              <div className="flex-1 overflow-auto">
+                <TemplateGallery onSelect={handleTemplateSelect} />
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Main content */}
-        <div className="flex-1 flex overflow-hidden">
-          {activeTab === "editor" && (
-            <>
-              <NodePalette />
-              <EditorDropZone />
-              {selectedNodeId && <NodeInspector />}
-            </>
-          )}
-          {activeTab === "history" && (
-            <div className="flex-1 overflow-auto">
-              <ExecutionHistory />
-            </div>
-          )}
-          {activeTab === "templates" && (
-            <div className="flex-1 overflow-auto">
-              <TemplateGallery onSelect={handleTemplateSelect} />
-            </div>
-          )}
-        </div>
-      </div>
-    </ReactFlowProvider>
+      </ReactFlowProvider>
+    </StorageAdapterProvider>
   );
 }
 

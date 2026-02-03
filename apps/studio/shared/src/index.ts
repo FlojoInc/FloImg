@@ -72,6 +72,42 @@ export interface InputNodeData {
   imageUrl?: string; // Remote image URL (for remix/fork flows)
 }
 
+// ============================================
+// Storage Adapter Types
+// ============================================
+
+/**
+ * StorageAdapter interface for Input node uploads.
+ *
+ * Allows different deployments to provide their own storage implementations:
+ * - OSS: Local filesystem via /api/uploads
+ * - FSC: S3 via presigned URLs through /api/storage/*
+ *
+ * Injected via React Context - see StorageAdapterProvider.
+ */
+export interface StorageAdapter {
+  /** Upload an image file, returns a reference for later retrieval */
+  upload(file: File): Promise<UploadResult>;
+
+  /** Get URL for displaying uploaded image preview */
+  getPreviewUrl(reference: string): string;
+
+  /** Delete an uploaded image (optional) */
+  delete?(reference: string): Promise<void>;
+}
+
+/** Result from uploading an image */
+export interface UploadResult {
+  /** Opaque reference ID for the upload */
+  reference: string;
+  /** Original filename */
+  filename: string;
+  /** MIME type */
+  mime: string;
+  /** File size in bytes */
+  size: number;
+}
+
 // Vision node data (AI image analysis)
 export interface VisionNodeData {
   providerName: string; // Provider ID for execution (e.g., "gemini-vision", "grok-vision")

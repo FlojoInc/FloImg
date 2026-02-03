@@ -47,6 +47,14 @@ export {
 } from "./stores/workflowStore";
 export { useSettingsStore } from "./stores/settingsStore";
 
+// Storage adapter for Input node uploads
+export {
+  StorageAdapterProvider,
+  useStorageAdapter,
+  useRequiredStorageAdapter,
+} from "./providers/StorageAdapterProvider";
+export { OssStorageAdapter, ossStorageAdapter } from "./adapters/OssStorageAdapter";
+
 // Re-export types from shared
 // Note: Template types are included via the shared re-export
 // Templates are fetched from API at runtime (single source of truth)
