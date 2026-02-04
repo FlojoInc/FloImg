@@ -5,6 +5,31 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.20] - 2026-02-03
+
+### @teamflojo/floimg-studio-shared (0.9.5)
+
+- fix: Add input node variables to `pipeline.initialVariables` for SDK validation
+  - Input nodes don't create pipeline steps; data is injected at runtime
+  - The SDK validator now recognizes input node variables as pre-defined
+
+### @teamflojo/floimg-studio-backend (0.5.8)
+
+- fix: Add `InputNodeData` handling in `generatedToStudioFormat()`
+- fix: Simplify AI generator reference image example (no unnecessary fan-out)
+
+### CI
+
+- fix: Extract CHANGELOG.md content for GitHub Release body
+
+## [v0.21.19] - 2026-02-03
+
+### @teamflojo/floimg-studio-backend (0.5.7)
+
+- feat: Support pre-resolved cloud uploads via `initialVariablesBase64`
+  - Enables FSC to pass already-fetched cloud images to OSS backend
+  - Base64 data takes precedence over local upload IDs
+
 ## [v0.21.18] - 2026-02-03
 
 ### @teamflojo/floimg-studio-ui (0.10.6)
