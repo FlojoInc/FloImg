@@ -189,12 +189,61 @@ function injectApiKeys(steps: PipelineStep[], aiProviders?: AIProviderConfig): P
   });
 }
 
+/** Valid MIME types for ImageBlob */
+const VALID_IMAGE_MIMES = [
+  "image/svg+xml",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/avif",
+] as const;
+
+/**
+ * Validate that a MIME type is allowed for ImageBlob
+ */
+function validateMimeType(mime: string, varName: string): asserts mime is ImageBlob["mime"] {
+  if (!VALID_IMAGE_MIMES.includes(mime as ImageBlob["mime"])) {
+    throw new Error(
+      `Invalid MIME type for ${varName}: "${mime}". Must be one of: ${VALID_IMAGE_MIMES.join(", ")}`
+    );
+  }
+}
+
+/**
+ * Validate and decode base64 data
+ */
+function decodeBase64(base64: string, varName: string): Buffer {
+  if (!base64 || typeof base64 !== "string") {
+    throw new Error(`Invalid base64 data for ${varName}: expected non-empty string`);
+  }
+
+  // Validate base64 format (standard base64 alphabet plus padding)
+  const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+  if (!base64Regex.test(base64)) {
+    throw new Error(`Invalid base64 encoding for ${varName}: contains invalid characters`);
+  }
+
+  const bytes = Buffer.from(base64, "base64");
+
+  if (bytes.length === 0) {
+    throw new Error(`Empty image data for ${varName} after base64 decoding`);
+  }
+
+  return bytes;
+}
+
 /**
  * Resolve input uploads to ImageBlobs for pipeline execution.
  * Handles both local uploads (by ID) and pre-resolved cloud data (base64).
  *
+ * Precedence: initialVariablesBase64 takes priority over inputUploads when
+ * both provide the same variable name. This allows FSC to override local
+ * upload resolution with cloud-fetched data.
+ *
  * @param inputUploads - Maps variable names to local upload IDs
  * @param initialVariablesBase64 - Maps variable names to pre-resolved base64 data (from FSC)
+ * @returns Record mapping variable names to resolved ImageBlobs
+ * @throws {Error} If upload not found, invalid MIME type, or base64 decoding fails
  */
 async function resolveInputUploads(
   inputUploads?: Record<string, string>,
@@ -205,10 +254,15 @@ async function resolveInputUploads(
   // First, resolve pre-loaded base64 data (from FSC cloud uploads)
   if (initialVariablesBase64) {
     for (const [varName, data] of Object.entries(initialVariablesBase64)) {
-      const bytes = Buffer.from(data.base64, "base64");
+      // Validate MIME type before type assertion
+      validateMimeType(data.mime, varName);
+
+      // Validate and decode base64 data
+      const bytes = decodeBase64(data.base64, varName);
+
       initialVariables[varName] = {
         bytes,
-        mime: data.mime as ImageBlob["mime"],
+        mime: data.mime,
       };
     }
   }
