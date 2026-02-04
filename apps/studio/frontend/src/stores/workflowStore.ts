@@ -17,6 +17,7 @@ import type {
   ExecutionSSEEvent,
   ErrorCategory,
   StudioValidationIssue,
+  AIWorkflowOperation,
 } from "@teamflojo/floimg-studio-shared";
 import { nodesToPipeline } from "@teamflojo/floimg-studio-shared";
 import type { Template } from "@teamflojo/floimg-studio-shared";
@@ -197,6 +198,9 @@ interface WorkflowStore {
 
   // AI-generated workflow
   loadGeneratedWorkflow: (workflow: GeneratedWorkflowData) => void;
+
+  // AI iterative operations
+  applyAIOperations: (operations: AIWorkflowOperation[]) => void;
 
   // Remix/fork loading
   loadRemixImage: (imageUrl: string) => void;
@@ -1427,6 +1431,205 @@ export const useWorkflowStore = create<WorkflowStore>()(
               nodeStatus: {},
               nodeTiming: {},
             },
+          });
+        },
+
+        applyAIOperations: (operations: AIWorkflowOperation[]) => {
+          const state = get();
+          let nodes = [...state.nodes];
+          let edges = [...state.edges];
+
+          // Track new node ID mappings (AI may reference by generated IDs)
+          const idMap = new Map<string, string>();
+
+          // Helper to get the average position of existing nodes
+          const getNewNodePosition = (): { x: number; y: number } => {
+            if (nodes.length === 0) {
+              return { x: 250, y: 200 };
+            }
+            const maxX = Math.max(...nodes.map((n) => n.position.x));
+            const avgY = nodes.reduce((sum, n) => sum + n.position.y, 0) / nodes.length;
+            return { x: maxX + 300, y: avgY };
+          };
+
+          for (const op of operations) {
+            switch (op.type) {
+              case "add": {
+                if (!op.nodeType) continue;
+
+                const newId = generateNodeId();
+                if (op.nodeId) {
+                  idMap.set(op.nodeId, newId);
+                }
+
+                // Parse nodeType to create appropriate node data
+                const parts = op.nodeType.split(":");
+                const nodeType = parts[0] as StudioNodeType;
+                const position = getNewNodePosition();
+
+                let data: NodeData;
+
+                if (nodeType === "generator") {
+                  const generatorName = parts.slice(1).join(":");
+                  data = {
+                    generatorName,
+                    params: op.parameters || {},
+                    providerLabel: op.label || generatorName,
+                  } as GeneratorNodeData;
+                } else if (nodeType === "transform") {
+                  const providerName = parts[1];
+                  const operation = parts.slice(2).join(":");
+                  data = {
+                    operation,
+                    providerName,
+                    params: op.parameters || {},
+                    providerLabel: op.label,
+                  } as TransformNodeData;
+                } else if (nodeType === "save") {
+                  data = {
+                    destination: (op.parameters?.destination as string) || "./output/image.png",
+                    provider: (op.parameters?.provider as string) || "filesystem",
+                  } as SaveNodeData;
+                } else if (nodeType === "input") {
+                  data = {
+                    uploadId: undefined,
+                    filename: undefined,
+                    mime: undefined,
+                  } as InputNodeData;
+                } else if (nodeType === "fanout") {
+                  data = {
+                    mode: (op.parameters?.mode as "array" | "count") || "count",
+                    count: (op.parameters?.count as number) || 3,
+                    arrayProperty: op.parameters?.arrayProperty as string | undefined,
+                  } as FanOutNodeData;
+                } else if (nodeType === "collect") {
+                  data = {
+                    expectedInputs: (op.parameters?.expectedInputs as number) || 3,
+                    waitMode: (op.parameters?.waitMode as "all" | "available") || "all",
+                  } as CollectNodeData;
+                } else if (nodeType === "router") {
+                  data = {
+                    selectionProperty: (op.parameters?.selectionProperty as string) || "winner",
+                    selectionType: (op.parameters?.selectionType as "index" | "value") || "index",
+                    outputCount: (op.parameters?.outputCount as number) || 1,
+                    contextProperty: op.parameters?.contextProperty as string | undefined,
+                  } as RouterNodeData;
+                } else if (nodeType === "vision") {
+                  const providerName = parts.slice(1).join(":");
+                  data = {
+                    providerName,
+                    params: op.parameters || {},
+                  } as VisionNodeData;
+                } else if (nodeType === "text") {
+                  const providerName = parts.slice(1).join(":");
+                  data = {
+                    providerName,
+                    params: op.parameters || {},
+                  } as TextNodeData;
+                } else {
+                  // Default to save
+                  data = {
+                    destination: "./output/image.png",
+                    provider: "filesystem",
+                  } as SaveNodeData;
+                }
+
+                nodes.push({
+                  id: newId,
+                  type: nodeType,
+                  position,
+                  data,
+                });
+                break;
+              }
+
+              case "modify": {
+                if (!op.nodeId) continue;
+                const nodeIndex = nodes.findIndex((n) => n.id === op.nodeId);
+                if (nodeIndex === -1) continue;
+
+                const node = nodes[nodeIndex];
+                nodes[nodeIndex] = {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    ...(op.parameters && {
+                      params: {
+                        ...((node.data as { params?: Record<string, unknown> }).params || {}),
+                        ...op.parameters,
+                      },
+                    }),
+                    ...(op.label && { providerLabel: op.label }),
+                  } as NodeData,
+                };
+                break;
+              }
+
+              case "delete": {
+                if (!op.nodeId) continue;
+                nodes = nodes.filter((n) => n.id !== op.nodeId);
+                // Also remove connected edges
+                edges = edges.filter((e) => e.source !== op.nodeId && e.target !== op.nodeId);
+                break;
+              }
+
+              case "connect": {
+                if (!op.source || !op.target) continue;
+
+                // Resolve IDs (may reference newly created nodes)
+                const sourceId = idMap.get(op.source) || op.source;
+                const targetId = idMap.get(op.target) || op.target;
+
+                // Check if edge already exists
+                const existingEdge = edges.find(
+                  (e) =>
+                    e.source === sourceId &&
+                    e.target === targetId &&
+                    e.sourceHandle === (op.sourceHandle ?? undefined) &&
+                    e.targetHandle === (op.targetHandle ?? undefined)
+                );
+                if (existingEdge) continue;
+
+                const handleSuffix = [op.sourceHandle, op.targetHandle].filter(Boolean).join("_");
+                const edgeId = handleSuffix
+                  ? `edge_${sourceId}_${targetId}_${handleSuffix}`
+                  : `edge_${sourceId}_${targetId}`;
+
+                edges.push({
+                  id: edgeId,
+                  source: sourceId,
+                  target: targetId,
+                  sourceHandle: op.sourceHandle ?? undefined,
+                  targetHandle: op.targetHandle ?? undefined,
+                });
+                break;
+              }
+
+              case "disconnect": {
+                if (!op.source || !op.target) continue;
+
+                // Resolve IDs
+                const sourceId = idMap.get(op.source) || op.source;
+                const targetId = idMap.get(op.target) || op.target;
+
+                edges = edges.filter(
+                  (e) =>
+                    !(
+                      e.source === sourceId &&
+                      e.target === targetId &&
+                      (op.sourceHandle === undefined || e.sourceHandle === op.sourceHandle) &&
+                      (op.targetHandle === undefined || e.targetHandle === op.targetHandle)
+                    )
+                );
+                break;
+              }
+            }
+          }
+
+          set({
+            nodes,
+            edges,
+            hasUnsavedChanges: true,
           });
         },
 

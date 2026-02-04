@@ -640,6 +640,95 @@ export interface GenerateStatusResponse {
 }
 
 // ============================================
+// AI Iterative Workflow Operations
+// ============================================
+
+/**
+ * Snapshot of the current canvas state sent to AI for context
+ * Used for iterative editing - AI needs to know what's already on the canvas
+ */
+export interface CanvasSnapshot {
+  /** Summary of nodes currently on canvas */
+  nodes: {
+    /** Node's unique ID (stable reference for operations) */
+    id: string;
+    /** Node type (e.g., "generator:openai", "transform:sharp:resize") */
+    type: string;
+    /** Human-readable label if set */
+    label?: string;
+    /** Node configuration parameters */
+    parameters?: Record<string, unknown>;
+  }[];
+  /** Connections between nodes */
+  edges: {
+    source: string;
+    target: string;
+  }[];
+  /** Total node count */
+  nodeCount: number;
+  /** Whether canvas has any content */
+  hasContent: boolean;
+}
+
+/**
+ * Operation type for iterative workflow editing
+ * AI returns these when modifying an existing workflow
+ */
+export type AIOperationType = "add" | "modify" | "delete" | "connect" | "disconnect";
+
+/**
+ * A single operation to apply to the canvas
+ * Operations are atomic changes that can be applied incrementally
+ */
+export interface AIWorkflowOperation {
+  /** Type of operation */
+  type: AIOperationType;
+  /** Target node ID (for modify, delete) */
+  nodeId?: string;
+  /** Target edge ID (for disconnect) */
+  edgeId?: string;
+  /** New node type (for add) */
+  nodeType?: string;
+  /** Node label (for add, modify) */
+  label?: string;
+  /** Node parameters to set/update (for add, modify) */
+  parameters?: Record<string, unknown>;
+  /** Source node ID (for connect) */
+  source?: string;
+  /** Target node ID (for connect) */
+  target?: string;
+  /** Source handle (for connect, optional) */
+  sourceHandle?: string;
+  /** Target handle (for connect, optional) */
+  targetHandle?: string;
+  /** Human-readable explanation of this operation */
+  explanation?: string;
+}
+
+/**
+ * Response from AI for iterative workflow editing
+ * AI chooses between full replacement and incremental operations
+ */
+export interface AIIterativeResponse {
+  /** Full workflow replacement (for empty canvas or major changes) */
+  workflow?: GeneratedWorkflowData;
+  /** Incremental operations (for modifications to existing workflow) */
+  operations?: AIWorkflowOperation[];
+  /** Overall explanation of what was done */
+  explanation: string;
+  /** Suggested follow-up actions */
+  suggestions?: string[];
+}
+
+/**
+ * Extended request for workflow generation with canvas context
+ */
+export interface GenerateWorkflowRequestWithCanvas extends GenerateWorkflowRequest {
+  /** Current canvas state for iterative editing */
+  currentCanvas?: CanvasSnapshot;
+}
+
+// ============================================
 // Server-Sent Events (SSE) Types
 // ============================================
 
@@ -772,10 +861,17 @@ export interface GenerationSSEError {
   };
 }
 
+/** SSE event for iterative workflow modifications (operations instead of full replacement) */
+export interface GenerationSSEIterative {
+  type: "generation.iterative";
+  data: AIIterativeResponse;
+}
+
 export type GenerationSSEEvent =
   | GenerationSSEStarted
   | GenerationSSEProgress
   | GenerationSSECompleted
+  | GenerationSSEIterative
   | GenerationSSEError;
 
 // ============================================

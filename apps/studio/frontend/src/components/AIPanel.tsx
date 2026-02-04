@@ -1,8 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import type { GeneratedWorkflowData, GenerationSSEEvent } from "@teamflojo/floimg-studio-shared";
+import type {
+  GeneratedWorkflowData,
+  GenerationSSEEvent,
+  AIWorkflowOperation,
+} from "@teamflojo/floimg-studio-shared";
 import { getGenerateStatus } from "../api/client";
 import { createSSEConnection, type SSEConnection } from "../api/sse";
 import { useAIChatStore, type CanvasSnapshot, type ExecutionContext } from "../stores/aiChatStore";
+import { useWorkflowStore } from "../stores/workflowStore";
 
 // Module-level connection reference for cancellation
 // (Not in component state because SSEConnection is not serializable)
@@ -101,6 +106,9 @@ export function AIPanel({
   onGenerationSuccess,
   onGenerationFailed,
 }: AIPanelProps) {
+  // Workflow store for applying operations
+  const applyAIOperations = useWorkflowStore((s) => s.applyAIOperations);
+
   // Store state
   const isOpen = useAIChatStore((s) => s.isOpen);
   const closePanel = useAIChatStore((s) => s.closePanel);
@@ -222,6 +230,8 @@ export function AIPanel({
     setGenerationProgress(null, "");
 
     let receivedWorkflow: GeneratedWorkflowData | undefined;
+    let receivedOperations: AIWorkflowOperation[] | undefined;
+    let receivedExplanation: string | undefined;
     const promptLength = userContent.length;
     const isConversation = messages.length > 0;
 
@@ -267,6 +277,35 @@ export function AIPanel({
             }
           }
 
+          if (event.type === "generation.iterative") {
+            receivedOperations = event.data.operations;
+            receivedExplanation = event.data.explanation;
+
+            // If the response also includes a full workflow (fallback), use that
+            if (event.data.workflow) {
+              receivedWorkflow = event.data.workflow;
+            }
+
+            // Call analytics callback on success (for operations)
+            if (onGenerationSuccess && receivedOperations) {
+              const addOps = receivedOperations.filter((op) => op.type === "add");
+              const hasAINodes = addOps.some(
+                (op) =>
+                  op.nodeType?.startsWith("generator:") ||
+                  op.nodeType?.startsWith("transform:stability") ||
+                  op.nodeType?.startsWith("transform:openai") ||
+                  op.nodeType?.startsWith("vision:") ||
+                  op.nodeType?.startsWith("text:")
+              );
+              onGenerationSuccess({
+                nodeCount: addOps.length,
+                hasAINodes,
+                promptLength,
+                isConversation,
+              });
+            }
+          }
+
           if (event.type === "generation.error") {
             setError(event.data.error);
 
@@ -297,14 +336,44 @@ export function AIPanel({
         },
         onClose: () => {
           activeGenerationConnection = null;
-          // Stream completed - add the assistant message
-          const assistantContent = receivedWorkflow
-            ? canvasSnapshot?.hasContent
-              ? "I've updated the workflow based on your request. Click 'Apply to Canvas' to use it."
-              : "I've created a workflow based on your description. Click 'Apply to Canvas' to use it."
-            : "I couldn't generate a workflow. Please try a different description.";
 
-          addAssistantMessage(assistantContent, receivedWorkflow);
+          // Handle iterative operations
+          if (receivedOperations && receivedOperations.length > 0) {
+            // Apply operations directly to the canvas
+            applyAIOperations(receivedOperations);
+
+            // Build a summary of changes
+            const addCount = receivedOperations.filter((op) => op.type === "add").length;
+            const modifyCount = receivedOperations.filter((op) => op.type === "modify").length;
+            const deleteCount = receivedOperations.filter((op) => op.type === "delete").length;
+            const connectCount = receivedOperations.filter((op) => op.type === "connect").length;
+
+            const changes: string[] = [];
+            if (addCount > 0) changes.push(`${addCount} node${addCount > 1 ? "s" : ""} added`);
+            if (modifyCount > 0)
+              changes.push(`${modifyCount} node${modifyCount > 1 ? "s" : ""} modified`);
+            if (deleteCount > 0)
+              changes.push(`${deleteCount} node${deleteCount > 1 ? "s" : ""} removed`);
+            if (connectCount > 0)
+              changes.push(`${connectCount} connection${connectCount > 1 ? "s" : ""} added`);
+
+            const changeSummary = changes.length > 0 ? changes.join(", ") : "No changes made";
+            const assistantContent = receivedExplanation
+              ? `${receivedExplanation}\n\n**Changes applied:** ${changeSummary}`
+              : `I've updated your workflow. ${changeSummary}.`;
+
+            addAssistantMessage(assistantContent, undefined);
+          } else {
+            // Standard workflow generation (full replacement)
+            const assistantContent = receivedWorkflow
+              ? canvasSnapshot?.hasContent
+                ? "I've updated the workflow based on your request. Click 'Apply to Canvas' to use it."
+                : "I've created a workflow based on your description. Click 'Apply to Canvas' to use it."
+              : "I couldn't generate a workflow. Please try a different description.";
+
+            addAssistantMessage(assistantContent, receivedWorkflow);
+          }
+
           setLoading(false);
           setGenerationProgress(null, "");
         },
@@ -323,6 +392,7 @@ export function AIPanel({
     setGenerationProgress,
     onGenerationSuccess,
     onGenerationFailed,
+    applyAIOperations,
   ]);
 
   const handleCancelGeneration = useCallback(() => {
