@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.21.19] - 2026-02-03
 
-### @teamflojo/floimg-studio-backend (0.5.7 → 0.5.8)
+### @teamflojo/floimg-studio-backend (0.5.7)
 
 - feat: Support pre-resolved cloud uploads via `initialVariablesBase64`
   - Enables FSC to pass already-fetched cloud images to OSS backend
