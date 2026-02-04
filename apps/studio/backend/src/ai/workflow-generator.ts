@@ -19,6 +19,7 @@ import type {
   FanOutNodeData,
   CollectNodeData,
   RouterNodeData,
+  InputNodeData,
   StudioNodeType,
 } from "@teamflojo/floimg-studio-shared";
 import { nodesToPipeline, mapValidationToNodes } from "@teamflojo/floimg-studio-shared";
@@ -160,6 +161,12 @@ export function generatedToStudioFormat(workflow: GeneratedWorkflowData): {
           outputCount: (node.parameters?.outputCount as number) || 1,
           contextProperty: node.parameters?.contextProperty as string,
         } as RouterNodeData;
+        break;
+      case "input":
+        // Input nodes have minimal data - uploadId is set by user upload
+        data = {
+          uploadId: node.parameters?.uploadId as string | undefined,
+        } as InputNodeData;
         break;
       default:
         data = {
@@ -366,6 +373,36 @@ Response nodes:
 
 Response edges:
 - source: "node_1", target: "node_2"
+
+### Simple: User's uploaded image with transforms
+**User**: "Take my uploaded image and apply grayscale then resize to 400x400"
+
+Response nodes:
+- id: "input_1", nodeType: "input:upload", label: "Uploaded Image", parametersJson: '{}'
+- id: "gray_1", nodeType: "transform:sharp:grayscale", label: "Grayscale", parametersJson: '{}'
+- id: "resize_1", nodeType: "transform:sharp:resize", label: "Resize", parametersJson: '{"width": 400, "height": 400}'
+
+Response edges:
+- source: "input_1", target: "gray_1", sourceHandle: "image"
+- source: "gray_1", target: "resize_1"
+
+Note: Input nodes output images via the "image" sourceHandle. The user will upload their image to this node.
+
+### Advanced: Uploaded reference image with AI variations
+**User**: "Take my uploaded reference image and generate 3 AI variations of it as logos"
+
+Response nodes:
+- id: "input_1", nodeType: "input:upload", label: "Reference Image", parametersJson: '{}'
+- id: "gen_1", nodeType: "generator:gemini-generate", label: "Logo Variation 1", parametersJson: '{"prompt": "Create a professional logo variation inspired by the reference image. Minimalist style."}'
+- id: "gen_2", nodeType: "generator:gemini-generate", label: "Logo Variation 2", parametersJson: '{"prompt": "Create a professional logo variation inspired by the reference image. Bold and modern style."}'
+- id: "gen_3", nodeType: "generator:gemini-generate", label: "Logo Variation 3", parametersJson: '{"prompt": "Create a professional logo variation inspired by the reference image. Elegant and refined style."}'
+
+Response edges:
+- source: "input_1", target: "gen_1", sourceHandle: "image", targetHandle: "referenceImage"
+- source: "input_1", target: "gen_2", sourceHandle: "image", targetHandle: "referenceImage"
+- source: "input_1", target: "gen_3", sourceHandle: "image", targetHandle: "referenceImage"
+
+Note: When using uploaded images as AI reference, connect the input node's "image" output to each generator's "referenceImage" input. Each generator uses the same reference but produces a different variation based on its unique prompt. No fan-out needed when generators have static prompts.
 
 ### Advanced: AI text generates prompts for image generation (simple)
 **User**: "Use Gemini text to create a creative prompt, then generate an image from it"

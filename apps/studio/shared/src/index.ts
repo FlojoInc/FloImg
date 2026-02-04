@@ -934,6 +934,7 @@ export function nodesToPipeline(
 
   const nodeToVar = new Map<string, string>();
   const steps: PipelineStep[] = [];
+  const inputNodeVars: string[] = [];
 
   for (let i = 0; i < sorted.length; i++) {
     const node = sorted[i];
@@ -942,7 +943,9 @@ export function nodesToPipeline(
     nodeToVar.set(node.id, varName);
 
     // Input nodes don't create pipeline steps - data injected via initialVariables
+    // Track them so we can add to initialVariables for validation
     if (node.type === "input") {
+      inputNodeVars.push(varName);
       continue;
     }
 
@@ -1176,10 +1179,16 @@ export function nodesToPipeline(
     }
   }
 
+  // Build initialVariables for input nodes (placeholder values for validation)
+  // Actual data is injected at runtime via initialVariablesBase64
+  const initialVariables: Record<string, unknown> | undefined =
+    inputNodeVars.length > 0 ? Object.fromEntries(inputNodeVars.map((v) => [v, null])) : undefined;
+
   return {
     pipeline: {
       name: "Studio Workflow",
       steps,
+      ...(initialVariables && { initialVariables }),
     },
     nodeToVar,
   };
