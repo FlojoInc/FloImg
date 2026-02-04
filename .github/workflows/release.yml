@@ -122,9 +122,37 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          # Extract the section for this version from CHANGELOG.md
+          # Looks for ## [vX.Y.Z] and captures until the next ## [v or end of file
+          VERSION="${{ steps.version.outputs.VERSION }}"
+
+          # Use awk to extract the section
+          CHANGELOG=$(awk -v ver="$VERSION" '
+            /^## \[/ {
+              if (found) exit
+              if (index($0, ver)) found=1
+            }
+            found { print }
+          ' CHANGELOG.md)
+
+          # If no changelog found, use a default message
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="Release $VERSION - see [CHANGELOG.md](https://github.com/FlojoInc/FloImg/blob/main/CHANGELOG.md) for details."
+          fi
+
+          # Write to file for the release action (handles multiline properly)
+          echo "$CHANGELOG" > release_notes.md
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body_path: release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
