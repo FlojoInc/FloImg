@@ -21,6 +21,8 @@ import type {
   RouterNodeData,
   InputNodeData,
   StudioNodeType,
+  CanvasSnapshot,
+  AIWorkflowOperation,
 } from "@teamflojo/floimg-studio-shared";
 import { nodesToPipeline, mapValidationToNodes } from "@teamflojo/floimg-studio-shared";
 import { validatePipelineFull } from "@teamflojo/floimg";
@@ -33,6 +35,19 @@ import {
   getFlowControlNodes,
 } from "../floimg/registry.js";
 import { getCachedCapabilities } from "../floimg/setup.js";
+
+/**
+ * Safely parse JSON with a fallback value
+ * Protects against malformed JSON from AI-generated content
+ */
+function safeJsonParse<T>(json: string, fallback: T): T {
+  try {
+    return JSON.parse(json) as T;
+  } catch (error) {
+    console.error("Failed to parse JSON:", error);
+    return fallback;
+  }
+}
 
 /** Model definition for workflow generation */
 interface GenerateModelConfig {
@@ -658,7 +673,7 @@ export async function generateWorkflow(
           id: node.id,
           nodeType: node.nodeType,
           label: node.label,
-          parameters: node.parametersJson ? JSON.parse(node.parametersJson) : {},
+          parameters: node.parametersJson ? safeJsonParse(node.parametersJson, {}) : {},
         })),
         edges: rawWorkflow.edges,
       };
@@ -992,4 +1007,405 @@ Remember:
 - Generators that receive dynamic prompts from text nodes should have an empty "prompt": "" parameter AND an edge with targetHandle: "text"
 - The text node must have sourceHandle: "text" (or "output.{property}" for structured output)
 - Fan-out in array mode needs arrayProperty set to match the text node's JSON schema`;
+}
+
+// ============================================
+// Iterative Workflow Generation (Phase 2)
+// ============================================
+
+/**
+ * Schema for iterative operations response
+ * When the user has an existing workflow, AI returns targeted operations
+ */
+const OPERATIONS_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    mode: {
+      type: Type.STRING,
+      enum: ["replace", "operations"],
+      description: "Whether to replace the entire workflow or apply incremental operations",
+    },
+    // Full workflow (when mode = "replace")
+    nodes: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          id: { type: Type.STRING },
+          nodeType: { type: Type.STRING },
+          label: { type: Type.STRING },
+          parametersJson: { type: Type.STRING },
+        },
+        required: ["id", "nodeType"],
+      },
+      description: "Full workflow nodes (only when mode = replace)",
+    },
+    edges: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          source: { type: Type.STRING },
+          target: { type: Type.STRING },
+          sourceHandle: { type: Type.STRING },
+          targetHandle: { type: Type.STRING },
+        },
+        required: ["source", "target"],
+      },
+      description: "Full workflow edges (only when mode = replace)",
+    },
+    // Incremental operations (when mode = "operations")
+    operations: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          type: {
+            type: Type.STRING,
+            enum: ["add", "modify", "delete", "connect", "disconnect"],
+            description: "Type of operation",
+          },
+          nodeId: {
+            type: Type.STRING,
+            description: "Target node ID (for modify, delete)",
+          },
+          nodeType: {
+            type: Type.STRING,
+            description: "Node type to create (for add)",
+          },
+          label: {
+            type: Type.STRING,
+            description: "Node label (for add, modify)",
+          },
+          parametersJson: {
+            type: Type.STRING,
+            description: "Node parameters as JSON string (for add, modify)",
+          },
+          source: {
+            type: Type.STRING,
+            description: "Source node ID (for connect, disconnect)",
+          },
+          target: {
+            type: Type.STRING,
+            description: "Target node ID (for connect, disconnect)",
+          },
+          sourceHandle: {
+            type: Type.STRING,
+            description: "Source handle (for connect)",
+          },
+          targetHandle: {
+            type: Type.STRING,
+            description: "Target handle (for connect)",
+          },
+          explanation: {
+            type: Type.STRING,
+            description: "Human-readable explanation of this operation",
+          },
+        },
+        required: ["type"],
+      },
+      description: "Incremental operations to apply (only when mode = operations)",
+    },
+    explanation: {
+      type: Type.STRING,
+      description: "Overall explanation of what was done",
+    },
+    suggestions: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+      description: "Suggested follow-up actions",
+    },
+  },
+  required: ["mode", "explanation"],
+};
+
+/**
+ * Build system prompt for iterative editing
+ * Extends the base prompt with instructions for operations
+ */
+function buildIterativeSystemPrompt(
+  availableNodes: NodeDefinition[],
+  currentCanvas: CanvasSnapshot
+): string {
+  const basePrompt = buildSystemPrompt(availableNodes);
+
+  const canvasDescription = currentCanvas.nodes
+    .map((n) => `  - ${n.id}: ${n.type}${n.label ? ` (${n.label})` : ""}`)
+    .join("\n");
+
+  const edgeDescription = currentCanvas.edges
+    .map((e) => `  - ${e.source} → ${e.target}`)
+    .join("\n");
+
+  return `${basePrompt}
+
+## Iterative Editing Mode
+
+The user already has a workflow on their canvas. You can either:
+1. **Replace** the entire workflow (mode: "replace") - Use when the user wants something completely different
+2. **Apply operations** (mode: "operations") - Use for targeted modifications
+
+### Current Canvas State
+
+**Nodes (${currentCanvas.nodeCount} total):**
+${canvasDescription || "  (none)"}
+
+**Connections:**
+${edgeDescription || "  (none)"}
+
+### Operations (when mode = "operations")
+
+Use operations for targeted modifications:
+
+- **add**: Create a new node
+  - Required: type, nodeType
+  - Optional: label, parametersJson
+  - Returns: new node ID (auto-generated as "node_N")
+
+- **modify**: Update an existing node's properties
+  - Required: type, nodeId
+  - Optional: label, parametersJson (only changed properties)
+
+- **delete**: Remove a node (automatically removes connected edges)
+  - Required: type, nodeId
+
+- **connect**: Add a connection between nodes
+  - Required: type, source, target
+  - Optional: sourceHandle, targetHandle
+
+- **disconnect**: Remove a connection
+  - Required: type, source, target
+
+### Decision Guide
+
+Use **operations** when:
+- User says "add", "change", "remove", "connect", "modify"
+- Making targeted changes to existing workflow
+- Adjusting parameters or adding single nodes
+
+Use **replace** when:
+- User wants a completely different workflow
+- User says "create", "generate", "make me", "start fresh"
+- The request is fundamentally incompatible with current canvas
+
+### Example: "Add resize to 800x600 after the generator"
+
+Response (mode: "operations"):
+{
+  "mode": "operations",
+  "operations": [
+    {
+      "type": "add",
+      "nodeType": "transform:sharp:resize",
+      "label": "Resize to 800x600",
+      "parametersJson": "{\\"width\\": 800, \\"height\\": 600}",
+      "explanation": "Adding resize transform"
+    },
+    {
+      "type": "connect",
+      "source": "node_1",
+      "target": "node_new_1",
+      "explanation": "Connecting generator output to resize"
+    }
+  ],
+  "explanation": "Added a resize transform after the generator",
+  "suggestions": ["Add a save node to export the result"]
+}`;
+}
+
+/**
+ * Result from iterative workflow generation
+ */
+export interface GenerateIterativeResult {
+  success: boolean;
+  /** Full workflow (when mode = "replace") */
+  workflow?: GeneratedWorkflowData;
+  /** Operations to apply (when mode = "operations") */
+  operations?: AIWorkflowOperation[];
+  /** Explanation of what was done */
+  explanation: string;
+  /** Suggested follow-up actions */
+  suggestions?: string[];
+  /** Error message if failed */
+  error?: string;
+  /** Generation mode used */
+  mode: "replace" | "operations";
+}
+
+/**
+ * Generate workflow changes iteratively
+ *
+ * When the canvas is empty, delegates to the standard generateWorkflow().
+ * When the canvas has content, uses the iterative schema to generate
+ * targeted operations that modify the existing workflow.
+ *
+ * @param prompt - User's description of what they want
+ * @param history - Previous conversation messages
+ * @param model - Model ID to use
+ * @param currentCanvas - Current canvas state (if any)
+ */
+export async function generateIterativeWorkflow(
+  prompt: string,
+  history: GenerateWorkflowMessage[] = [],
+  model: string = DEFAULT_MODEL_ID,
+  currentCanvas?: CanvasSnapshot
+): Promise<GenerateIterativeResult> {
+  // If canvas is empty, use standard generation
+  if (!currentCanvas?.hasContent) {
+    const result = await generateWorkflow(prompt, history, model);
+    return {
+      success: result.success,
+      workflow: result.workflow,
+      explanation: result.message,
+      error: result.error,
+      mode: "replace",
+    };
+  }
+
+  // Canvas has content - use iterative generation
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) {
+    return {
+      success: false,
+      explanation: "Google AI API key not configured",
+      error: "GOOGLE_AI_API_KEY environment variable is not set",
+      mode: "operations",
+    };
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+  const availableNodes = getAllAvailableNodes();
+  const systemPrompt = buildIterativeSystemPrompt(availableNodes, currentCanvas);
+
+  try {
+    const validModelIds = AVAILABLE_MODELS.map((m) => m.id);
+    const modelId = validModelIds.includes(model) ? model : DEFAULT_MODEL_ID;
+
+    const contents = [
+      ...formatHistory(history),
+      { role: "user" as const, parts: [{ text: prompt }] },
+    ];
+
+    const response = await ai.models.generateContent({
+      model: modelId,
+      contents,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: "application/json",
+        responseSchema: OPERATIONS_SCHEMA,
+      },
+    });
+
+    const text = response.text;
+    if (!text) {
+      return {
+        success: false,
+        explanation: "No response from Gemini",
+        error: "Empty response received",
+        mode: "operations",
+      };
+    }
+
+    const rawResponse = JSON.parse(text) as {
+      mode: "replace" | "operations";
+      nodes?: Array<{
+        id: string;
+        nodeType: string;
+        label?: string;
+        parametersJson?: string;
+      }>;
+      edges?: GeneratedWorkflowData["edges"];
+      operations?: Array<{
+        type: AIWorkflowOperation["type"];
+        nodeId?: string;
+        nodeType?: string;
+        label?: string;
+        parametersJson?: string;
+        source?: string;
+        target?: string;
+        sourceHandle?: string;
+        targetHandle?: string;
+        explanation?: string;
+      }>;
+      explanation: string;
+      suggestions?: string[];
+    };
+
+    if (rawResponse.mode === "replace") {
+      // Full workflow replacement
+      if (!rawResponse.nodes || !rawResponse.edges) {
+        return {
+          success: false,
+          explanation: "Invalid response: missing nodes/edges for replace mode",
+          error: "Missing workflow data",
+          mode: "replace",
+        };
+      }
+
+      const workflow: GeneratedWorkflowData = {
+        nodes: rawResponse.nodes.map((node) => ({
+          id: node.id,
+          nodeType: node.nodeType,
+          label: node.label,
+          parameters: node.parametersJson ? safeJsonParse(node.parametersJson, {}) : {},
+        })),
+        edges: rawResponse.edges,
+      };
+
+      // Validate the replacement workflow
+      const validation = validateWorkflow(workflow, availableNodes);
+      if (!validation.valid) {
+        console.log("Iterative replace validation failed:", validation.errors);
+        // Still return the workflow, let the client handle validation
+      }
+
+      return {
+        success: true,
+        workflow,
+        explanation: rawResponse.explanation,
+        suggestions: rawResponse.suggestions,
+        mode: "replace",
+      };
+    }
+
+    // Operations mode
+    if (!rawResponse.operations || rawResponse.operations.length === 0) {
+      return {
+        success: false,
+        explanation: "Invalid response: no operations for operations mode",
+        error: "Missing operations",
+        mode: "operations",
+      };
+    }
+
+    const operations: AIWorkflowOperation[] = rawResponse.operations.map((op) => ({
+      type: op.type,
+      nodeId: op.nodeId,
+      nodeType: op.nodeType,
+      label: op.label,
+      parameters: op.parametersJson ? safeJsonParse(op.parametersJson, {}) : undefined,
+      source: op.source,
+      target: op.target,
+      sourceHandle: op.sourceHandle,
+      targetHandle: op.targetHandle,
+      explanation: op.explanation,
+    }));
+
+    return {
+      success: true,
+      operations,
+      explanation: rawResponse.explanation,
+      suggestions: rawResponse.suggestions,
+      mode: "operations",
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Iterative generation failed:", errorMessage);
+    return {
+      success: false,
+      explanation: "Failed to generate workflow changes",
+      error: errorMessage,
+      mode: "operations",
+    };
+  }
 }

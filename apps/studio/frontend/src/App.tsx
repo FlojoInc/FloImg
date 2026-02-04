@@ -223,6 +223,18 @@ function App() {
     [loadGeneratedWorkflow]
   );
 
+  // Handler for applying workflow as new (fork) - same behavior but explicit
+  // This clears any notion of the current workflow being a saved one
+  const handleApplyAsNewWorkflow = useCallback(
+    (workflow: GeneratedWorkflowData) => {
+      // loadGeneratedWorkflow already sets activeWorkflowId to null,
+      // treating it as a new unsaved workflow
+      loadGeneratedWorkflow(workflow);
+      setActiveTab("editor");
+    },
+    [loadGeneratedWorkflow]
+  );
+
   // Toggle AI panel handler for keyboard shortcuts
   const handleToggleAIChat = useCallback(() => {
     toggleAIPanel();
@@ -269,6 +281,7 @@ function App() {
         {/* AI Panel - Persistent slide-out for iterative workflow editing */}
         <AIPanel
           onApplyWorkflow={handleApplyWorkflow}
+          onApplyAsNewWorkflow={handleApplyAsNewWorkflow}
           canvasSnapshot={canvasSnapshot}
           executionContext={executionContext}
         />
