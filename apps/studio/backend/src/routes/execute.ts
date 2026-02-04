@@ -95,6 +95,14 @@ interface CloudConfig {
  * This is the canonical format used across SDK, CLI, YAML, and API.
  * The visual editor converts nodes/edges to this format before sending.
  */
+/** Pre-resolved image data for cloud uploads */
+interface InitialVariableBase64 {
+  /** Base64-encoded image bytes */
+  base64: string;
+  /** MIME type (e.g., "image/png") */
+  mime: string;
+}
+
 interface ExecuteBody {
   /** Pipeline steps to execute */
   steps: PipelineStep[];
@@ -106,6 +114,12 @@ interface ExecuteBody {
    * Example: { "v0": "upload-abc123" }
    */
   inputUploads?: Record<string, string>;
+  /**
+   * Pre-resolved images from cloud storage (used by FSC).
+   * Takes precedence over inputUploads for the same variable name.
+   * Example: { "v0": { base64: "iVBORw0...", mime: "image/png" } }
+   */
+  initialVariablesBase64?: Record<string, InitialVariableBase64>;
   /** AI provider configurations (API keys, base URLs) */
   aiProviders?: AIProviderConfig;
   /** Cloud config for FloImg Cloud save functionality */
@@ -175,23 +189,99 @@ function injectApiKeys(steps: PipelineStep[], aiProviders?: AIProviderConfig): P
   });
 }
 
+/** Valid MIME types for ImageBlob */
+const VALID_IMAGE_MIMES = [
+  "image/svg+xml",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/avif",
+] as const;
+
 /**
- * Resolve input uploads to ImageBlobs for pipeline execution
+ * Validate that a MIME type is allowed for ImageBlob
+ */
+function validateMimeType(mime: string, varName: string): asserts mime is ImageBlob["mime"] {
+  if (!VALID_IMAGE_MIMES.includes(mime as ImageBlob["mime"])) {
+    throw new Error(
+      `Invalid MIME type for ${varName}: "${mime}". Must be one of: ${VALID_IMAGE_MIMES.join(", ")}`
+    );
+  }
+}
+
+/**
+ * Validate and decode base64 data
+ */
+function decodeBase64(base64: string, varName: string): Buffer {
+  if (!base64 || typeof base64 !== "string") {
+    throw new Error(`Invalid base64 data for ${varName}: expected non-empty string`);
+  }
+
+  // Validate base64 format (standard base64 alphabet plus padding)
+  const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+  if (!base64Regex.test(base64)) {
+    throw new Error(`Invalid base64 encoding for ${varName}: contains invalid characters`);
+  }
+
+  const bytes = Buffer.from(base64, "base64");
+
+  if (bytes.length === 0) {
+    throw new Error(`Empty image data for ${varName} after base64 decoding`);
+  }
+
+  return bytes;
+}
+
+/**
+ * Resolve input uploads to ImageBlobs for pipeline execution.
+ * Handles both local uploads (by ID) and pre-resolved cloud data (base64).
+ *
+ * Precedence: initialVariablesBase64 takes priority over inputUploads when
+ * both provide the same variable name. This allows FSC to override local
+ * upload resolution with cloud-fetched data.
+ *
+ * @param inputUploads - Maps variable names to local upload IDs
+ * @param initialVariablesBase64 - Maps variable names to pre-resolved base64 data (from FSC)
+ * @returns Record mapping variable names to resolved ImageBlobs
+ * @throws {Error} If upload not found, invalid MIME type, or base64 decoding fails
  */
 async function resolveInputUploads(
-  inputUploads: Record<string, string>
+  inputUploads?: Record<string, string>,
+  initialVariablesBase64?: Record<string, InitialVariableBase64>
 ): Promise<Record<string, ImageBlob>> {
   const initialVariables: Record<string, ImageBlob> = {};
 
-  for (const [varName, uploadId] of Object.entries(inputUploads)) {
-    const upload = await loadUpload(uploadId);
-    if (!upload) {
-      throw new Error(`Upload not found: ${uploadId}`);
+  // First, resolve pre-loaded base64 data (from FSC cloud uploads)
+  if (initialVariablesBase64) {
+    for (const [varName, data] of Object.entries(initialVariablesBase64)) {
+      // Validate MIME type before type assertion
+      validateMimeType(data.mime, varName);
+
+      // Validate and decode base64 data
+      const bytes = decodeBase64(data.base64, varName);
+
+      initialVariables[varName] = {
+        bytes,
+        mime: data.mime,
+      };
     }
-    initialVariables[varName] = {
-      bytes: upload.bytes,
-      mime: upload.mime as ImageBlob["mime"],
-    };
+  }
+
+  // Then resolve local uploads (skip if already resolved from base64)
+  if (inputUploads) {
+    for (const [varName, uploadId] of Object.entries(inputUploads)) {
+      // Skip if already resolved from base64
+      if (initialVariables[varName]) continue;
+
+      const upload = await loadUpload(uploadId);
+      if (!upload) {
+        throw new Error(`Upload not found: ${uploadId}`);
+      }
+      initialVariables[varName] = {
+        bytes: upload.bytes,
+        mime: upload.mime as ImageBlob["mime"],
+      };
+    }
   }
 
   return initialVariables;
@@ -223,7 +313,8 @@ export async function executeRoutes(fastify: FastifyInstance) {
    * Returns when execution is complete with all results.
    */
   fastify.post<{ Body: ExecuteBody }>("/execute/sync", async (request, reply) => {
-    const { steps, name, inputUploads, aiProviders, cloudConfig } = request.body;
+    const { steps, name, inputUploads, initialVariablesBase64, aiProviders, cloudConfig } =
+      request.body;
 
     if (!steps || !Array.isArray(steps) || steps.length === 0) {
       reply.code(400);
@@ -231,8 +322,8 @@ export async function executeRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      // Resolve input uploads to ImageBlobs
-      const initialVariables = inputUploads ? await resolveInputUploads(inputUploads) : {};
+      // Resolve input uploads to ImageBlobs (handles both local and pre-resolved cloud data)
+      const initialVariables = await resolveInputUploads(inputUploads, initialVariablesBase64);
 
       // Inject API keys into steps
       const stepsWithKeys = injectApiKeys(steps, aiProviders);
@@ -307,7 +398,8 @@ export async function executeRoutes(fastify: FastifyInstance) {
    * as the pipeline executes.
    */
   fastify.post<{ Body: ExecuteBody }>("/execute/stream", async (request, reply) => {
-    const { steps, name, inputUploads, aiProviders, cloudConfig } = request.body;
+    const { steps, name, inputUploads, initialVariablesBase64, aiProviders, cloudConfig } =
+      request.body;
 
     if (!steps || !Array.isArray(steps) || steps.length === 0) {
       reply.code(400);
@@ -322,8 +414,8 @@ export async function executeRoutes(fastify: FastifyInstance) {
     });
 
     try {
-      // Resolve input uploads
-      const initialVariables = inputUploads ? await resolveInputUploads(inputUploads) : {};
+      // Resolve input uploads (handles both local and pre-resolved cloud data)
+      const initialVariables = await resolveInputUploads(inputUploads, initialVariablesBase64);
 
       // Inject API keys
       const stepsWithKeys = injectApiKeys(steps, aiProviders);
