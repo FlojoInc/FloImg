@@ -875,6 +875,66 @@ export type GenerationSSEEvent =
   | GenerationSSEError;
 
 // ============================================
+// AI Operation Conflict Detection
+// ============================================
+
+/**
+ * Type of conflict between user edits and AI operations
+ */
+export type ConflictType =
+  /** Node was modified by user after last AI apply, and AI wants to modify it again */
+  | "modified_by_both"
+  /** Node was modified by user, but AI wants to delete it */
+  | "deleted_by_ai"
+  /** AI wants to modify a node that user deleted */
+  | "deleted_by_user"
+  /** AI wants to reconnect nodes that user disconnected */
+  | "reconnect_conflict";
+
+/**
+ * A conflict between user edits and an AI operation
+ */
+export interface OperationConflict {
+  /** The operation that caused the conflict */
+  operation: AIWorkflowOperation;
+  /** Type of conflict */
+  type: ConflictType;
+  /** Node ID involved in the conflict */
+  nodeId: string;
+  /** Human-readable description of the conflict */
+  description: string;
+  /** User's version of the data (for modified_by_both) */
+  userValue?: Record<string, unknown>;
+  /** AI's proposed value (for modified_by_both) */
+  aiValue?: Record<string, unknown>;
+}
+
+/**
+ * User's resolution choice for a conflict
+ */
+export type ConflictResolution = "keep_mine" | "accept_ai" | "skip";
+
+/**
+ * Conflict with user's chosen resolution
+ */
+export interface ResolvedConflict {
+  conflict: OperationConflict;
+  resolution: ConflictResolution;
+}
+
+/**
+ * Result of conflict detection before applying AI operations
+ */
+export interface ConflictDetectionResult {
+  /** Whether there are any conflicts */
+  hasConflicts: boolean;
+  /** List of detected conflicts */
+  conflicts: OperationConflict[];
+  /** Operations that can be applied without conflict */
+  safeOperations: AIWorkflowOperation[];
+}
+
+// ============================================
 // Pipeline Conversion
 // ============================================
 

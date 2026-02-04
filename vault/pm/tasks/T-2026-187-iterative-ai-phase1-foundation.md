@@ -1,6 +1,6 @@
 ---
 tags: [type/task]
-status: in-progress
+status: complete
 priority: p1
 created: 2026-02-03
 updated: 2026-02-03
@@ -14,10 +14,10 @@ epic: EPIC-2026-019
 ## Task Details
 
 - **Task ID**: T-2026-187
-- **Status**: in-progress
+- **Status**: complete
 - **Priority**: p1
 - **Created**: 2026-02-03
-- **Completed**:
+- **Completed**: 2026-02-03
 
 ## Description
 
@@ -30,13 +30,13 @@ Convert the AI Workflow Generator from a modal dialog to a persistent slide-out 
 
 ## Acceptance Criteria
 
-- [ ] AIChat refactored to AIPanel (slide-out from right)
-- [ ] Panel stays open while editing canvas
-- [ ] Conversation persists in session
-- [ ] AI receives currentCanvas snapshot with each request
-- [ ] AI can reference existing nodes in responses
-- [ ] Execution results (images, status) included in context
-- [ ] Full replacement mode still works (backwards compatible)
+- [x] AIChat refactored to AIPanel (slide-out from right)
+- [x] Panel stays open while editing canvas
+- [x] Conversation persists in session
+- [x] AI receives currentCanvas snapshot with each request
+- [x] AI can reference existing nodes in responses
+- [x] Execution results (images, status) included in context
+- [x] Full replacement mode still works (backwards compatible)
 
 ## Implementation Details
 
@@ -94,3 +94,10 @@ Convert the AI Workflow Generator from a modal dialog to a persistent slide-out 
 ### Work Log
 
 - **2026-02-03**: Task created, starting implementation
+- **2026-02-03**: COMPLETE - PR #249 merged
+  - Created `aiChatStore.ts` with conversation persistence
+  - Created `AIPanel.tsx` slide-out component
+  - Added canvas snapshot computation in `App.tsx`
+  - Updated backend to accept `currentCanvas` parameter
+  - Added `CanvasSnapshot` type to shared package
+  - Context-aware example prompts (modify vs create)

@@ -1,17 +1,29 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import type {
   GeneratedWorkflowData,
   GenerationSSEEvent,
   AIWorkflowOperation,
+  ResolvedConflict,
+  OperationConflict,
 } from "@teamflojo/floimg-studio-shared";
 import { getGenerateStatus } from "../api/client";
 import { createSSEConnection, type SSEConnection } from "../api/sse";
 import { useAIChatStore, type CanvasSnapshot, type ExecutionContext } from "../stores/aiChatStore";
 import { useWorkflowStore } from "../stores/workflowStore";
+import { ConflictResolutionModal } from "./ConflictResolutionModal";
 
 // Module-level connection reference for cancellation
 // (Not in component state because SSEConnection is not serializable)
 let activeGenerationConnection: SSEConnection | null = null;
+
+/**
+ * Quick action suggestion based on canvas state
+ */
+interface QuickAction {
+  label: string;
+  prompt: string;
+  icon: "add" | "edit" | "save" | "sparkles";
+}
 
 /**
  * Analytics data for successful workflow generation
@@ -34,6 +46,8 @@ export interface GenerationFailedData {
 
 interface AIPanelProps {
   onApplyWorkflow: (workflow: GeneratedWorkflowData) => void;
+  /** Apply workflow as a new workflow (fork) - clears workflow name/ID */
+  onApplyAsNewWorkflow?: (workflow: GeneratedWorkflowData) => void;
   /** Current canvas state for AI context */
   canvasSnapshot?: CanvasSnapshot;
   /** Last execution results for AI context */
@@ -91,6 +105,85 @@ function isAINode(nodeType: string): boolean {
 }
 
 /**
+ * Get quick actions based on canvas state and execution context
+ */
+function getQuickActions(
+  canvasSnapshot: CanvasSnapshot | undefined,
+  executionContext: ExecutionContext | undefined
+): QuickAction[] {
+  const actions: QuickAction[] = [];
+
+  // Empty canvas - suggest generating a new workflow
+  if (!canvasSnapshot?.hasContent) {
+    actions.push({
+      label: "Generate new workflow",
+      prompt: "Create a workflow that generates an AI image and saves it",
+      icon: "sparkles",
+    });
+    return actions;
+  }
+
+  // Has nodes - analyze what's present
+  const hasGenerators = canvasSnapshot.nodes.some(
+    (n) => n.type?.startsWith("generator:") || n.type?.startsWith("generator")
+  );
+  const hasSaveNode = canvasSnapshot.nodes.some(
+    (n) => n.type?.startsWith("save:") || n.type === "save"
+  );
+  const hasTransforms = canvasSnapshot.nodes.some(
+    (n) => n.type?.startsWith("transform:") || n.type === "transform"
+  );
+
+  // Suggest adding post-processing if only generators
+  if (hasGenerators && !hasTransforms) {
+    actions.push({
+      label: "Add post-processing",
+      prompt: "Add resize and format conversion to optimize the output images",
+      icon: "add",
+    });
+  }
+
+  // Suggest adding save node if missing
+  if (!hasSaveNode) {
+    actions.push({
+      label: "Add save node",
+      prompt: "Add a save node to store the final output",
+      icon: "save",
+    });
+  }
+
+  // After execution - suggest improvements
+  if (executionContext?.status === "completed") {
+    actions.push({
+      label: "Improve results",
+      prompt: "How can I improve the quality of these results?",
+      icon: "sparkles",
+    });
+  }
+
+  // After error - suggest fixes
+  if (executionContext?.status === "error") {
+    actions.push({
+      label: "Fix errors",
+      prompt: `The workflow failed with: ${executionContext.error}. Help me fix this.`,
+      icon: "edit",
+    });
+  }
+
+  // General improvements
+  if (canvasSnapshot.nodeCount >= 2) {
+    actions.push({
+      label: "Add variations",
+      prompt: "Add a fan-out node to generate multiple variations of this workflow",
+      icon: "add",
+    });
+  }
+
+  // Limit to 3 actions
+  return actions.slice(0, 3);
+}
+
+/**
  * AIPanel - Persistent slide-out panel for AI workflow generation
  *
  * Features:
@@ -101,6 +194,7 @@ function isAINode(nodeType: string): boolean {
  */
 export function AIPanel({
   onApplyWorkflow,
+  onApplyAsNewWorkflow,
   canvasSnapshot,
   executionContext,
   onGenerationSuccess,
@@ -135,6 +229,8 @@ export function AIPanel({
   const setSelectedModel = useAIChatStore((s) => s.setSelectedModel);
   const setCanvasSnapshot = useAIChatStore((s) => s.setCanvasSnapshot);
   const setExecutionContext = useAIChatStore((s) => s.setExecutionContext);
+  const detectConflicts = useAIChatStore((s) => s.detectConflicts);
+  const setLastAppliedSnapshot = useAIChatStore((s) => s.setLastAppliedSnapshot);
 
   // Local state for input
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -144,6 +240,18 @@ export function AIPanel({
   // Input state (local, not persisted)
   const [input, setInput] = useState("");
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+
+  // Conflict resolution state
+  const [pendingOperations, setPendingOperations] = useState<AIWorkflowOperation[] | null>(null);
+  const [pendingExplanation, setPendingExplanation] = useState<string | undefined>();
+  const [conflicts, setConflicts] = useState<OperationConflict[]>([]);
+  const [showConflictModal, setShowConflictModal] = useState(false);
+
+  // Compute quick actions based on canvas state
+  const quickActions = useMemo(
+    () => getQuickActions(canvasSnapshot, executionContext),
+    [canvasSnapshot, executionContext]
+  );
 
   // Update canvas snapshot when it changes
   useEffect(() => {
@@ -212,6 +320,132 @@ export function AIPanel({
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
   }, []);
+
+  // Save snapshot after applying operations
+  const saveAppliedSnapshot = useCallback(
+    (operations: AIWorkflowOperation[]) => {
+      // Get current canvas state after operations are applied
+      // Use setTimeout to ensure state has updated
+      setTimeout(() => {
+        const currentSnapshot = useAIChatStore.getState().canvasSnapshot;
+        if (currentSnapshot) {
+          setLastAppliedSnapshot({
+            ...currentSnapshot,
+            timestamp: Date.now(),
+            appliedOperations: operations,
+          });
+        }
+      }, 0);
+    },
+    [setLastAppliedSnapshot]
+  );
+
+  // Apply operations with conflict detection
+  const applyOperationsWithConflictDetection = useCallback(
+    (operations: AIWorkflowOperation[], explanation?: string) => {
+      if (!canvasSnapshot) {
+        // No snapshot - apply directly without conflict detection
+        applyAIOperations(operations);
+        saveAppliedSnapshot(operations);
+        return { hadConflicts: false };
+      }
+
+      const result = detectConflicts(canvasSnapshot, operations);
+
+      if (result.hasConflicts) {
+        // Store pending operations and show conflict modal
+        setPendingOperations(operations);
+        setPendingExplanation(explanation);
+        setConflicts(result.conflicts);
+        setShowConflictModal(true);
+        return { hadConflicts: true };
+      }
+
+      // No conflicts - apply all operations
+      applyAIOperations(operations);
+      saveAppliedSnapshot(operations);
+      return { hadConflicts: false };
+    },
+    [canvasSnapshot, detectConflicts, applyAIOperations, saveAppliedSnapshot]
+  );
+
+  // Handle conflict resolution
+  const handleConflictResolve = useCallback(
+    (resolved: ResolvedConflict[]) => {
+      if (!pendingOperations) return;
+
+      // Build list of operations to apply based on resolutions
+      const operationsToApply: AIWorkflowOperation[] = [];
+      const conflictNodeIds = new Set(conflicts.map((c) => c.nodeId));
+
+      // Add all safe operations (non-conflicting)
+      for (const op of pendingOperations) {
+        const opNodeId = op.nodeId || op.source || op.target;
+        if (!opNodeId || !conflictNodeIds.has(opNodeId)) {
+          operationsToApply.push(op);
+        }
+      }
+
+      // Add resolved conflict operations where user chose "accept_ai"
+      for (const { conflict, resolution } of resolved) {
+        if (resolution === "accept_ai") {
+          operationsToApply.push(conflict.operation);
+        }
+        // "keep_mine" and "skip" both mean don't apply the AI operation
+      }
+
+      // Apply the resolved operations
+      if (operationsToApply.length > 0) {
+        applyAIOperations(operationsToApply);
+        saveAppliedSnapshot(operationsToApply);
+      }
+
+      // Build summary message
+      const appliedCount = operationsToApply.length;
+      const skippedCount = pendingOperations.length - appliedCount;
+      let summaryMessage = pendingExplanation || "Conflicts resolved.";
+      if (skippedCount > 0) {
+        summaryMessage += `\n\n**Note:** ${skippedCount} operation${skippedCount > 1 ? "s were" : " was"} skipped based on your choices.`;
+      }
+
+      addAssistantMessage(summaryMessage, undefined);
+
+      // Clear conflict state
+      setShowConflictModal(false);
+      setPendingOperations(null);
+      setPendingExplanation(undefined);
+      setConflicts([]);
+      setLoading(false);
+      setGenerationProgress(null, "");
+    },
+    [
+      pendingOperations,
+      pendingExplanation,
+      conflicts,
+      applyAIOperations,
+      saveAppliedSnapshot,
+      addAssistantMessage,
+      setLoading,
+      setGenerationProgress,
+    ]
+  );
+
+  // Handle conflict modal cancel
+  const handleConflictCancel = useCallback(() => {
+    setShowConflictModal(false);
+    setPendingOperations(null);
+    setPendingExplanation(undefined);
+    setConflicts([]);
+
+    // Add message about cancelled operations
+    addAssistantMessage(
+      "I've cancelled the changes. Your current workflow remains unchanged.",
+      undefined
+    );
+
+    setLoading(false);
+    setGenerationProgress(null, "");
+  }, [addAssistantMessage, setLoading, setGenerationProgress]);
 
   const handleSubmit = useCallback(() => {
     if (!input.trim() || isLoading) return;
@@ -339,10 +573,18 @@ export function AIPanel({
 
           // Handle iterative operations
           if (receivedOperations && receivedOperations.length > 0) {
-            // Apply operations directly to the canvas
-            applyAIOperations(receivedOperations);
+            // Check for conflicts before applying
+            const { hadConflicts } = applyOperationsWithConflictDetection(
+              receivedOperations,
+              receivedExplanation
+            );
 
-            // Build a summary of changes
+            if (hadConflicts) {
+              // Conflict modal will be shown, don't finish loading yet
+              return;
+            }
+
+            // No conflicts - build summary and add message
             const addCount = receivedOperations.filter((op) => op.type === "add").length;
             const modifyCount = receivedOperations.filter((op) => op.type === "modify").length;
             const deleteCount = receivedOperations.filter((op) => op.type === "delete").length;
@@ -392,7 +634,7 @@ export function AIPanel({
     setGenerationProgress,
     onGenerationSuccess,
     onGenerationFailed,
-    applyAIOperations,
+    applyOperationsWithConflictDetection,
   ]);
 
   const handleCancelGeneration = useCallback(() => {
@@ -416,14 +658,38 @@ export function AIPanel({
     // Don't close panel - allow iterative editing
   };
 
+  const handleApplyAsNew = (workflow: GeneratedWorkflowData) => {
+    if (onApplyAsNewWorkflow) {
+      onApplyAsNewWorkflow(workflow);
+    } else {
+      // Fallback: just apply normally
+      onApplyWorkflow(workflow);
+    }
+  };
+
   const handleNewChat = () => {
     clearMessages();
+  };
+
+  const handleQuickAction = (action: QuickAction) => {
+    setInput(action.prompt);
+    // Focus the input
+    inputRef.current?.focus();
   };
 
   if (!isOpen) return null;
 
   return (
     <>
+      {/* Conflict resolution modal */}
+      {showConflictModal && conflicts.length > 0 && (
+        <ConflictResolutionModal
+          conflicts={conflicts}
+          onResolve={handleConflictResolve}
+          onCancel={handleConflictCancel}
+        />
+      )}
+
       {/* Backdrop - semi-transparent, allows clicking through to canvas */}
       <div className="fixed inset-0 bg-black/10 dark:bg-black/20 z-40" onClick={closePanel} />
 
@@ -717,12 +983,24 @@ export function AIPanel({
                       <span className="text-xs font-medium text-gray-500 dark:text-zinc-400">
                         Generated Workflow
                       </span>
-                      <button
-                        onClick={() => handleApply(msg.workflow!)}
-                        className="text-xs px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded transition-colors"
-                      >
-                        Apply to Canvas
-                      </button>
+                      <div className="flex items-center gap-1">
+                        {/* Show "Apply as New" option if canvas has content */}
+                        {canvasSnapshot?.hasContent && onApplyAsNewWorkflow && (
+                          <button
+                            onClick={() => handleApplyAsNew(msg.workflow!)}
+                            className="text-xs px-2 py-1 border border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded transition-colors"
+                            title="Create a new workflow from this"
+                          >
+                            As New
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleApply(msg.workflow!)}
+                          className="text-xs px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded transition-colors"
+                        >
+                          {canvasSnapshot?.hasContent ? "Replace" : "Apply to Canvas"}
+                        </button>
+                      </div>
                     </div>
                     <div className="bg-white dark:bg-zinc-800 rounded p-2 text-xs">
                       <div className="space-y-1">
@@ -869,6 +1147,64 @@ export function AIPanel({
 
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Quick Actions - show when there are suggestions and not loading */}
+        {quickActions.length > 0 && !isLoading && messages.length > 0 && (
+          <div className="px-4 py-2 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Quick actions:</span>
+              {quickActions.map((action, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleQuickAction(action)}
+                  className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full hover:border-teal-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+                >
+                  {action.icon === "add" && (
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                  )}
+                  {action.icon === "edit" && (
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                  )}
+                  {action.icon === "save" && (
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                      />
+                    </svg>
+                  )}
+                  {action.icon === "sparkles" && (
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                      />
+                    </svg>
+                  )}
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Input */}
         <div className="border-t border-gray-200 dark:border-zinc-700 p-4">
