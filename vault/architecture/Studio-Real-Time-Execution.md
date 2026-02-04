@@ -173,3 +173,4 @@ To add real-time features to new endpoints:
 - [[Studio-Technical-Architecture]] - Overall Studio architecture
 - [[Pipeline-Execution-Engine]] - Core floimg execution (parallel)
 - [[Content-Moderation]] - Moderation system details
+- [[AI-Workflow-Generator]] - AI-powered workflow generation with validation-retry loop
