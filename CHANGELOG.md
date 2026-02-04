@@ -5,6 +5,25 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### @teamflojo/floimg-studio-ui
+
+- feat: AI can make targeted changes to existing workflows (add/modify/delete nodes)
+- feat: Operations mode allows iterative workflow refinement without full replacement
+- feat: Show change summary when AI operations are applied
+
+### @teamflojo/floimg-studio-shared
+
+- feat: Add AIWorkflowOperation types for iterative AI editing
+- feat: Add CanvasSnapshot interface for canvas state context
+- feat: Add GenerationSSEIterative event type
+
+### @teamflojo/floimg-studio-backend
+
+- feat: Add generateIterativeWorkflow() for canvas-aware AI generation
+- feat: Operations-based responses instead of full workflow replacement
+
 ## [v0.21.20] - 2026-02-03
 
 ### @teamflojo/floimg-studio-shared (0.9.5)

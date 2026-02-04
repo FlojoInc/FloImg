@@ -1442,29 +1442,64 @@ export const useWorkflowStore = create<WorkflowStore>()(
           // Track new node ID mappings (AI may reference by generated IDs)
           const idMap = new Map<string, string>();
 
-          // Helper to get the average position of existing nodes
+          // Track position offset for multiple added nodes
+          let addedNodeCount = 0;
+
+          // Helper to get position for a new node (offset vertically to avoid stacking)
           const getNewNodePosition = (): { x: number; y: number } => {
-            if (nodes.length === 0) {
+            if (nodes.length === 0 && addedNodeCount === 0) {
+              addedNodeCount++;
               return { x: 250, y: 200 };
             }
-            const maxX = Math.max(...nodes.map((n) => n.position.x));
-            const avgY = nodes.reduce((sum, n) => sum + n.position.y, 0) / nodes.length;
-            return { x: maxX + 300, y: avgY };
+            const maxX = Math.max(...nodes.map((n) => n.position.x), 0);
+            const avgY =
+              nodes.length > 0
+                ? nodes.reduce((sum, n) => sum + n.position.y, 0) / nodes.length
+                : 200;
+            const yOffset = addedNodeCount * 100; // Offset each new node vertically
+            addedNodeCount++;
+            return { x: maxX + 300, y: avgY + yOffset };
           };
+
+          // Valid node types for validation
+          const validNodeTypes = [
+            "generator",
+            "transform",
+            "save",
+            "input",
+            "fanout",
+            "collect",
+            "router",
+            "vision",
+            "text",
+          ];
 
           for (const op of operations) {
             switch (op.type) {
               case "add": {
-                if (!op.nodeType) continue;
+                if (!op.nodeType) {
+                  console.warn("[applyAIOperations] add operation missing nodeType, skipping");
+                  continue;
+                }
+
+                // Parse and validate nodeType
+                const parts = op.nodeType.split(":");
+                if (parts.length === 0 || !parts[0]) {
+                  console.warn(`[applyAIOperations] invalid nodeType format: ${op.nodeType}`);
+                  continue;
+                }
+
+                const nodeType = parts[0];
+                if (!validNodeTypes.includes(nodeType)) {
+                  console.warn(`[applyAIOperations] unknown nodeType: ${nodeType}`);
+                  continue;
+                }
 
                 const newId = generateNodeId();
                 if (op.nodeId) {
                   idMap.set(op.nodeId, newId);
                 }
 
-                // Parse nodeType to create appropriate node data
-                const parts = op.nodeType.split(":");
-                const nodeType = parts[0] as StudioNodeType;
                 const position = getNewNodePosition();
 
                 let data: NodeData;
@@ -1536,7 +1571,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
 
                 nodes.push({
                   id: newId,
-                  type: nodeType,
+                  type: nodeType as StudioNodeType,
                   position,
                   data,
                 });

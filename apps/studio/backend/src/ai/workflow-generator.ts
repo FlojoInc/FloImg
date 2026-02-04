@@ -36,6 +36,19 @@ import {
 } from "../floimg/registry.js";
 import { getCachedCapabilities } from "../floimg/setup.js";
 
+/**
+ * Safely parse JSON with a fallback value
+ * Protects against malformed JSON from AI-generated content
+ */
+function safeJsonParse<T>(json: string, fallback: T): T {
+  try {
+    return JSON.parse(json) as T;
+  } catch (error) {
+    console.error("Failed to parse JSON:", error);
+    return fallback;
+  }
+}
+
 /** Model definition for workflow generation */
 interface GenerateModelConfig {
   id: string;
@@ -660,7 +673,7 @@ export async function generateWorkflow(
           id: node.id,
           nodeType: node.nodeType,
           label: node.label,
-          parameters: node.parametersJson ? JSON.parse(node.parametersJson) : {},
+          parameters: node.parametersJson ? safeJsonParse(node.parametersJson, {}) : {},
         })),
         edges: rawWorkflow.edges,
       };
@@ -1334,7 +1347,7 @@ export async function generateIterativeWorkflow(
           id: node.id,
           nodeType: node.nodeType,
           label: node.label,
-          parameters: node.parametersJson ? JSON.parse(node.parametersJson) : {},
+          parameters: node.parametersJson ? safeJsonParse(node.parametersJson, {}) : {},
         })),
         edges: rawResponse.edges,
       };
@@ -1370,7 +1383,7 @@ export async function generateIterativeWorkflow(
       nodeId: op.nodeId,
       nodeType: op.nodeType,
       label: op.label,
-      parameters: op.parametersJson ? JSON.parse(op.parametersJson) : undefined,
+      parameters: op.parametersJson ? safeJsonParse(op.parametersJson, {}) : undefined,
       source: op.source,
       target: op.target,
       sourceHandle: op.sourceHandle,
