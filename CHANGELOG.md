@@ -5,24 +5,31 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v0.22.0] - 2026-02-03
 
-### @teamflojo/floimg-studio-ui
+Iterative AI Workflow Editing - Users can now refine workflows through conversation with canvas-aware AI.
 
-- feat: AI can make targeted changes to existing workflows (add/modify/delete nodes)
-- feat: Operations mode allows iterative workflow refinement without full replacement
+### @teamflojo/floimg-studio-ui (0.11.0)
+
+- feat: AI iterative operations - add/modify/delete nodes and connections
+- feat: Conflict detection when user edits conflict with AI changes
+- feat: ConflictResolutionModal for resolving merge conflicts
+- feat: Quick actions based on canvas state (add save node, post-processing, etc.)
+- feat: "Apply as New" button for workflow forking
 - feat: Show change summary when AI operations are applied
 
-### @teamflojo/floimg-studio-shared
+### @teamflojo/floimg-studio-shared (0.10.0)
 
 - feat: Add AIWorkflowOperation types for iterative AI editing
 - feat: Add CanvasSnapshot interface for canvas state context
 - feat: Add GenerationSSEIterative event type
+- feat: Add conflict detection types (ConflictType, OperationConflict, ResolvedConflict)
 
-### @teamflojo/floimg-studio-backend
+### @teamflojo/floimg-studio-backend (0.6.0)
 
 - feat: Add generateIterativeWorkflow() for canvas-aware AI generation
 - feat: Operations-based responses instead of full workflow replacement
+- feat: AI chooses mode (replace vs operations) based on canvas state
 
 ## [v0.21.20] - 2026-02-03
 
