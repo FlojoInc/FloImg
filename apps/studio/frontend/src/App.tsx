@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, DragEvent } from "react";
+import { useState, useCallback, useEffect, useMemo, DragEvent } from "react";
 import { ReactFlowProvider, useReactFlow } from "reactflow";
 import { WorkflowEditor } from "./editor/WorkflowEditor";
 import { NodePalette } from "./components/NodePalette";
@@ -8,7 +8,7 @@ import { ExecutionHistory } from "./components/ExecutionHistory";
 import { TemplateGallery } from "./components/TemplateGallery";
 import { WorkflowLibrary } from "./components/WorkflowLibrary";
 import { AISettings } from "./components/AISettings";
-import { AIChat } from "./components/AIChat";
+import { AIPanel } from "./components/AIPanel";
 import { OutputInspector } from "./components/OutputInspector";
 import { CommandPalette } from "./components/CommandPalette";
 import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
@@ -16,6 +16,7 @@ import { ConfirmationDialog } from "./components/ConfirmationDialog";
 import { useKeyboardShortcuts } from "./lib/keyboard/useKeyboardShortcuts";
 import { useWorkflowStore } from "./stores/workflowStore";
 import { useSettingsStore } from "./stores/settingsStore";
+import { useAIChatStore, type CanvasSnapshot, type ExecutionContext } from "./stores/aiChatStore";
 import { StorageAdapterProvider } from "./providers/StorageAdapterProvider";
 import { ossStorageAdapter } from "./adapters/OssStorageAdapter";
 import type {
@@ -81,17 +82,25 @@ type TabType = "editor" | "history" | "templates";
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>("editor");
-  const [showAIChat, setShowAIChat] = useState(false);
   const loadTemplate = useWorkflowStore((s) => s.loadTemplate);
   const loadGeneratedWorkflow = useWorkflowStore((s) => s.loadGeneratedWorkflow);
   const loadRemixImage = useWorkflowStore((s) => s.loadRemixImage);
+
+  // AI Panel state from store
+  const toggleAIPanel = useAIChatStore((s) => s.togglePanel);
 
   // Output inspector state
   const inspectedNodeId = useWorkflowStore((s) => s.inspectedNodeId);
   const executionDataOutputs = useWorkflowStore((s) => s.execution.dataOutputs);
   const closeOutputInspector = useWorkflowStore((s) => s.closeOutputInspector);
   const nodes = useWorkflowStore((s) => s.nodes);
+  const edges = useWorkflowStore((s) => s.edges);
   const selectedNodeId = useWorkflowStore((s) => s.selectedNodeId);
+
+  // Execution state for AI context
+  const executionStatus = useWorkflowStore((s) => s.execution.status);
+  const executionPreviews = useWorkflowStore((s) => s.execution.previews);
+  const executionError = useWorkflowStore((s) => s.execution.error);
 
   // Unseen runs indicator
   const unseenRunCount = useWorkflowStore((s) => s.unseenRunCount);
@@ -101,6 +110,53 @@ function App() {
   // Get inspected node info
   const inspectedNode = inspectedNodeId ? nodes.find((n) => n.id === inspectedNodeId) : null;
   const inspectedOutput = inspectedNodeId ? executionDataOutputs[inspectedNodeId] : null;
+
+  // Compute canvas snapshot for AI context
+  const canvasSnapshot = useMemo((): CanvasSnapshot => {
+    const nodeData = nodes.map((node) => {
+      const data = node.data as Record<string, unknown>;
+      return {
+        id: node.id,
+        type: node.type || "unknown",
+        label: (data.providerLabel as string) || (data.label as string) || undefined,
+        parameters: data.parameters as Record<string, unknown> | undefined,
+      };
+    });
+
+    return {
+      nodes: nodeData,
+      edges: edges.map((e) => ({ source: e.source, target: e.target })),
+      nodeCount: nodes.length,
+      hasContent: nodes.length > 0,
+    };
+  }, [nodes, edges]);
+
+  // Compute execution context for AI awareness
+  const executionContext = useMemo((): ExecutionContext | undefined => {
+    if (executionStatus === "idle") return undefined;
+
+    const outputs = Object.entries(executionPreviews).map(([nodeId, preview]) => {
+      const node = nodes.find((n) => n.id === nodeId);
+      const data = node?.data as Record<string, unknown> | undefined;
+      const dataOutput = executionDataOutputs[nodeId];
+
+      return {
+        nodeId,
+        nodeName:
+          (data?.providerLabel as string) || (data?.label as string) || node?.type || "Unknown",
+        hasImage: !!preview,
+        hasText: !!dataOutput,
+      };
+    });
+
+    return {
+      status: executionStatus === "running" ? "idle" : executionStatus,
+      nodeCount: nodes.length,
+      outputs,
+      error: executionError,
+      // Note: timestamp is set when the context is sent to AI, not computed here
+    };
+  }, [executionStatus, executionPreviews, executionDataOutputs, executionError, nodes]);
 
   // Handle URL parameters: ?template=<id>, ?remixImage=<url>
   useEffect(() => {
@@ -167,10 +223,10 @@ function App() {
     [loadGeneratedWorkflow]
   );
 
-  // Toggle AI chat handler for keyboard shortcuts
+  // Toggle AI panel handler for keyboard shortcuts
   const handleToggleAIChat = useCallback(() => {
-    setShowAIChat((prev) => !prev);
-  }, []);
+    toggleAIPanel();
+  }, [toggleAIPanel]);
 
   // Handle History tab click - marks runs as seen
   const handleHistoryTabClick = useCallback(() => {
@@ -210,11 +266,11 @@ function App() {
         {/* AI Settings Modal */}
         <AISettings />
 
-        {/* AI Chat Modal */}
-        <AIChat
-          isOpen={showAIChat}
-          onClose={() => setShowAIChat(false)}
+        {/* AI Panel - Persistent slide-out for iterative workflow editing */}
+        <AIPanel
           onApplyWorkflow={handleApplyWorkflow}
+          canvasSnapshot={canvasSnapshot}
+          executionContext={executionContext}
         />
 
         {/* Output Inspector Modal */}
@@ -273,7 +329,7 @@ function App() {
               </div>
 
               {/* AI Generate button */}
-              <button onClick={() => setShowAIChat(true)} className="floimg-ai-btn mr-4">
+              <button onClick={toggleAIPanel} className="floimg-ai-btn mr-4">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
