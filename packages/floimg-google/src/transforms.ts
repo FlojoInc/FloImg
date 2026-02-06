@@ -27,10 +27,10 @@ interface GeminiImageGenerationConfig extends GenerateContentConfig {
 }
 
 /**
- * Supported Gemini models for image generation/editing (Nano Banana)
+ * Supported Gemini models for image generation/editing
  *
- * - gemini-2.5-flash-image: "Nano Banana" - Fast, high-volume, low-latency
- * - gemini-3-pro-image-preview: "Nano Banana Pro" - Professional quality, better text rendering
+ * - gemini-2.5-flash-image: Fast, high-volume, low-latency
+ * - gemini-3-pro-image-preview: Professional quality, better text rendering
  */
 const GEMINI_IMAGE_MODELS = ["gemini-2.5-flash-image", "gemini-3-pro-image-preview"] as const;
 
@@ -109,7 +109,8 @@ export const geminiEditSchema: TransformOperationSchema = {
     model: {
       type: "string",
       title: "Model",
-      description: "Gemini model to use: Nano Banana (fast) or Nano Banana Pro (high quality)",
+      description:
+        "Gemini model: gemini-2.5-flash-image (fast) or gemini-3-pro-image-preview (high quality)",
       enum: [...GEMINI_IMAGE_MODELS],
       default: "gemini-2.5-flash-image",
     },
@@ -467,7 +468,8 @@ export const geminiGenerateSchema: GeneratorSchema = {
     model: {
       type: "string",
       title: "Model",
-      description: "Gemini model to use: Nano Banana (fast) or Nano Banana Pro (high quality)",
+      description:
+        "Gemini model: gemini-2.5-flash-image (fast) or gemini-3-pro-image-preview (high quality)",
       enum: [...GEMINI_IMAGE_MODELS],
       default: "gemini-2.5-flash-image",
     },

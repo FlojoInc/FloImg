@@ -61,6 +61,9 @@ export const googleImagenSchema: GeneratorSchema = {
   isAI: true,
   requiresApiKey: true,
   apiKeyEnvVar: "GOOGLE_AI_API_KEY",
+  // Imagen API is text-to-image only - does NOT support reference images
+  // Use gemini-generate instead for image-to-image generation with references
+  acceptsReferenceImages: false,
 };
 
 /**
