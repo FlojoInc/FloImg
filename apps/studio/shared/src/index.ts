@@ -7,8 +7,17 @@ export type { Template, TemplateCategory } from "./types/template.js";
 
 // Validation utilities - import type for local use, then re-export
 import type { StudioValidationIssue as _StudioValidationIssue } from "./validation.js";
-export { mapValidationToNodes, formatValidationResponse } from "./validation.js";
-export type { ValidationIssue, StudioValidationIssue } from "./validation.js";
+export {
+  mapValidationToNodes,
+  formatValidationResponse,
+  validateInputFormats,
+} from "./validation.js";
+export type {
+  ValidationIssue,
+  StudioValidationIssue,
+  QuickFix,
+  TransformFormatRequirements,
+} from "./validation.js";
 // Alias for use within this file
 type StudioValidationIssue = _StudioValidationIssue;
 
@@ -333,6 +342,10 @@ export interface NodeDefinition {
   acceptsReferenceImages?: boolean;
   /** Maximum number of reference images supported */
   maxReferenceImages?: number;
+  /** For transforms: accepted input image formats (e.g., ["image/png"]) */
+  acceptedInputFormats?: string[];
+  /** For transforms: custom error message when input format doesn't match */
+  inputFormatError?: string;
 }
 
 // Parameter schema for dynamic form generation

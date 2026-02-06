@@ -88,6 +88,13 @@ export const ERROR_MESSAGES: Record<string, ErrorMessage> = {
     description: "The workflow has no steps to execute.",
     suggestedFix: "Add at least one generator or input node.",
   },
+
+  // Format compatibility errors
+  INCOMPATIBLE_INPUT_FORMAT: {
+    title: "Incompatible Image Format",
+    description: "This operation requires a specific image format that doesn't match the input.",
+    suggestedFix: "Add a Convert node before this operation to change the format.",
+  },
 };
 
 /**

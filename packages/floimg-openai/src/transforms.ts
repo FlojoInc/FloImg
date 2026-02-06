@@ -9,6 +9,9 @@ import type {
 
 /**
  * Schema for the image edit/inpaint operation
+ *
+ * Note: DALL-E 2 edit API requires PNG format. The schema includes
+ * acceptedInputFormats so validation can detect this before execution.
  */
 export const editSchema: TransformOperationSchema = {
   name: "edit",
@@ -48,10 +51,16 @@ export const editSchema: TransformOperationSchema = {
   isAI: true,
   requiresApiKey: true,
   apiKeyEnvVar: "OPENAI_API_KEY",
+  // DALL-E 2 edit API only accepts PNG format
+  acceptedInputFormats: ["image/png"],
+  inputFormatError: "OpenAI edit requires PNG format. Add a Convert node before this operation.",
 };
 
 /**
  * Schema for the image variations operation
+ *
+ * Note: DALL-E 2 variations API requires PNG format. The schema includes
+ * acceptedInputFormats so validation can detect this before execution.
  */
 export const variationsSchema: TransformOperationSchema = {
   name: "variations",
@@ -80,6 +89,10 @@ export const variationsSchema: TransformOperationSchema = {
   isAI: true,
   requiresApiKey: true,
   apiKeyEnvVar: "OPENAI_API_KEY",
+  // DALL-E 2 variations API only accepts PNG format
+  acceptedInputFormats: ["image/png"],
+  inputFormatError:
+    "OpenAI variations requires PNG format. Add a Convert node before this operation.",
 };
 
 /**

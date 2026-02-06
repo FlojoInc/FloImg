@@ -251,6 +251,11 @@ export interface GeneratorSchema {
 export type IOType = "image" | "data";
 
 /**
+ * Supported image MIME types for format constraints
+ */
+export type ImageMimeType = "image/png" | "image/jpeg" | "image/webp" | "image/avif";
+
+/**
  * Schema for a transform operation
  */
 export interface TransformOperationSchema {
@@ -282,6 +287,15 @@ export interface TransformOperationSchema {
   acceptsReferenceImages?: boolean;
   /** Maximum number of reference images supported */
   maxReferenceImages?: number;
+
+  // Input format constraints (for operations with specific format requirements)
+  /**
+   * Accepted input image formats. If specified, validation will fail for other formats.
+   * Use this for API limitations like OpenAI edit requiring PNG.
+   */
+  acceptedInputFormats?: ImageMimeType[];
+  /** Custom error message when input format doesn't match (optional) */
+  inputFormatError?: string;
 }
 
 /**

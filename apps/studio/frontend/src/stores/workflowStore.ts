@@ -18,8 +18,9 @@ import type {
   ErrorCategory,
   StudioValidationIssue,
   AIWorkflowOperation,
+  TransformFormatRequirements,
 } from "@teamflojo/floimg-studio-shared";
-import { nodesToPipeline } from "@teamflojo/floimg-studio-shared";
+import { nodesToPipeline, validateInputFormats } from "@teamflojo/floimg-studio-shared";
 import type { Template } from "@teamflojo/floimg-studio-shared";
 import { exportYaml, validateWorkflow as validateWorkflowApi } from "../api/client";
 import { createSSEConnection, type SSEConnection } from "../api/sse";
@@ -154,6 +155,8 @@ interface WorkflowStore {
   deleteNode: (id: string) => void;
   duplicateNode: (id: string) => void;
   setNodes: (nodes: Node<NodeData>[]) => void;
+  /** Insert a Convert node between two connected nodes (for format validation quick fix) */
+  insertConvertNode: (sourceNodeId: string, targetNodeId: string, targetFormat: string) => void;
 
   // Edge operations
   addEdge: (connection: Connection) => void;
@@ -444,9 +447,12 @@ export const useWorkflowStore = create<WorkflowStore>()(
               maxReferenceImages: definition.maxReferenceImages,
             } as TransformNodeData;
           } else if (definition.type === "input") {
+            // Read uploadId from definition params (set by UploadGallery when clicking an image)
+            const props = definition.params?.properties || {};
+            const uploadId = props.uploadId?.default as string | undefined;
             data = {
-              uploadId: undefined,
-              filename: undefined,
+              uploadId,
+              filename: uploadId ? definition.label : undefined, // Use label as filename when uploadId is set
               mime: undefined,
             } as InputNodeData;
           } else if (definition.type === "vision") {
@@ -523,6 +529,68 @@ export const useWorkflowStore = create<WorkflowStore>()(
           });
         },
 
+        insertConvertNode: (sourceNodeId, targetNodeId, targetFormat) => {
+          const state = get();
+          const sourceNode = state.nodes.find((n) => n.id === sourceNodeId);
+          const targetNode = state.nodes.find((n) => n.id === targetNodeId);
+
+          if (!sourceNode || !targetNode) return;
+
+          // Find the edge connecting source to target
+          const existingEdge = state.edges.find(
+            (e) => e.source === sourceNodeId && e.target === targetNodeId
+          );
+
+          if (!existingEdge) return;
+
+          // Create the convert node, positioned between source and target
+          const convertNodeId = generateNodeId();
+          const convertNode: Node<NodeData> = {
+            id: convertNodeId,
+            type: "transform",
+            position: {
+              x: (sourceNode.position.x + targetNode.position.x) / 2,
+              y: (sourceNode.position.y + targetNode.position.y) / 2,
+            },
+            data: {
+              operation: "convert",
+              providerName: "sharp", // Convert is provided by sharp
+              isAI: false,
+              params: {
+                to: targetFormat,
+              },
+            } as TransformNodeData,
+          };
+
+          // Create new edges: source -> convert -> target
+          const sourceToConvertEdge: Edge = {
+            id: `edge_${sourceNodeId}_${convertNodeId}`,
+            source: sourceNodeId,
+            target: convertNodeId,
+            sourceHandle: existingEdge.sourceHandle,
+            targetHandle: undefined, // Convert node uses default image input
+          };
+
+          const convertToTargetEdge: Edge = {
+            id: `edge_${convertNodeId}_${targetNodeId}`,
+            source: convertNodeId,
+            target: targetNodeId,
+            sourceHandle: undefined, // Convert node uses default image output
+            targetHandle: existingEdge.targetHandle,
+          };
+
+          // Remove old edge and add new node + edges
+          set({
+            nodes: [...state.nodes, convertNode],
+            edges: [
+              ...state.edges.filter((e) => e.id !== existingEdge.id),
+              sourceToConvertEdge,
+              convertToTargetEdge,
+            ],
+            selectedNodeId: convertNodeId, // Select the new convert node
+          });
+        },
+
         setNodes: (nodes) => set({ nodes }),
 
         addEdge: (connection) => {
@@ -561,7 +629,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
 
         // Pre-flight validation
         validateWorkflow: async () => {
-          const { nodes, edges } = get();
+          const { nodes, edges, transforms } = get();
 
           // Convert React Flow nodes to StudioNodes
           const studioNodes = nodes.map((n) => ({
@@ -579,15 +647,30 @@ export const useWorkflowStore = create<WorkflowStore>()(
             targetHandle: e.targetHandle ?? undefined,
           }));
 
+          // Build transform format requirements map from loaded transforms
+          const transformSchemas = new Map<string, TransformFormatRequirements>();
+          for (const transform of transforms) {
+            if (transform.acceptedInputFormats) {
+              transformSchemas.set(transform.name, {
+                name: transform.name,
+                acceptedInputFormats: transform.acceptedInputFormats,
+                inputFormatError: transform.inputFormatError,
+              });
+            }
+          }
+
+          // Run client-side format validation (needs node metadata not available in backend)
+          const formatIssues = validateInputFormats(studioNodes, studioEdges, transformSchemas);
+
           try {
             // Call backend validation API
             const result = await validateWorkflowApi(studioNodes, studioEdges);
-            return result.issues;
+            // Combine backend issues with client-side format issues
+            return [...formatIssues, ...result.issues];
           } catch (error) {
-            // If validation API fails, allow execution to proceed
-            // (execution will catch any issues)
+            // If validation API fails, still return format issues
             console.warn("Pre-flight validation failed:", error);
-            return [];
+            return formatIssues;
           }
         },
 

@@ -581,6 +581,8 @@ export const SemanticValidationCodes = {
   UNDEFINED_COLLECT_INPUT: "UNDEFINED_COLLECT_INPUT",
   /** Router step references undefined candidate or selection input */
   UNDEFINED_ROUTER_INPUT: "UNDEFINED_ROUTER_INPUT",
+  /** Transform operation requires specific input format (e.g., PNG for OpenAI edit) */
+  INCOMPATIBLE_INPUT_FORMAT: "INCOMPATIBLE_INPUT_FORMAT",
 } as const;
 
 export type SemanticValidationCode =
