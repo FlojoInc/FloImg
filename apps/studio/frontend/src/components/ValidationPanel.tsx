@@ -4,10 +4,13 @@
  * Displays validation issues with node-level detail and allows users
  * to fix issues before execution. Errors block execution, while
  * warnings allow "Execute Anyway".
+ *
+ * Supports quick fixes for certain issues (like format conversion)
+ * that can automatically insert nodes to resolve the problem.
  */
 
-import { useEffect } from "react";
-import type { StudioValidationIssue } from "@teamflojo/floimg-studio-shared";
+import { useEffect, useCallback } from "react";
+import type { StudioValidationIssue, QuickFix } from "@teamflojo/floimg-studio-shared";
 import { getErrorMessage, getErrorColorClass } from "../utils/errorMessages";
 import { useWorkflowStore } from "../stores/workflowStore";
 
@@ -15,10 +18,18 @@ interface ValidationPanelProps {
   issues: StudioValidationIssue[];
   onClose: () => void;
   onExecuteAnyway?: () => void;
+  /** Callback when a quick fix is applied */
+  onQuickFixApplied?: () => void;
 }
 
-export function ValidationPanel({ issues, onClose, onExecuteAnyway }: ValidationPanelProps) {
+export function ValidationPanel({
+  issues,
+  onClose,
+  onExecuteAnyway,
+  onQuickFixApplied,
+}: ValidationPanelProps) {
   const setSelectedNode = useWorkflowStore((s) => s.setSelectedNode);
+  const insertConvertNode = useWorkflowStore((s) => s.insertConvertNode);
 
   const errors = issues.filter((i) => i.severity === "error");
   const warnings = issues.filter((i) => i.severity === "warning");
@@ -42,6 +53,21 @@ export function ValidationPanel({ issues, onClose, onExecuteAnyway }: Validation
       onClose();
     }
   };
+
+  const handleQuickFix = useCallback(
+    (quickFix: QuickFix) => {
+      if (quickFix.type === "ADD_CONVERT_NODE" && quickFix.sourceNodeId && quickFix.targetNodeId) {
+        insertConvertNode(
+          quickFix.sourceNodeId,
+          quickFix.targetNodeId,
+          quickFix.targetFormat || "image/png"
+        );
+        onQuickFixApplied?.();
+        onClose();
+      }
+    },
+    [insertConvertNode, onQuickFixApplied, onClose]
+  );
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -95,10 +121,20 @@ export function ValidationPanel({ issues, onClose, onExecuteAnyway }: Validation
         {/* Issue list */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {errors.map((issue, index) => (
-            <IssueCard key={`error-${index}`} issue={issue} onSelectNode={handleSelectNode} />
+            <IssueCard
+              key={`error-${index}`}
+              issue={issue}
+              onSelectNode={handleSelectNode}
+              onQuickFix={handleQuickFix}
+            />
           ))}
           {warnings.map((issue, index) => (
-            <IssueCard key={`warning-${index}`} issue={issue} onSelectNode={handleSelectNode} />
+            <IssueCard
+              key={`warning-${index}`}
+              issue={issue}
+              onSelectNode={handleSelectNode}
+              onQuickFix={handleQuickFix}
+            />
           ))}
         </div>
 
@@ -127,9 +163,10 @@ export function ValidationPanel({ issues, onClose, onExecuteAnyway }: Validation
 interface IssueCardProps {
   issue: StudioValidationIssue;
   onSelectNode: (nodeId: string | undefined) => void;
+  onQuickFix: (quickFix: QuickFix) => void;
 }
 
-function IssueCard({ issue, onSelectNode }: IssueCardProps) {
+function IssueCard({ issue, onSelectNode, onQuickFix }: IssueCardProps) {
   const errorMsg = getErrorMessage(issue.code);
   const colors = getErrorColorClass(issue.severity);
 
@@ -170,15 +207,27 @@ function IssueCard({ issue, onSelectNode }: IssueCardProps) {
           )}
         </div>
 
-        {/* Go to node button */}
-        {issue.nodeId && (
-          <button
-            onClick={() => onSelectNode(issue.nodeId)}
-            className="flex-shrink-0 px-2 py-1 text-xs font-medium text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 rounded hover:bg-gray-50 dark:hover:bg-zinc-600"
-          >
-            Edit Node
-          </button>
-        )}
+        <div className="flex flex-col gap-2">
+          {/* Quick Fix button - shown when a quick fix is available */}
+          {issue.quickFix && (
+            <button
+              onClick={() => onQuickFix(issue.quickFix!)}
+              className="flex-shrink-0 px-3 py-1.5 text-xs font-medium text-white bg-teal-600 rounded hover:bg-teal-700 transition-colors"
+            >
+              {issue.quickFix.label}
+            </button>
+          )}
+
+          {/* Go to node button */}
+          {issue.nodeId && (
+            <button
+              onClick={() => onSelectNode(issue.nodeId)}
+              className="flex-shrink-0 px-2 py-1 text-xs font-medium text-gray-600 dark:text-zinc-400 bg-white dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 rounded hover:bg-gray-50 dark:hover:bg-zinc-600"
+            >
+              Edit Node
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

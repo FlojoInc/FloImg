@@ -12,6 +12,7 @@ export type {
   FloimgConfig,
   ImageBlob,
   MimeType,
+  ImageMimeType,
   ImageGenerator,
   TransformProvider,
   StoreProvider,

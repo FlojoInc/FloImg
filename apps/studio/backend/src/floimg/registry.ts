@@ -88,6 +88,9 @@ function transformToNode(schema: TransformOperationSchema, providerName: string)
     apiKeyEnvVar: schema.apiKeyEnvVar,
     acceptsReferenceImages: schema.acceptsReferenceImages,
     maxReferenceImages: schema.maxReferenceImages,
+    // Format validation requirements (for operations like OpenAI edit that need PNG)
+    acceptedInputFormats: schema.acceptedInputFormats,
+    inputFormatError: schema.inputFormatError,
   };
 }
 
