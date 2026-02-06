@@ -5,6 +5,47 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.23.0] - 2026-02-06
+
+Format validation for AI transform operations - Prevents runtime failures with clear guidance and one-click fixes.
+
+### @teamflojo/floimg (0.18.0)
+
+- feat: Add `ImageMimeType` type for type-safe format handling
+- feat: Add `acceptedInputFormats` and `inputFormatError` to `TransformOperationSchema`
+  - Enables transforms to declare required input formats at the schema level
+  - Validation can detect format mismatches before execution
+
+### @teamflojo/floimg-openai (0.4.0)
+
+- feat: Add PNG format requirement to edit and variations schemas
+  - DALL-E 2 edit/variations API requires PNG input
+  - Schema now declares `acceptedInputFormats: ["image/png"]`
+  - Provides user-friendly error message with fix guidance
+
+### @teamflojo/floimg-studio-shared (0.11.0)
+
+- feat: Add `QuickFix` interface for automated issue resolution
+- feat: Add `validateInputFormats()` for client-side format validation
+  - Tracks MIME types through workflow graph
+  - Detects format mismatches before execution
+  - Returns actionable quick fix metadata
+
+### @teamflojo/floimg-studio-ui (0.12.0)
+
+- feat: Add "Quick Fix" button to validation panel
+  - One-click insertion of Convert nodes for format mismatches
+  - Automatically wires connections correctly
+
+### @teamflojo/floimg-studio-backend (0.7.0)
+
+- feat: Pass through format requirements from transform schemas
+  - Exposes `acceptedInputFormats` and `inputFormatError` in node definitions
+
+### @teamflojo/floimg-mcp (0.2.1)
+
+- security: Update @modelcontextprotocol/sdk to >=1.26.0
+
 ## [v0.22.0] - 2026-02-03
 
 Iterative AI Workflow Editing - Users can now refine workflows through conversation with canvas-aware AI.
