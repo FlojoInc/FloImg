@@ -332,7 +332,7 @@ function App() {
         <WorkflowLibrary />
 
         <div className="floimg-studio h-screen flex flex-col bg-gray-100 dark:bg-zinc-900">
-          <Toolbar onToggleAI={handleToggleAIChat} isAIPanelOpen={isAIPanelOpen} />
+          <Toolbar />
 
           {/* Tab navigation */}
           <div className="floimg-tabs">

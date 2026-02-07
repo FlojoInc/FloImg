@@ -27,10 +27,6 @@ export interface ToolbarProps {
   hideAttribution?: boolean;
   /** Hide the "My Workflows" library toggle button (for wrappers providing custom workflow management) */
   hideWorkflowLibrary?: boolean;
-  /** Callback when AI Generate button is clicked */
-  onToggleAI?: () => void;
-  /** Whether the AI panel is currently open (for visual feedback) */
-  isAIPanelOpen?: boolean;
 }
 
 export function Toolbar({
@@ -40,13 +36,9 @@ export function Toolbar({
   remixInfoSlot,
   hideAttribution = false,
   hideWorkflowLibrary = false,
-  onToggleAI,
-  isAIPanelOpen = false,
 }: ToolbarProps = {}) {
   const execution = useWorkflowStore((s) => s.execution);
   const execute = useWorkflowStore((s) => s.execute);
-  const executeWithValidation = useWorkflowStore((s) => s.executeWithValidation);
-  const cancelExecution = useWorkflowStore((s) => s.cancelExecution);
   const exportToYaml = useWorkflowStore((s) => s.exportToYaml);
   const importFromYaml = useWorkflowStore((s) => s.importFromYaml);
   const nodes = useWorkflowStore((s) => s.nodes);
@@ -106,10 +98,6 @@ export function Toolbar({
     setIsEditingName(false);
   };
 
-  const handleExecute = async () => {
-    await executeWithValidation();
-  };
-
   const handleExecuteAnyway = async () => {
     hideValidationPanel();
     await execute();
@@ -152,24 +140,6 @@ export function Toolbar({
                   d="M4 6h16M4 12h16M4 18h7"
                 />
               </svg>
-            </button>
-          )}
-
-          {/* AI Generate button - placed in left zone for spatial separation from Execute */}
-          {onToggleAI && (
-            <button
-              onClick={onToggleAI}
-              className={`floimg-ai-btn ${isAIPanelOpen ? "floimg-ai-btn--active" : ""}`}
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-              AI Generate
             </button>
           )}
 
@@ -275,45 +245,6 @@ export function Toolbar({
           >
             Export
           </button>
-
-          {execution.status === "running" ? (
-            <button
-              onClick={cancelExecution}
-              className="floimg-toolbar__btn-primary !bg-red-500 hover:!bg-red-600 flex items-center gap-2"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-              Cancel
-            </button>
-          ) : (
-            <button
-              onClick={handleExecute}
-              disabled={nodes.length === 0}
-              className="floimg-toolbar__btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              Execute
-            </button>
-          )}
           {afterActionsSlot}
         </div>
       </div>

@@ -641,28 +641,27 @@
 
 /* ===== NODE TYPE ACCENTS ===== */
 
-/* Generator nodes - blue accent line */
-.floimg-node--generator::before {
+/* Base accent line - ensures full width regardless of content */
+.floimg-node::before {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
+  width: auto !important; /* Override any computed/inherited width */
   height: 3px;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
   border-radius: 12px 12px 0 0;
+  pointer-events: none;
+}
+
+/* Generator nodes - blue accent line */
+.floimg-node--generator::before {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
 }
 
 /* Transform nodes - teal accent line */
 .floimg-node--transform::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
   background: linear-gradient(90deg, #0d9488, #14b8a6);
-  border-radius: 12px 12px 0 0;
 }
 
 /* AI transform nodes - indigo accent line */
@@ -672,62 +671,27 @@
 
 /* Save nodes - green accent line */
 .floimg-node--save::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
   background: linear-gradient(90deg, #22c55e, #4ade80);
-  border-radius: 12px 12px 0 0;
 }
 
 /* Input nodes - amber accent line */
 .floimg-node--input::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
   background: linear-gradient(90deg, #f59e0b, #fbbf24);
-  border-radius: 12px 12px 0 0;
 }
 
 /* Vision nodes - cyan accent line */
 .floimg-node--vision::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
   background: linear-gradient(90deg, #06b6d4, #22d3ee);
-  border-radius: 12px 12px 0 0;
 }
 
 /* Text nodes - pink accent line */
 .floimg-node--text::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
   background: linear-gradient(90deg, #ec4899, #f472b6);
-  border-radius: 12px 12px 0 0;
 }
 
 /* Fan-out/Collect/Router - orange accent line */
 .floimg-node--iterative::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
   background: linear-gradient(90deg, #f97316, #fb923c);
-  border-radius: 12px 12px 0 0;
 }
 
 /* ===== EXECUTION STATUS ===== */
@@ -1166,4 +1130,139 @@
 
 .animate-slide-in {
   animation: slide-in 0.2s ease-out forwards;
+}
+
+/* ===== FLOATING CANVAS ACTIONS ===== */
+/* Action buttons positioned on the canvas for spatial proximity to results */
+
+.floimg-canvas-actions {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.floimg-canvas-actions > * {
+  pointer-events: auto;
+}
+
+/* Execute button - primary action, teal gradient */
+.floimg-canvas-actions__execute {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+  border-radius: 10px;
+  box-shadow:
+    0 2px 8px rgba(13, 148, 136, 0.25),
+    0 4px 16px rgba(13, 148, 136, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.15s ease;
+}
+
+.floimg-canvas-actions__execute:hover:not(:disabled) {
+  box-shadow:
+    0 4px 12px rgba(13, 148, 136, 0.35),
+    0 8px 24px rgba(13, 148, 136, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.floimg-canvas-actions__execute:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.floimg-canvas-actions__execute:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Cancel button - danger state */
+.floimg-canvas-actions__cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  border-radius: 10px;
+  box-shadow:
+    0 2px 8px rgba(220, 38, 38, 0.25),
+    0 4px 16px rgba(220, 38, 38, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.15s ease;
+}
+
+.floimg-canvas-actions__cancel:hover {
+  box-shadow:
+    0 4px 12px rgba(220, 38, 38, 0.35),
+    0 8px 24px rgba(220, 38, 38, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* AI Generate button - secondary/outline style, positioned near right edge where panel opens */
+.floimg-canvas-actions__ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #818cf8;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(129, 140, 248, 0.4);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.15s ease;
+}
+
+.floimg-canvas-actions__ai:hover {
+  background: rgba(129, 140, 248, 0.1);
+  border-color: rgba(129, 140, 248, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.floimg-canvas-actions__ai--active {
+  background: rgba(129, 140, 248, 0.15);
+  border-color: rgba(129, 140, 248, 0.8);
+  color: #6366f1;
+}
+
+.floimg-canvas-actions__ai--active:hover {
+  background: rgba(129, 140, 248, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .floimg-canvas-actions__ai {
+    background: rgba(39, 39, 42, 0.9);
+    color: #a5b4fc;
+    border-color: rgba(165, 180, 252, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .floimg-canvas-actions__ai:hover {
+    background: rgba(129, 140, 248, 0.15);
+    border-color: rgba(165, 180, 252, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .floimg-canvas-actions__ai--active {
+    background: rgba(129, 140, 248, 0.2);
+    border-color: rgba(165, 180, 252, 0.7);
+    color: #c7d2fe;
+  }
 }
