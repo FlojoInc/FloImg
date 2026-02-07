@@ -5,6 +5,17 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.26.0] - 2026-02-07
+
+Edge validation feedback improvements - Users can now see connection problems at a glance and receive clear feedback when connections are rejected.
+
+### @teamflojo/floimg-studio-ui (0.15.0)
+
+- feat: Persistent amber warning badge on edges with issues (visible without hover)
+- feat: Dashed amber stroke for warning edges to differentiate from normal edges
+- feat: Toast notifications when connections are rejected with clear reason
+- feat: Export `ToastContainer` and `useNotificationStore` for reusable notifications
+
 ## [v0.25.0] - 2026-02-06
 
 AI button placement and panel persistence improvements.
