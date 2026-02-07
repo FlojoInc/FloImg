@@ -1,6 +1,6 @@
 {
   "name": "floimg-monorepo",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "private": true,
   "description": "floimg monorepo - universal image workflow engine for developers and AI agents",
   "scripts": {
