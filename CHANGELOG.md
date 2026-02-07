@@ -5,6 +5,20 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.24.0] - 2026-02-06
+
+UX improvements for preview interaction, action hierarchy, and connection feedback.
+
+### @teamflojo/floimg-studio-ui (0.13.0)
+
+- feat: Click-to-expand preview lightbox with download/copy controls
+- feat: Extend canvas zoom range (0.1x to 4x) for detailed inspection
+- feat: Adaptive preview heights (Generator/Input 100px, Transform 80px)
+- feat: Loading skeleton animation during node execution
+- feat: Color-coded warning edges for ambiguous connections
+- feat: WarningEdge component with hover tooltip for image→text connections
+- style: Demote AI Generate button from gradient to outline style
+
 ## [v0.23.0] - 2026-02-06
 
 Format validation for AI transform operations - Prevents runtime failures with clear guidance and one-click fixes.

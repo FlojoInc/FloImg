@@ -449,7 +449,7 @@ export function geminiTransform(config: GeminiTransformConfig = {}): TransformPr
  */
 export const geminiGenerateSchema: GeneratorSchema = {
   name: "gemini-generate",
-  description: "Generate images from text using Gemini's native image generation",
+  description: "Google Gemini - Supports reference images for style guidance",
   category: "AI",
   parameters: {
     prompt: {

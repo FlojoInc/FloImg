@@ -151,6 +151,7 @@ export const GeneratorNode = memo(function GeneratorNode({
   const preview = useWorkflowStore((s) => s.execution.previews[id]);
   const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[id]);
   const previewVisible = useWorkflowStore((s) => s.previewVisible[id] !== false);
+  const openLightbox = useWorkflowStore((s) => s.openImageLightbox);
 
   const executionClass = getExecutionClass(nodeStatus);
 
@@ -163,6 +164,15 @@ export const GeneratorNode = memo(function GeneratorNode({
     <div
       className={`floimg-node floimg-node--generator relative min-w-[190px] overflow-hidden ${selected ? "selected" : ""} ${executionClass}`}
     >
+      {/* AI badge for AI-powered generators */}
+      {isAI && (
+        <div
+          className="absolute top-1.5 right-1.5 px-1.5 py-0.5 text-[9px] font-semibold bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 rounded z-10"
+          title="AI-powered - results vary with each run"
+        >
+          AI
+        </div>
+      )}
       {/* Text input handle for AI generators (optional - for dynamic prompts) */}
       {isAI && (
         <Handle
@@ -173,20 +183,50 @@ export const GeneratorNode = memo(function GeneratorNode({
           title="Text input (optional prompt from text/vision node)"
         />
       )}
-      {/* Reference images input handle (for AI generators) */}
+      {/* Reference images input handle (for AI generators) - larger and at bottom for visibility */}
       {acceptsReferences && (
         <Handle
           type="target"
-          position={Position.Left}
+          position={Position.Bottom}
           id="references"
-          className="!w-3 !h-3 !bg-violet-500 !border-2 !border-white dark:!border-zinc-800"
-          style={{ top: "50%" }}
+          className="!w-4 !h-4 !bg-violet-500 !border-2 !border-white dark:!border-zinc-800 !shadow-[0_0_0_2px_rgba(139,92,246,0.3)]"
           title={`Reference images (up to ${data.maxReferenceImages || 14})`}
         />
       )}
-      {preview && previewVisible && (
+      {/* Loading skeleton while node is running but no preview yet */}
+      {nodeStatus === "running" && !preview && previewVisible && (
         <div className="floimg-node__preview">
-          <img src={preview} alt="Preview" className="w-full h-20 object-contain rounded-md" />
+          <div className="w-full h-[100px] bg-zinc-200 dark:bg-zinc-700 rounded-md animate-pulse flex items-center justify-center">
+            <svg
+              className="w-8 h-8 text-zinc-400 dark:text-zinc-500"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+        </div>
+      )}
+      {preview && previewVisible && (
+        <div
+          className="floimg-node__preview cursor-zoom-in"
+          onClick={(e) => {
+            e.stopPropagation();
+            openLightbox({ src: preview, nodeName: data.generatorName, nodeId: id });
+          }}
+          title="Click to view full size"
+        >
+          <img
+            src={preview}
+            alt="Preview"
+            className="w-full h-[100px] object-contain rounded-md pointer-events-none"
+          />
         </div>
       )}
       <ErrorBadge nodeId={id} />
@@ -205,15 +245,27 @@ export const GeneratorNode = memo(function GeneratorNode({
       </div>
       <div className="floimg-node__content">
         {isAI && (
-          <div className="text-[10px] text-pink-500/80 dark:text-pink-400/80 mb-1.5 flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-pink-400" />
-            Text input for dynamic prompt
+          <div className="text-[11px] text-pink-500 dark:text-pink-400 mb-1.5 flex items-center gap-1.5">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Text input (top)
           </div>
         )}
         {acceptsReferences && (
-          <div className="text-[10px] text-violet-500/80 dark:text-violet-400/80 mb-1.5 flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-violet-400" />
-            Reference images
+          <div className="text-[11px] text-violet-500 dark:text-violet-400 mb-1.5 flex items-center gap-1.5">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                clipRule="evenodd"
+              />
+            </svg>
+            References (bottom)
           </div>
         )}
         <div className="space-y-0.5">
@@ -248,6 +300,7 @@ export const TransformNode = memo(function TransformNode({
   const preview = useWorkflowStore((s) => s.execution.previews[id]);
   const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[id]);
   const previewVisible = useWorkflowStore((s) => s.previewVisible[id] !== false);
+  const openLightbox = useWorkflowStore((s) => s.openImageLightbox);
 
   const executionClass = getExecutionClass(nodeStatus);
 
@@ -262,6 +315,15 @@ export const TransformNode = memo(function TransformNode({
     <div
       className={`floimg-node ${nodeTypeClass} relative min-w-[190px] overflow-hidden ${selected ? "selected" : ""} ${executionClass}`}
     >
+      {/* AI badge for AI-powered transforms */}
+      {isAI && (
+        <div
+          className="absolute top-1.5 right-1.5 px-1.5 py-0.5 text-[9px] font-semibold bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 rounded z-10"
+          title="AI-powered - results vary with each run"
+        >
+          AI
+        </div>
+      )}
       {/* Text input handle for AI transforms (optional - for dynamic prompts) */}
       {isAI && (
         <Handle
@@ -279,19 +341,50 @@ export const TransformNode = memo(function TransformNode({
         id="image"
         className="!w-3 !h-3 !bg-teal-500 !border-2 !border-white dark:!border-zinc-800"
       />
-      {/* Reference images input handle (for AI transforms that accept additional references) */}
+      {/* Reference images input handle (for AI transforms that accept additional references) - larger for visibility */}
       {acceptsReferences && (
         <Handle
           type="target"
           position={Position.Bottom}
           id="references"
-          className="!w-3 !h-3 !bg-violet-500 !border-2 !border-white dark:!border-zinc-800"
+          className="!w-4 !h-4 !bg-violet-500 !border-2 !border-white dark:!border-zinc-800 !shadow-[0_0_0_2px_rgba(139,92,246,0.3)]"
           title={`Reference images (up to ${data.maxReferenceImages || 13})`}
         />
       )}
-      {preview && previewVisible && (
+      {/* Loading skeleton while node is running but no preview yet */}
+      {nodeStatus === "running" && !preview && previewVisible && (
         <div className="floimg-node__preview">
-          <img src={preview} alt="Preview" className="w-full h-20 object-contain rounded-md" />
+          <div className="w-full h-20 bg-zinc-200 dark:bg-zinc-700 rounded-md animate-pulse flex items-center justify-center">
+            <svg
+              className="w-6 h-6 text-zinc-400 dark:text-zinc-500"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+        </div>
+      )}
+      {preview && previewVisible && (
+        <div
+          className="floimg-node__preview cursor-zoom-in"
+          onClick={(e) => {
+            e.stopPropagation();
+            openLightbox({ src: preview, nodeName: data.operation, nodeId: id });
+          }}
+          title="Click to view full size"
+        >
+          <img
+            src={preview}
+            alt="Preview"
+            className="w-full h-20 object-contain rounded-md pointer-events-none"
+          />
         </div>
       )}
       <ErrorBadge nodeId={id} />
@@ -323,15 +416,27 @@ export const TransformNode = memo(function TransformNode({
       </div>
       <div className="floimg-node__content">
         {isAI && (
-          <div className="text-[10px] text-pink-500/80 dark:text-pink-400/80 mb-1.5 flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-pink-400" />
-            Text input for dynamic prompt
+          <div className="text-[11px] text-pink-500 dark:text-pink-400 mb-1.5 flex items-center gap-1.5">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Text input (top)
           </div>
         )}
         {acceptsReferences && (
-          <div className="text-[10px] text-violet-500/80 dark:text-violet-400/80 mb-1.5 flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-violet-400" />
-            Reference images
+          <div className="text-[11px] text-violet-500 dark:text-violet-400 mb-1.5 flex items-center gap-1.5">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                clipRule="evenodd"
+              />
+            </svg>
+            References (bottom)
           </div>
         )}
         <div className="space-y-0.5">
@@ -398,6 +503,7 @@ export const InputNode = memo(function InputNode({ id, data, selected }: NodePro
   const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[id]);
   const previewVisible = useWorkflowStore((s) => s.previewVisible[id] !== false);
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
+  const openLightbox = useWorkflowStore((s) => s.openImageLightbox);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const storageAdapter = useRequiredStorageAdapter();
 
@@ -465,17 +571,24 @@ export const InputNode = memo(function InputNode({ id, data, selected }: NodePro
       onDragOver={handleDragOver}
     >
       {previewUrl && previewVisible ? (
-        <div className="floimg-node__preview">
+        <div
+          className="floimg-node__preview cursor-zoom-in"
+          onClick={(e) => {
+            e.stopPropagation();
+            openLightbox({ src: previewUrl, nodeName: data.filename || "Input", nodeId: id });
+          }}
+          title="Click to view full size"
+        >
           <img
             src={previewUrl}
             alt="Uploaded"
-            className="w-full h-20 object-contain rounded-md"
+            className="w-full h-[100px] object-contain rounded-md pointer-events-none"
             crossOrigin="use-credentials"
           />
         </div>
       ) : !previewUrl ? (
         <div
-          className="h-20 flex items-center justify-center cursor-pointer bg-amber-50/50 dark:bg-amber-900/20 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors border-b border-amber-100/50 dark:border-amber-800/30"
+          className="h-[100px] flex items-center justify-center cursor-pointer bg-amber-50/50 dark:bg-amber-900/20 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors border-b border-amber-100/50 dark:border-amber-800/30"
           onClick={(e) => {
             e.stopPropagation();
             fileInputRef.current?.click();
@@ -565,6 +678,13 @@ export const VisionNode = memo(function VisionNode({
     <div
       className={`floimg-node floimg-node--vision relative min-w-[190px] overflow-hidden ${selected ? "selected" : ""} ${executionClass}`}
     >
+      {/* AI badge - vision nodes are inherently AI-powered */}
+      <div
+        className="absolute top-1.5 right-1.5 px-1.5 py-0.5 text-[9px] font-semibold bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 rounded z-10"
+        title="AI-powered - results vary with each run"
+      >
+        AI
+      </div>
       {/* Text/context input handle (top) - for workflow context */}
       <Handle
         type="target"
@@ -703,6 +823,13 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
     <div
       className={`floimg-node floimg-node--text relative min-w-[190px] overflow-hidden ${selected ? "selected" : ""} ${executionClass}`}
     >
+      {/* AI badge - text nodes are inherently AI-powered */}
+      <div
+        className="absolute top-1.5 right-1.5 px-1.5 py-0.5 text-[9px] font-semibold bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 rounded z-10"
+        title="AI-powered - results vary with each run"
+      >
+        AI
+      </div>
       <Handle
         type="target"
         position={Position.Left}

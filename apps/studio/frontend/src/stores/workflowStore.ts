@@ -216,6 +216,15 @@ interface WorkflowStore {
   inspectedNodeId: string | null;
   openOutputInspector: (nodeId: string) => void;
   closeOutputInspector: () => void;
+
+  // Image lightbox for preview expansion
+  imageLightbox: {
+    src: string;
+    nodeName: string;
+    nodeId: string;
+  } | null;
+  openImageLightbox: (params: { src: string; nodeName: string; nodeId: string }) => void;
+  closeImageLightbox: () => void;
 }
 
 let nodeIdCounter = 0;
@@ -307,6 +316,11 @@ export const useWorkflowStore = create<WorkflowStore>()(
         inspectedNodeId: null,
         openOutputInspector: (nodeId) => set({ inspectedNodeId: nodeId }),
         closeOutputInspector: () => set({ inspectedNodeId: null }),
+
+        // Image lightbox state
+        imageLightbox: null,
+        openImageLightbox: (params) => set({ imageLightbox: params }),
+        closeImageLightbox: () => set({ imageLightbox: null }),
 
         // Execution history methods
         addExecutionRun: (run) => {
@@ -604,12 +618,46 @@ export const useWorkflowStore = create<WorkflowStore>()(
             ? `edge_${connection.source}_${connection.target}_${handleSuffix}`
             : `edge_${connection.source}_${connection.target}`;
 
+          // Check for "valid but potentially wrong" connection warnings
+          // Warn when: image output → text input, but target has references handle
+          const { nodes } = get();
+          const sourceNode = nodes.find((n) => n.id === connection.source);
+          const targetNode = nodes.find((n) => n.id === connection.target);
+
+          // Image-output node types
+          const isSourceImageOutput =
+            sourceNode?.type &&
+            ["generator", "transform", "input", "multiinput", "fanout"].includes(sourceNode.type);
+
+          // Check if connecting to text handle when target accepts references
+          const isConnectingToTextHandle = connection.targetHandle === "text";
+          const targetData = targetNode?.data as { acceptsReferenceImages?: boolean } | undefined;
+          const targetAcceptsReferences = targetData?.acceptsReferenceImages;
+
+          // Warning: connecting image output to text handle when references handle is available
+          const isWarningConnection =
+            isSourceImageOutput && isConnectingToTextHandle && targetAcceptsReferences;
+
           const newEdge: Edge = {
             id,
             source: connection.source,
             target: connection.target,
             sourceHandle: connection.sourceHandle ?? undefined,
             targetHandle: connection.targetHandle ?? undefined,
+            // Apply warning edge type and styling for ambiguous connections
+            ...(isWarningConnection && {
+              type: "warning",
+              animated: true,
+              style: {
+                stroke: "#f59e0b", // amber-500
+                strokeWidth: 2,
+                strokeDasharray: "5,5",
+              },
+              data: {
+                warning:
+                  "Image connected to text input. Did you mean the References handle (bottom)?",
+              },
+            }),
           };
 
           set((state) => ({
