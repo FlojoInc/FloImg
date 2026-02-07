@@ -5,6 +5,14 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### @teamflojo/floimg-studio-ui (0.14.0)
+
+- feat: Add `onToggleAI` and `isAIPanelOpen` props to Toolbar for spatial button placement
+- feat: AI panel open state persists across page refreshes
+- feat: Auto-open AI panel on empty canvas for first-time users
+
 ## [v0.24.0] - 2026-02-06
 
 UX improvements for preview interaction, action hierarchy, and connection feedback.

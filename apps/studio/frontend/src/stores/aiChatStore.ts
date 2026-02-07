@@ -337,10 +337,11 @@ export const useAIChatStore = create<AIChatState>()(
     }),
     {
       name: "floimg-ai-chat",
-      // Only persist these fields - don't persist transient state
+      // Persist conversation, model, and panel visibility
       partialize: (state) => ({
         messages: state.messages,
         selectedModel: state.selectedModel,
+        isOpen: state.isOpen,
       }),
     }
   )

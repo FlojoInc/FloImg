@@ -515,6 +515,16 @@
   border-color: rgba(129, 140, 248, 0.6);
 }
 
+.floimg-ai-btn--active {
+  background: rgba(129, 140, 248, 0.15);
+  border-color: rgba(129, 140, 248, 0.8);
+  color: #a5b4fc; /* indigo-300 */
+}
+
+.floimg-ai-btn--active:hover {
+  background: rgba(129, 140, 248, 0.2);
+}
+
 /* ===== EMPTY STATE ===== */
 
 .floimg-empty {

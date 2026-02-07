@@ -89,6 +89,9 @@ function App() {
 
   // AI Panel state from store
   const toggleAIPanel = useAIChatStore((s) => s.togglePanel);
+  const isAIPanelOpen = useAIChatStore((s) => s.isOpen);
+  const openAIPanel = useAIChatStore((s) => s.openPanel);
+  const aiMessages = useAIChatStore((s) => s.messages);
 
   // Output inspector state
   const inspectedNodeId = useWorkflowStore((s) => s.inspectedNodeId);
@@ -196,6 +199,22 @@ function App() {
       window.removeEventListener("workflow-loaded", handleWorkflowLoaded);
     };
   }, []);
+
+  // Auto-open AI panel on empty canvas (first-time experience)
+  // Opens when: canvas is empty, panel not already open, no prior conversation
+  // This helps new users discover the AI workflow builder immediately
+  useEffect(() => {
+    const isEmptyCanvas = nodes.length === 0;
+    const isNewSession = aiMessages.length === 0;
+
+    if (isEmptyCanvas && !isAIPanelOpen && isNewSession) {
+      // Small delay to let the UI settle before opening
+      const timer = setTimeout(() => {
+        openAIPanel();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []); // Only run once on mount
 
   // Handler for template selection - fetches from API
   const handleTemplateSelect = useCallback(
@@ -309,7 +328,7 @@ function App() {
         <WorkflowLibrary />
 
         <div className="floimg-studio h-screen flex flex-col bg-gray-100 dark:bg-zinc-900">
-          <Toolbar />
+          <Toolbar onToggleAI={handleToggleAIChat} isAIPanelOpen={isAIPanelOpen} />
 
           {/* Tab navigation */}
           <div className="floimg-tabs">
@@ -344,19 +363,6 @@ function App() {
                   Templates
                 </button>
               </div>
-
-              {/* AI Generate button */}
-              <button onClick={toggleAIPanel} className="floimg-ai-btn mr-4">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-                AI Generate
-              </button>
             </div>
           </div>
 
