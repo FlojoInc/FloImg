@@ -6,6 +6,20 @@ import { useWorkflowStore } from "../stores/workflowStore";
 import { NodePaletteItem } from "./NodePaletteItem";
 
 /**
+ * Badge indicating an AI-powered node (results vary with each run)
+ */
+function AIBadge() {
+  return (
+    <span
+      className="ml-1.5 px-1.5 py-0.5 text-[9px] font-medium bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 rounded"
+      title="AI-powered - results vary with each run"
+    >
+      AI
+    </span>
+  );
+}
+
+/**
  * Badge indicating a node accepts reference images
  */
 function ReferenceBadge({ maxReferenceImages }: { maxReferenceImages?: number }) {
@@ -271,8 +285,13 @@ export function NodePalette() {
                   onDragStart={handleDragStart}
                   onDoubleClick={handleDoubleClick}
                   badge={
-                    def.acceptsReferenceImages ? (
-                      <ReferenceBadge maxReferenceImages={def.maxReferenceImages} />
+                    def.isAI || def.acceptsReferenceImages ? (
+                      <>
+                        {def.isAI && <AIBadge />}
+                        {def.acceptsReferenceImages && (
+                          <ReferenceBadge maxReferenceImages={def.maxReferenceImages} />
+                        )}
+                      </>
                     ) : undefined
                   }
                 />
@@ -295,8 +314,13 @@ export function NodePalette() {
                   onDragStart={handleDragStart}
                   onDoubleClick={handleDoubleClick}
                   badge={
-                    def.acceptsReferenceImages ? (
-                      <ReferenceBadge maxReferenceImages={def.maxReferenceImages} />
+                    def.isAI || def.acceptsReferenceImages ? (
+                      <>
+                        {def.isAI && <AIBadge />}
+                        {def.acceptsReferenceImages && (
+                          <ReferenceBadge maxReferenceImages={def.maxReferenceImages} />
+                        )}
+                      </>
                     ) : undefined
                   }
                 />
@@ -316,6 +340,7 @@ export function NodePalette() {
                 colorVariant="pink"
                 onDragStart={handleDragStart}
                 onDoubleClick={handleDoubleClick}
+                badge={<AIBadge />}
               />
             ))}
           </div>
@@ -332,6 +357,7 @@ export function NodePalette() {
                 colorVariant="cyan"
                 onDragStart={handleDragStart}
                 onDoubleClick={handleDoubleClick}
+                badge={<AIBadge />}
               />
             ))}
           </div>

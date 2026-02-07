@@ -163,6 +163,15 @@ export const GeneratorNode = memo(function GeneratorNode({
     <div
       className={`floimg-node floimg-node--generator relative min-w-[190px] overflow-hidden ${selected ? "selected" : ""} ${executionClass}`}
     >
+      {/* AI badge for AI-powered generators */}
+      {isAI && (
+        <div
+          className="absolute top-1.5 right-1.5 px-1.5 py-0.5 text-[9px] font-semibold bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 rounded z-10"
+          title="AI-powered - results vary with each run"
+        >
+          AI
+        </div>
+      )}
       {/* Text input handle for AI generators (optional - for dynamic prompts) */}
       {isAI && (
         <Handle
@@ -262,6 +271,15 @@ export const TransformNode = memo(function TransformNode({
     <div
       className={`floimg-node ${nodeTypeClass} relative min-w-[190px] overflow-hidden ${selected ? "selected" : ""} ${executionClass}`}
     >
+      {/* AI badge for AI-powered transforms */}
+      {isAI && (
+        <div
+          className="absolute top-1.5 right-1.5 px-1.5 py-0.5 text-[9px] font-semibold bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 rounded z-10"
+          title="AI-powered - results vary with each run"
+        >
+          AI
+        </div>
+      )}
       {/* Text input handle for AI transforms (optional - for dynamic prompts) */}
       {isAI && (
         <Handle
@@ -565,6 +583,13 @@ export const VisionNode = memo(function VisionNode({
     <div
       className={`floimg-node floimg-node--vision relative min-w-[190px] overflow-hidden ${selected ? "selected" : ""} ${executionClass}`}
     >
+      {/* AI badge - vision nodes are inherently AI-powered */}
+      <div
+        className="absolute top-1.5 right-1.5 px-1.5 py-0.5 text-[9px] font-semibold bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 rounded z-10"
+        title="AI-powered - results vary with each run"
+      >
+        AI
+      </div>
       {/* Text/context input handle (top) - for workflow context */}
       <Handle
         type="target"
@@ -703,6 +728,13 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
     <div
       className={`floimg-node floimg-node--text relative min-w-[190px] overflow-hidden ${selected ? "selected" : ""} ${executionClass}`}
     >
+      {/* AI badge - text nodes are inherently AI-powered */}
+      <div
+        className="absolute top-1.5 right-1.5 px-1.5 py-0.5 text-[9px] font-semibold bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 rounded z-10"
+        title="AI-powered - results vary with each run"
+      >
+        AI
+      </div>
       <Handle
         type="target"
         position={Position.Left}
