@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -18,6 +18,7 @@ import "reactflow/dist/style.css";
 import "./studio-theme.css";
 import type { GeneratorNodeData } from "@teamflojo/floimg-studio-shared";
 import { useWorkflowStore } from "../stores/workflowStore";
+import { useNotificationStore } from "../stores/notificationStore";
 import { nodeTypes } from "./nodeTypes";
 import { WarningEdge } from "./WarningEdge";
 
@@ -52,15 +53,22 @@ export function WorkflowEditor() {
   const setEdges = useWorkflowStore((s) => s.setEdges);
   const addEdge = useWorkflowStore((s) => s.addEdge);
   const setSelectedNode = useWorkflowStore((s) => s.setSelectedNode);
+  const showNotification = useNotificationStore((s) => s.showNotification);
+
+  // Track last rejection reason for onConnectEnd feedback
+  const lastRejectionReason = useRef<string | null>(null);
 
   // Memoize nodeTypes to prevent React Flow warning during HMR
   // The nodeTypes object is defined outside, but HMR can cause module re-evaluation
   const memoizedNodeTypes = useMemo(() => nodeTypes, []);
 
   // Validate connections based on node types
+  // Returns true if valid, sets rejection reason if not
   const isValidConnection = useCallback(
     (connection: Connection) => {
       const { source, target, targetHandle } = connection;
+      lastRejectionReason.current = null;
+
       if (!source || !target) return false;
 
       const sourceNode = nodes.find((n) => n.id === source);
@@ -68,8 +76,19 @@ export function WorkflowEditor() {
 
       if (!sourceNode || !targetNode) return false;
 
+      // Get node labels for clear error messages
+      const sourceData = sourceNode.data as Record<string, unknown>;
+      const targetData = targetNode.data as Record<string, unknown>;
+      const sourceLabel =
+        (sourceData.providerLabel as string) || (sourceData.label as string) || sourceNode.type;
+      const targetLabel =
+        (targetData.providerLabel as string) || (targetData.label as string) || targetNode.type;
+
       // Rule 1: Cannot connect FROM a save node (no output)
-      if (sourceNode.type === "save") return false;
+      if (sourceNode.type === "save") {
+        lastRejectionReason.current = `${sourceLabel} has no output to connect`;
+        return false;
+      }
 
       // Rule 2: Cannot connect TO a generator UNLESS it has specific input handles
       // AI generators have "text" (for prompts) and "references" (for reference images) handles
@@ -80,20 +99,35 @@ export function WorkflowEditor() {
         // Allow connections to references handle if it accepts reference images
         if (targetHandle === "references" && data.acceptsReferenceImages) return true;
         // Block all other connections to generators
+        lastRejectionReason.current = `${targetLabel} doesn't accept this input type`;
         return false;
       }
 
       // Rule 3: Cannot connect TO an input node (no input port)
-      if (targetNode.type === "input") return false;
+      if (targetNode.type === "input") {
+        lastRejectionReason.current = `${targetLabel} is an input node and can't receive connections`;
+        return false;
+      }
 
       // Rule 4: No self-connections
-      if (source === target) return false;
+      if (source === target) {
+        lastRejectionReason.current = "Cannot connect a node to itself";
+        return false;
+      }
 
       // Note: We allow replacing existing connections - handled in onConnect
       return true;
     },
     [nodes]
   );
+
+  // Show notification when a connection is rejected
+  const onConnectEnd = useCallback(() => {
+    if (lastRejectionReason.current) {
+      showNotification(lastRejectionReason.current, "warning", 3000);
+      lastRejectionReason.current = null;
+    }
+  }, [showNotification]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
@@ -173,6 +207,7 @@ export function WorkflowEditor() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectEnd={onConnectEnd}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         nodeTypes={memoizedNodeTypes}
