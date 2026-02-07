@@ -5,6 +5,17 @@ All notable changes to FloImg will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.27.0] - 2026-02-07
+
+UX improvements for spatial button placement - Execute and AI Generate buttons now float directly on the canvas for better proximity to their results.
+
+### @teamflojo/floimg-studio-ui (0.16.0)
+
+- feat: Move Execute button to floating position on canvas (bottom-right)
+- feat: Move AI Generate button to floating position near AI panel (right edge)
+- feat: Remove `onToggleAI` and `isAIPanelOpen` props from Toolbar (now handled internally)
+- fix: Node header accent lines now span full width on all node sizes
+
 ## [v0.26.0] - 2026-02-07
 
 Edge validation feedback improvements - Users can now see connection problems at a glance and receive clear feedback when connections are rejected.
