@@ -19,6 +19,7 @@ import "./studio-theme.css";
 import type { GeneratorNodeData } from "@teamflojo/floimg-studio-shared";
 import { useWorkflowStore } from "../stores/workflowStore";
 import { useNotificationStore } from "../stores/notificationStore";
+import { useAIChatStore } from "../stores/aiChatStore";
 import { nodeTypes } from "./nodeTypes";
 import { WarningEdge } from "./WarningEdge";
 
@@ -54,6 +55,19 @@ export function WorkflowEditor() {
   const addEdge = useWorkflowStore((s) => s.addEdge);
   const setSelectedNode = useWorkflowStore((s) => s.setSelectedNode);
   const showNotification = useNotificationStore((s) => s.showNotification);
+
+  // Execution state for floating Execute button
+  const execution = useWorkflowStore((s) => s.execution);
+  const executeWithValidation = useWorkflowStore((s) => s.executeWithValidation);
+  const cancelExecution = useWorkflowStore((s) => s.cancelExecution);
+
+  // AI panel state for floating AI button
+  const toggleAIPanel = useAIChatStore((s) => s.togglePanel);
+  const isAIPanelOpen = useAIChatStore((s) => s.isOpen);
+
+  const handleExecute = useCallback(async () => {
+    await executeWithValidation();
+  }, [executeWithValidation]);
 
   // Track last rejection reason for onConnectEnd feedback
   const lastRejectionReason = useRef<string | null>(null);
@@ -200,7 +214,7 @@ export function WorkflowEditor() {
   }, [setSelectedNode]);
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full relative">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -236,6 +250,63 @@ export function WorkflowEditor() {
           pannable
         />
       </ReactFlow>
+
+      {/* Floating Action Buttons - positioned on canvas for spatial proximity to results */}
+      <div className="floimg-canvas-actions">
+        {/* AI Generate button - right edge, near where AI panel opens */}
+        <button
+          onClick={toggleAIPanel}
+          className={`floimg-canvas-actions__ai ${isAIPanelOpen ? "floimg-canvas-actions__ai--active" : ""}`}
+          title="AI Generate (⌘/)"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          AI Generate
+        </button>
+
+        {/* Execute button - bottom right, directly on the canvas it affects */}
+        {execution.status === "running" ? (
+          <button onClick={cancelExecution} className="floimg-canvas-actions__cancel">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            Cancel
+          </button>
+        ) : (
+          <button
+            onClick={handleExecute}
+            disabled={nodes.length === 0}
+            className="floimg-canvas-actions__execute"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Execute
+          </button>
+        )}
+      </div>
     </div>
   );
 }
