@@ -25,7 +25,7 @@ type AspectRatio = (typeof ASPECT_RATIOS)[number];
  */
 export const googleImagenSchema: GeneratorSchema = {
   name: "google-imagen",
-  description: "Generate images using Google's Imagen models via the Gemini API",
+  description: "Google Imagen - Text-to-image only (no reference images)",
   category: "AI",
   parameters: {
     prompt: {

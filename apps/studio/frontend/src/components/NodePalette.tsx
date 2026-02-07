@@ -5,6 +5,20 @@ import { getGenerators, getTransforms, getTextProviders, getVisionProviders } fr
 import { useWorkflowStore } from "../stores/workflowStore";
 import { NodePaletteItem } from "./NodePaletteItem";
 
+/**
+ * Badge indicating a node accepts reference images
+ */
+function ReferenceBadge({ maxReferenceImages }: { maxReferenceImages?: number }) {
+  return (
+    <span
+      className="ml-1.5 px-1.5 py-0.5 text-[9px] font-medium bg-violet-500/15 text-violet-500 dark:text-violet-400 rounded"
+      title={`Accepts up to ${maxReferenceImages || 14} reference images for style guidance`}
+    >
+      +ref
+    </span>
+  );
+}
+
 export function NodePalette() {
   const setGenerators = useWorkflowStore((s) => s.setGenerators);
   const setTransforms = useWorkflowStore((s) => s.setTransforms);
@@ -256,6 +270,11 @@ export function NodePalette() {
                   colorVariant="blue"
                   onDragStart={handleDragStart}
                   onDoubleClick={handleDoubleClick}
+                  badge={
+                    def.acceptsReferenceImages ? (
+                      <ReferenceBadge maxReferenceImages={def.maxReferenceImages} />
+                    ) : undefined
+                  }
                 />
               ))}
             </div>
@@ -275,6 +294,11 @@ export function NodePalette() {
                   colorVariant="teal"
                   onDragStart={handleDragStart}
                   onDoubleClick={handleDoubleClick}
+                  badge={
+                    def.acceptsReferenceImages ? (
+                      <ReferenceBadge maxReferenceImages={def.maxReferenceImages} />
+                    ) : undefined
+                  }
                 />
               ))}
             </div>
