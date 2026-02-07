@@ -182,14 +182,13 @@ export const GeneratorNode = memo(function GeneratorNode({
           title="Text input (optional prompt from text/vision node)"
         />
       )}
-      {/* Reference images input handle (for AI generators) */}
+      {/* Reference images input handle (for AI generators) - larger and at bottom for visibility */}
       {acceptsReferences && (
         <Handle
           type="target"
-          position={Position.Left}
+          position={Position.Bottom}
           id="references"
-          className="!w-3 !h-3 !bg-violet-500 !border-2 !border-white dark:!border-zinc-800"
-          style={{ top: "50%" }}
+          className="!w-4 !h-4 !bg-violet-500 !border-2 !border-white dark:!border-zinc-800 !shadow-[0_0_0_2px_rgba(139,92,246,0.3)]"
           title={`Reference images (up to ${data.maxReferenceImages || 14})`}
         />
       )}
@@ -214,15 +213,27 @@ export const GeneratorNode = memo(function GeneratorNode({
       </div>
       <div className="floimg-node__content">
         {isAI && (
-          <div className="text-[10px] text-pink-500/80 dark:text-pink-400/80 mb-1.5 flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-pink-400" />
-            Text input for dynamic prompt
+          <div className="text-[11px] text-pink-500 dark:text-pink-400 mb-1.5 flex items-center gap-1.5">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Text input (top)
           </div>
         )}
         {acceptsReferences && (
-          <div className="text-[10px] text-violet-500/80 dark:text-violet-400/80 mb-1.5 flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-violet-400" />
-            Reference images
+          <div className="text-[11px] text-violet-500 dark:text-violet-400 mb-1.5 flex items-center gap-1.5">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                clipRule="evenodd"
+              />
+            </svg>
+            References (bottom)
           </div>
         )}
         <div className="space-y-0.5">
@@ -297,13 +308,13 @@ export const TransformNode = memo(function TransformNode({
         id="image"
         className="!w-3 !h-3 !bg-teal-500 !border-2 !border-white dark:!border-zinc-800"
       />
-      {/* Reference images input handle (for AI transforms that accept additional references) */}
+      {/* Reference images input handle (for AI transforms that accept additional references) - larger for visibility */}
       {acceptsReferences && (
         <Handle
           type="target"
           position={Position.Bottom}
           id="references"
-          className="!w-3 !h-3 !bg-violet-500 !border-2 !border-white dark:!border-zinc-800"
+          className="!w-4 !h-4 !bg-violet-500 !border-2 !border-white dark:!border-zinc-800 !shadow-[0_0_0_2px_rgba(139,92,246,0.3)]"
           title={`Reference images (up to ${data.maxReferenceImages || 13})`}
         />
       )}
@@ -341,15 +352,27 @@ export const TransformNode = memo(function TransformNode({
       </div>
       <div className="floimg-node__content">
         {isAI && (
-          <div className="text-[10px] text-pink-500/80 dark:text-pink-400/80 mb-1.5 flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-pink-400" />
-            Text input for dynamic prompt
+          <div className="text-[11px] text-pink-500 dark:text-pink-400 mb-1.5 flex items-center gap-1.5">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Text input (top)
           </div>
         )}
         {acceptsReferences && (
-          <div className="text-[10px] text-violet-500/80 dark:text-violet-400/80 mb-1.5 flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-violet-400" />
-            Reference images
+          <div className="text-[11px] text-violet-500 dark:text-violet-400 mb-1.5 flex items-center gap-1.5">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                clipRule="evenodd"
+              />
+            </svg>
+            References (bottom)
           </div>
         )}
         <div className="space-y-0.5">
