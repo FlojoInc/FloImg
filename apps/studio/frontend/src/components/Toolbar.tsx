@@ -27,6 +27,10 @@ export interface ToolbarProps {
   hideAttribution?: boolean;
   /** Hide the "My Workflows" library toggle button (for wrappers providing custom workflow management) */
   hideWorkflowLibrary?: boolean;
+  /** Callback when AI Generate button is clicked */
+  onToggleAI?: () => void;
+  /** Whether the AI panel is currently open (for visual feedback) */
+  isAIPanelOpen?: boolean;
 }
 
 export function Toolbar({
@@ -36,6 +40,8 @@ export function Toolbar({
   remixInfoSlot,
   hideAttribution = false,
   hideWorkflowLibrary = false,
+  onToggleAI,
+  isAIPanelOpen = false,
 }: ToolbarProps = {}) {
   const execution = useWorkflowStore((s) => s.execution);
   const execute = useWorkflowStore((s) => s.execute);
@@ -146,6 +152,24 @@ export function Toolbar({
                   d="M4 6h16M4 12h16M4 18h7"
                 />
               </svg>
+            </button>
+          )}
+
+          {/* AI Generate button - placed in left zone for spatial separation from Execute */}
+          {onToggleAI && (
+            <button
+              onClick={onToggleAI}
+              className={`floimg-ai-btn ${isAIPanelOpen ? "floimg-ai-btn--active" : ""}`}
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+              AI Generate
             </button>
           )}
 
