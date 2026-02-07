@@ -1,6 +1,6 @@
 {
   "name": "@teamflojo/floimg-studio-ui",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "FloImg Studio React components for building visual workflow editors",
   "type": "module",
   "license": "MIT",
