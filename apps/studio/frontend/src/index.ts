@@ -33,6 +33,7 @@ export { AIPanel } from "./components/AIPanel";
 export { useAIChatStore, type CanvasSnapshot, type ExecutionContext } from "./stores/aiChatStore";
 export { CommandPalette } from "./components/CommandPalette";
 export { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
+export { ToastContainer } from "./components/Toast";
 
 // Keyboard shortcuts
 export { useKeyboardShortcuts } from "./lib/keyboard/useKeyboardShortcuts";
@@ -47,6 +48,7 @@ export {
   type SavedWorkflow,
 } from "./stores/workflowStore";
 export { useSettingsStore } from "./stores/settingsStore";
+export { useNotificationStore, type NotificationType } from "./stores/notificationStore";
 
 // Storage adapter for Input node uploads
 export {

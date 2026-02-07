@@ -2,8 +2,13 @@ import { memo, useState } from "react";
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from "reactflow";
 
 /**
- * Custom edge component that displays warning tooltip for ambiguous connections.
+ * Custom edge component that displays warning indicator for ambiguous connections.
  * Used when an image output is connected to a text input when references handle is available.
+ *
+ * Features:
+ * - Dashed amber stroke for visual differentiation
+ * - Persistent warning badge visible without hover
+ * - Tooltip on hover for full warning message
  */
 export const WarningEdge = memo(function WarningEdge({
   id,
@@ -13,7 +18,6 @@ export const WarningEdge = memo(function WarningEdge({
   targetY,
   sourcePosition,
   targetPosition,
-  style,
   markerEnd,
   data,
 }: EdgeProps) {
@@ -30,9 +34,17 @@ export const WarningEdge = memo(function WarningEdge({
 
   const warning = data?.warning as string | undefined;
 
+  // Warning edge uses dashed amber stroke
+  const warningStyle = {
+    stroke: "#f59e0b", // amber-500
+    strokeWidth: 2,
+    strokeDasharray: "6 4",
+    strokeLinecap: "round" as const,
+  };
+
   return (
     <>
-      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
+      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={warningStyle} />
       {warning && (
         <>
           {/* Invisible wider path for easier hover detection */}
@@ -46,14 +58,30 @@ export const WarningEdge = memo(function WarningEdge({
             style={{ cursor: "help" }}
           />
           <EdgeLabelRenderer>
+            {/* Always-visible warning badge */}
+            <div
+              style={{
+                position: "absolute",
+                transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+                pointerEvents: "all",
+              }}
+              className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shadow-md cursor-help border-2 border-amber-400"
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+            >
+              <span className="text-white text-[11px] font-bold leading-none">!</span>
+            </div>
+
+            {/* Tooltip on hover for full message */}
             {showTooltip && (
               <div
                 style={{
                   position: "absolute",
-                  transform: `translate(-50%, -100%) translate(${labelX}px,${labelY - 10}px)`,
+                  transform: `translate(-50%, -100%) translate(${labelX}px,${labelY - 16}px)`,
                   pointerEvents: "none",
+                  zIndex: 1000,
                 }}
-                className="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-md shadow-lg text-xs text-amber-800 dark:text-amber-200 max-w-[200px] text-center"
+                className="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-md shadow-lg text-xs text-amber-800 dark:text-amber-200 max-w-[200px] text-center whitespace-nowrap"
               >
                 <div className="flex items-center gap-1.5">
                   <svg
