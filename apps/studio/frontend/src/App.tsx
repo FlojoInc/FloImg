@@ -13,6 +13,7 @@ import { OutputInspector } from "./components/OutputInspector";
 import { CommandPalette } from "./components/CommandPalette";
 import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
 import { ConfirmationDialog } from "./components/ConfirmationDialog";
+import { ImageLightbox } from "./components/ImageLightbox";
 import { useKeyboardShortcuts } from "./lib/keyboard/useKeyboardShortcuts";
 import { useWorkflowStore } from "./stores/workflowStore";
 import { useSettingsStore } from "./stores/settingsStore";
@@ -277,6 +278,9 @@ function App() {
 
         {/* AI Settings Modal */}
         <AISettings />
+
+        {/* Image Lightbox - Full-screen preview for node output images */}
+        <ImageLightbox />
 
         {/* AI Panel - Persistent slide-out for iterative workflow editing */}
         <AIPanel

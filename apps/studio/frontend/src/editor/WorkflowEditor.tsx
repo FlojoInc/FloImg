@@ -10,6 +10,7 @@ import ReactFlow, {
   type OnNodesChange,
   type OnEdgesChange,
   type DefaultEdgeOptions,
+  type EdgeTypes,
   applyNodeChanges,
   applyEdgeChanges,
 } from "reactflow";
@@ -18,6 +19,12 @@ import "./studio-theme.css";
 import type { GeneratorNodeData } from "@teamflojo/floimg-studio-shared";
 import { useWorkflowStore } from "../stores/workflowStore";
 import { nodeTypes } from "./nodeTypes";
+import { WarningEdge } from "./WarningEdge";
+
+// Custom edge types for warning visualization
+const edgeTypes: EdgeTypes = {
+  warning: WarningEdge,
+};
 
 // Premium edge styling with refined colors
 const defaultEdgeOptions: DefaultEdgeOptions = {
@@ -169,6 +176,7 @@ export function WorkflowEditor() {
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         nodeTypes={memoizedNodeTypes}
+        edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         isValidConnection={isValidConnection}
         nodesDraggable={true}
@@ -180,6 +188,8 @@ export function WorkflowEditor() {
         fitView
         snapToGrid
         snapGrid={[15, 15]}
+        minZoom={0.1}
+        maxZoom={4}
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} />
         <Controls showInteractive={false} />

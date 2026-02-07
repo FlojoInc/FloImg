@@ -151,6 +151,7 @@ export const GeneratorNode = memo(function GeneratorNode({
   const preview = useWorkflowStore((s) => s.execution.previews[id]);
   const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[id]);
   const previewVisible = useWorkflowStore((s) => s.previewVisible[id] !== false);
+  const openLightbox = useWorkflowStore((s) => s.openImageLightbox);
 
   const executionClass = getExecutionClass(nodeStatus);
 
@@ -192,9 +193,40 @@ export const GeneratorNode = memo(function GeneratorNode({
           title={`Reference images (up to ${data.maxReferenceImages || 14})`}
         />
       )}
-      {preview && previewVisible && (
+      {/* Loading skeleton while node is running but no preview yet */}
+      {nodeStatus === "running" && !preview && previewVisible && (
         <div className="floimg-node__preview">
-          <img src={preview} alt="Preview" className="w-full h-20 object-contain rounded-md" />
+          <div className="w-full h-[100px] bg-zinc-200 dark:bg-zinc-700 rounded-md animate-pulse flex items-center justify-center">
+            <svg
+              className="w-8 h-8 text-zinc-400 dark:text-zinc-500"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+        </div>
+      )}
+      {preview && previewVisible && (
+        <div
+          className="floimg-node__preview cursor-zoom-in"
+          onClick={(e) => {
+            e.stopPropagation();
+            openLightbox({ src: preview, nodeName: data.generatorName, nodeId: id });
+          }}
+          title="Click to view full size"
+        >
+          <img
+            src={preview}
+            alt="Preview"
+            className="w-full h-[100px] object-contain rounded-md pointer-events-none"
+          />
         </div>
       )}
       <ErrorBadge nodeId={id} />
@@ -268,6 +300,7 @@ export const TransformNode = memo(function TransformNode({
   const preview = useWorkflowStore((s) => s.execution.previews[id]);
   const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[id]);
   const previewVisible = useWorkflowStore((s) => s.previewVisible[id] !== false);
+  const openLightbox = useWorkflowStore((s) => s.openImageLightbox);
 
   const executionClass = getExecutionClass(nodeStatus);
 
@@ -318,9 +351,40 @@ export const TransformNode = memo(function TransformNode({
           title={`Reference images (up to ${data.maxReferenceImages || 13})`}
         />
       )}
-      {preview && previewVisible && (
+      {/* Loading skeleton while node is running but no preview yet */}
+      {nodeStatus === "running" && !preview && previewVisible && (
         <div className="floimg-node__preview">
-          <img src={preview} alt="Preview" className="w-full h-20 object-contain rounded-md" />
+          <div className="w-full h-20 bg-zinc-200 dark:bg-zinc-700 rounded-md animate-pulse flex items-center justify-center">
+            <svg
+              className="w-6 h-6 text-zinc-400 dark:text-zinc-500"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+        </div>
+      )}
+      {preview && previewVisible && (
+        <div
+          className="floimg-node__preview cursor-zoom-in"
+          onClick={(e) => {
+            e.stopPropagation();
+            openLightbox({ src: preview, nodeName: data.operation, nodeId: id });
+          }}
+          title="Click to view full size"
+        >
+          <img
+            src={preview}
+            alt="Preview"
+            className="w-full h-20 object-contain rounded-md pointer-events-none"
+          />
         </div>
       )}
       <ErrorBadge nodeId={id} />
@@ -439,6 +503,7 @@ export const InputNode = memo(function InputNode({ id, data, selected }: NodePro
   const nodeStatus = useWorkflowStore((s) => s.execution.nodeStatus[id]);
   const previewVisible = useWorkflowStore((s) => s.previewVisible[id] !== false);
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
+  const openLightbox = useWorkflowStore((s) => s.openImageLightbox);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const storageAdapter = useRequiredStorageAdapter();
 
@@ -506,17 +571,24 @@ export const InputNode = memo(function InputNode({ id, data, selected }: NodePro
       onDragOver={handleDragOver}
     >
       {previewUrl && previewVisible ? (
-        <div className="floimg-node__preview">
+        <div
+          className="floimg-node__preview cursor-zoom-in"
+          onClick={(e) => {
+            e.stopPropagation();
+            openLightbox({ src: previewUrl, nodeName: data.filename || "Input", nodeId: id });
+          }}
+          title="Click to view full size"
+        >
           <img
             src={previewUrl}
             alt="Uploaded"
-            className="w-full h-20 object-contain rounded-md"
+            className="w-full h-[100px] object-contain rounded-md pointer-events-none"
             crossOrigin="use-credentials"
           />
         </div>
       ) : !previewUrl ? (
         <div
-          className="h-20 flex items-center justify-center cursor-pointer bg-amber-50/50 dark:bg-amber-900/20 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors border-b border-amber-100/50 dark:border-amber-800/30"
+          className="h-[100px] flex items-center justify-center cursor-pointer bg-amber-50/50 dark:bg-amber-900/20 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors border-b border-amber-100/50 dark:border-amber-800/30"
           onClick={(e) => {
             e.stopPropagation();
             fileInputRef.current?.click();

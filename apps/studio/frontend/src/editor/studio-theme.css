@@ -494,6 +494,7 @@
 }
 
 /* ===== AI GENERATE BUTTON ===== */
+/* Demoted to secondary/outline style per design audit - Execute should be primary action */
 
 .floimg-ai-btn {
   display: inline-flex;
@@ -501,23 +502,17 @@
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  font-weight: 600;
-  color: white;
-  background: linear-gradient(135deg, #0d9488 0%, #0891b2 50%, #6366f1 100%);
-  background-size: 200% 200%;
-  border-radius: 999px;
-  box-shadow:
-    0 2px 8px rgba(13, 148, 136, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transition: all 0.3s ease;
+  font-weight: 500;
+  color: #818cf8; /* indigo-400 */
+  background: transparent;
+  border: 1px solid rgba(129, 140, 248, 0.4); /* indigo-400/40 */
+  border-radius: 0.5rem;
+  transition: all 0.15s ease;
 }
 
 .floimg-ai-btn:hover {
-  background-position: 100% 100%;
-  box-shadow:
-    0 4px 16px rgba(13, 148, 136, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
+  background: rgba(129, 140, 248, 0.1); /* indigo-400/10 */
+  border-color: rgba(129, 140, 248, 0.6);
 }
 
 /* ===== EMPTY STATE ===== */
