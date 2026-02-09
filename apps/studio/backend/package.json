@@ -39,7 +39,7 @@
     "@teamflojo/floimg-xai": "workspace:*",
     "fastify": "^5.7.4",
     "nanoid": "^5.0.7",
-    "openai": "^6.17.0",
+    "openai": "^6.18.0",
     "yaml": "^2.4.1"
   },
   "devDependencies": {
